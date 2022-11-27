@@ -1,3 +1,6 @@
 [submodule "src/libs/navigation"]
 	path = src/libs/navigation
 	url = ../../ros-planning/navigation.git
+[submodule "src/libs/navigation_msgs"]
+	path = src/libs/navigation_msgs
+	url = ../../ros-planning/navigation_msgs.git
