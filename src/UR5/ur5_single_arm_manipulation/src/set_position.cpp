@@ -6,15 +6,15 @@
 #include <iterator>
 #include <vector>
 
-int startMoveToPosition(ros::ServiceClient client, ur5_single_arm_manipulation::SetPosition srv, std::string position, std::vector<std::string> params) {
-    srv.request.x = std::stof(params[1].c_str());
-    srv.request.y = std::stof(params[2].c_str());
-    srv.request.z = std::stof(params[3].c_str());
+int startMoveToPosition(ros::ServiceClient client, ur5_single_arm_manipulation::SetPosition srv, std::vector<std::string> params) {
+    srv.request.x = std::stof(params[0].c_str());
+    srv.request.y = std::stof(params[1].c_str());
+    srv.request.z = std::stof(params[2].c_str());
 
     if (client.call(srv)) {
         ROS_INFO("Result: %s", srv.response.result.c_str());
     } else {
-        ROS_ERROR("Failed to call service set_position: %s", position.c_str());
+        ROS_ERROR("Failed to call service.");
         return 1;
     }
 
@@ -48,7 +48,7 @@ int main(int argc, char**argv) {
     int result = 0;
 
     // Goal position
-    result = startMoveToPosition(client, srv, params[0].c_str(), params);
+    result = startMoveToPosition(client, srv, params);
 
     ros::Duration(1).sleep();
     ros::spinOnce();

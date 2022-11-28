@@ -41,7 +41,7 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
     pose.position.y = req.y;
     pose.position.z = req.z;
 
-    move_group->move->setApproximateJointValueTarget(pose,"link_grip");
+    move_group->move->setApproximateJointValueTarget(pose,"gripper_base_link");
     moveit::planning_interface::MoveGroupInterface::Plan plan;
 
     robot_state::RobotState current_state(*(move_group->move)->getCurrentState());
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 
     ros::NodeHandle n;
 
-//     // Получает позицию из position
+    // Получает позицию из position
     ros::ServiceServer setPositionService = n.advertiseService<ur5_single_arm_manipulation::SetPosition::Request, ur5_single_arm_manipulation::SetPosition::Response>
                                 ("set_position", boost::bind(setPosition, _1, _2, move_group, joint_model_group));
 
