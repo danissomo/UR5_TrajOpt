@@ -79,6 +79,7 @@
           </script>
           </material>
         </visual>
+        <kinematic>1</kinematic>
       </link>
       <link name="handles">
         <pose>0.0 0.8 1.05 0 3.14 1.57</pose>
@@ -216,7 +217,7 @@
           </material>
         </visual>
       </link>
-      <link name="wall_3">
+      <!-- <link name="wall_3">
         <collision name="wall_3_collision">
           <pose>1.5 2.05 1.05342 0 0 0</pose>
           <geometry>
@@ -264,7 +265,7 @@
           </material>
         </visual>
       </link>
-      <!-- <link name="wall_5">
+      <link name="wall_5">
         <collision name="wall_5_collision">
           <pose>2.95 0.5 1.05342 0 0 0</pose>
           <geometry>
@@ -289,12 +290,5 @@
         </visual>
       </link> -->
     </model>
-    <gui fullscreen='0'>
-      <camera name='user_camera'>
-        <pose frame=''>1.43231 2.17046 6.28176 0 1.2058 -2.42384</pose>
-        <view_controller>orbit</view_controller>
-        <projection_type>perspective</projection_type>
-      </camera>
-    </gui>
   </world>
 </sdf>
