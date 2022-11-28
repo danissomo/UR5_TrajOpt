@@ -14,6 +14,3 @@ grp_group = moveit_commander.MoveGroupCommander("gripper")
 arm_group.set_named_target('up')
 arm_group.go(wait=True)
 print("UR5 stand up")
-
-
-
