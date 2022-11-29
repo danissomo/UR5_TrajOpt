@@ -1,0 +1,42 @@
+<launch>
+
+  <!-- By default, we are not in debug mode -->
+  <arg name="debug" default="false" />
+  <arg name="use_gui" default="false" />
+
+
+  <node name="move" pkg="ur5_single_arm_manipulation" type="move" respawn="false" output="screen">
+    <rosparam command="load" file="$(find ur5_single_arm_moveit_config)/config/kinematics.yaml"/>
+    <param name="planning_plugin" value="ompl_interface/OMPLPlanner"/>
+    <rosparam command="load" file="$(find ur5_single_arm_moveit_config)/config/ompl_planning.yaml"/>
+  </node>
+
+  <rosparam command="load" file="$(find ur5_single_arm_moveit_config)/config/joints_name.yaml"/>
+
+  <!-- Load the URDF, SRDF and other .yaml configuration files on the param server -->
+  <include file="$(find ur5_single_arm_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="false"/>
+  </include>
+
+  <!-- Remap follow_joint_trajectory -->     
+  <remap from="/follow_joint_trajectory" to="/arm_controller/follow_joint_trajectory"/>
+  
+
+  <!-- We do not have a robot connected, so publish fake joint states -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="use_gui" value="false"/>
+    <rosparam param="source_list">[/joint_states]</rosparam>
+  </node>
+
+  <!-- Given the published joint states, publish tf for the robot links -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+  <!-- Run the main MoveIt! executable without trajectory execution (we do not have controllers configured by default) -->
+  <include file="$(find ur5_single_arm_moveit_config)/launch/move_group.launch">
+    <arg name="publish_monitored_planning_scene" value="true" />
+  </include>
+
+  <!-- Подключение  joint_subscriber -->
+  <node name="joint_subscriber" pkg="ur5_single_arm_manipulation" type="joint_subscriber"/>
+
+</launch>
