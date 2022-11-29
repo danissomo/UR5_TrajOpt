@@ -116,6 +116,48 @@
           </geometry>
         </visual>
       </link>
+      <link name="marker">
+        <collision name="marker_collision">
+          <pose>0.155000 0.700000 1.050000 -1.57 0 1.57</pose>
+          <geometry>
+            <cylinder>
+              <radius>.01</radius>
+              <length>.001</length>
+            </cylinder>
+          </geometry>
+        </collision>
+        <visual name="marker_visual">
+          <pose>0.155000 0.700000 1.050000 -1.57 0 -1.57</pose>
+          <geometry>
+            <cylinder>
+              <radius>.01</radius>
+              <length>.001</length>
+            </cylinder>
+          </geometry>
+          <material>
+            <script>
+              <uri>file://media/materials/scripts/Gazebo.material</uri>
+              <name>Gazebo/Red</name>
+            </script>
+          </material>
+        </visual>
+      </link>
+      <joint name="marker_joint" type="revolute">
+        <child>handles</child>
+        <parent>marker</parent>
+        <axis>
+          <xyz>0 0 0</xyz>
+          <limit>
+            <lower>0</lower>
+            <upper>0</upper>
+          </limit>
+          <dynamics>
+            <damping>0.0</damping>
+            <friction>0.0</friction>
+          </dynamics>
+          <use_parent_model_frame>true</use_parent_model_frame>
+        </axis>
+      </joint>
       <joint name="handle" type="revolute">
         <parent>door</parent>
         <child>handles</child>
@@ -124,7 +166,7 @@
           <xyz>1 0 0</xyz>
           <limit>
             <lower>0</lower>
-            <upper>1.58</upper>
+            <upper>0</upper>
           </limit>
           <dynamics>
             <damping>0.0</damping>
