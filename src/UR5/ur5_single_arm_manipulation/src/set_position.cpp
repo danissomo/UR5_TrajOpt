@@ -35,7 +35,7 @@ int main(int argc, char**argv) {
     ROS_INFO("Got parameter: %s", param.c_str());
 
     ros::NodeHandle nh;
-    ros::ServiceClient client = nh.serviceClient<ur5_single_arm_manipulation::SetPosition>("get_position");
+    ros::ServiceClient client = nh.serviceClient<ur5_single_arm_manipulation::SetPosition>("set_position");
     ur5_single_arm_manipulation::SetPosition srv;
 
     std::stringstream data(param);

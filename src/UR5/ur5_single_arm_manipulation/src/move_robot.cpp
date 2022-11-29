@@ -52,7 +52,7 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
 
 
     if (success) {
-        std::cout<<"Start move"<<std::endl;
+        ROS_INFO("Start move");
 
         robot_state::RobotState current_state(*(move_group->move)->getCurrentState());
         move_group->move->setStartState(current_state);
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
         ROS_FATAL_STREAM("Could not find planner plugin name");
     }
 
-    std::string PLANNING_GROUP = "arm";
+    std::string PLANNING_GROUP = "manipulator";
     MoveOperationClass *move_group = new MoveOperationClass(PLANNING_GROUP);
 
     robot_model_loader::RobotModelLoader robot_model_loader("robot_description");

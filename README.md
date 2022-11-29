@@ -20,7 +20,7 @@
 
 <p>Прописать пути <code>source devel/setup.bash</code></p>
 
-<p>Запустить окружение робота <code>roslaunch ur5_single_arm_manipulation load_scene.launch pipeline:=trajopt</code></p>
+<p>Запустить окружение робота <code>roslaunch ur5_single_arm_manipulation load_scene.launch</code></p>
 
 <p><br /></p>
 
@@ -34,7 +34,7 @@
 
 <p>Прописать пути <code>source devel/setup.bash</code></p></p>
 
-<p>Управление движениями: <code></code></p>
+<p>Управление движениями: <code>roslaunch ur5_single_arm_manipulation move.launch pipeline:=trajopt</code></p>
 
 <p><b>Новый терминал:</b></p>
 
