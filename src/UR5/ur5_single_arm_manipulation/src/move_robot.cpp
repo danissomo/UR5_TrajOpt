@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 
 #include <ur5_single_arm_manipulation/SetPosition.h>
+#include <ur5_single_arm_manipulation/SetDefaultPose.h>
 #include <std_msgs/String.h>
 #include <trajectory_msgs/JointTrajectoryPoint.h>
 
@@ -16,6 +17,8 @@
 #include <moveit/kinematic_constraints/utils.h>
 #include <boost/scoped_ptr.hpp>
 
+#include <tf2/LinearMath/Quaternion.h>
+
 #include <iostream>
 #include <math.h> 
 #include <stdio.h>
@@ -25,6 +28,8 @@
 #include <cmath>
 
 #include "MoveOperationClass.hpp"
+
+#define PLANNING_GROUP "manipulator"
 
 
 bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req, 
@@ -37,9 +42,19 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
     geometry_msgs::Pose pose;
     bool success = true;
 
-    pose.position.x = req.x;
-    pose.position.y = req.y;
-    pose.position.z = req.z;
+    if (req.is_pos) {
+        pose.position.x = req.xr;
+        pose.position.y = req.yp;
+        pose.position.z = req.zy;
+    } else {
+        tf2::Quaternion q;
+        q.setRPY(req.xr, req.yp, req.zy);
+
+        pose.orientation.x = q.getX();
+        pose.orientation.y = q.getY();
+        pose.orientation.z = q.getZ();
+        pose.orientation.w = q.getW();
+    }
 
     move_group->move->setApproximateJointValueTarget(pose,"gripper_base_link");
     moveit::planning_interface::MoveGroupInterface::Plan plan;
@@ -72,6 +87,22 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
     return true;
 }
 
+bool setDefaultPose(ur5_single_arm_manipulation::SetDefaultPose::Request &req, ur5_single_arm_manipulation::SetDefaultPose::Response &res) {
+
+    moveit::planning_interface::MoveGroupInterface arm(PLANNING_GROUP);
+
+    arm.setGoalJointTolerance(0.001);
+
+    arm.setMaxAccelerationScalingFactor(0.2);
+    arm.setMaxVelocityScalingFactor(0.2);
+    arm.setNamedTarget(req.name);
+    arm.move();
+    sleep(1);
+
+    res.result = "Set default pose END";
+    return true;
+}
+
 
 int main(int argc, char *argv[]) {
     ROS_INFO("start:");
@@ -86,7 +117,6 @@ int main(int argc, char *argv[]) {
         ROS_FATAL_STREAM("Could not find planner plugin name");
     }
 
-    std::string PLANNING_GROUP = "manipulator";
     MoveOperationClass *move_group = new MoveOperationClass(PLANNING_GROUP);
 
     robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
@@ -115,6 +145,11 @@ int main(int argc, char *argv[]) {
     // Получает позицию из position
     ros::ServiceServer setPositionService = n.advertiseService<ur5_single_arm_manipulation::SetPosition::Request, ur5_single_arm_manipulation::SetPosition::Response>
                                 ("set_position", boost::bind(setPosition, _1, _2, move_group, joint_model_group));
+
+    // Установить позу из поз по умолчанию
+    ros::ServiceServer setDefaultPoseService = n.advertiseService<ur5_single_arm_manipulation::SetDefaultPose::Request, ur5_single_arm_manipulation::SetDefaultPose::Response>
+                                ("set_default_pose", boost::bind(setDefaultPose, _1, _2));
+
 
     ros::Duration(1).sleep();
     ros::waitForShutdown();

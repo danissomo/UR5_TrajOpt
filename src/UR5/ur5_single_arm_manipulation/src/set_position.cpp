@@ -7,9 +7,10 @@
 #include <vector>
 
 int startMoveToPosition(ros::ServiceClient client, ur5_single_arm_manipulation::SetPosition srv, std::vector<std::string> params) {
-    srv.request.x = std::stof(params[0].c_str());
-    srv.request.y = std::stof(params[1].c_str());
-    srv.request.z = std::stof(params[2].c_str());
+    srv.request.xr = std::stof(params[0].c_str());
+    srv.request.yp = std::stof(params[1].c_str());
+    srv.request.zy = std::stof(params[2].c_str());
+    srv.request.is_pos = std::atoi(params[3].c_str());
 
     if (client.call(srv)) {
         ROS_INFO("Result: %s", srv.response.result.c_str());
@@ -47,7 +48,7 @@ int main(int argc, char**argv) {
 
     int result = 0;
 
-    // Goal position
+    // Поменять положение
     result = startMoveToPosition(client, srv, params);
 
     ros::Duration(1).sleep();

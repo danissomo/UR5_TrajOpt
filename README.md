@@ -18,7 +18,7 @@
 
 <p>Собрать проект <code>catkin_make</code> (если будут ошибки сборки, можно попробовать собрать пакеты изолированно <code>catkin_make_isolated</code>)</p>
 
-<p>Прописать пути <code>source devel/setup.bash</code></p>
+<p>Прописать пути <code>source devel/setup.bash</code> (или <code>devel_isolated/setup.bash</code>)</p>
 
 <p>Запустить окружение робота <code>roslaunch ur5_single_arm_manipulation load_scene.launch</code></p>
 
@@ -38,4 +38,13 @@
 
 <p><b>Новый терминал:</b></p>
 
-<p>Отправить команду с координатой: <code>rosrun ur5_single_arm_manipulation position _param:="1 2 3"</code></p>
+<p>Отправить команду с координатой: <code>rosrun ur5_single_arm_manipulation position _param:="1 2 3"</code> (для ориентации введите 4й символ)</p>
+
+<p>Вернуть робота в позу по умолчанию <code>rosrun ur5_single_arm_manipulation pose _param:="up"</code> (варианты поз: home, up, pickup)</p>
+
+<hr />
+
+<p>Создать библиотеки:</p>
+<p>
+<pre><code>cd your catkin_ws_path/src/package</code>
+<code>PKG_CONFIG_PATH=`rospack find gazebo`/gazebo/lib/pkgconfig cmake ../..</code></pre></p>
