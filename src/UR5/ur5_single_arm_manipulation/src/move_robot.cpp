@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
     }
 
     move_group->move->setPlanningTime(60*5);
-    move_group->move->setGoalTolerance(.0001);
+    move_group->move->setGoalTolerance(0.001);
 
     ros::NodeHandle n;
 

@@ -80,7 +80,7 @@
           </script>
           </material>
         </visual>
-        <kinematic>1</kinematic>
+        <!-- <kinematic>1</kinematic> -->
       </link>
       <link name="handles">
         <pose>0.0 0.8 1.05 0 3.14 1.57</pose>
@@ -117,7 +117,7 @@
           </geometry>
         </visual>
       </link>
-      <link name="marker">
+<!--       <link name="marker">
         <collision name="marker_collision">
           <pose>0.155000 0.700000 1.050000 -1.57 0 1.57</pose>
           <geometry>
@@ -158,7 +158,7 @@
           </dynamics>
           <use_parent_model_frame>true</use_parent_model_frame>
         </axis>
-      </joint>
+      </joint> -->
       <joint name="handle" type="revolute">
         <parent>door</parent>
         <child>handles</child>
@@ -167,7 +167,7 @@
           <xyz>1 0 0</xyz>
           <limit>
             <lower>0</lower>
-            <upper>0</upper>
+            <upper>1.58</upper>
           </limit>
           <dynamics>
             <damping>0.0</damping>
@@ -180,10 +180,10 @@
         <parent>frame</parent>
         <child>door</child>
         <axis>
-          <xyz>0 0 1</xyz>
+          <xyz>0 0 0</xyz>
           <limit>
-            <lower>-1.58</lower>
-            <upper>-0.1</upper>
+            <lower>0</lower>
+            <upper>0</upper>
           </limit>
           <dynamics>
             <spring_reference>1</spring_reference>
