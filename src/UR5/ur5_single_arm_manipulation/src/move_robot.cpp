@@ -30,6 +30,7 @@
 #include "MoveOperationClass.hpp"
 
 #define PLANNING_GROUP "manipulator"
+#define M_PI 3.14159265358979323846
 
 
 bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req, 
@@ -46,6 +47,15 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
         pose.position.x = req.xr;
         pose.position.y = req.yp;
         pose.position.z = req.zy;
+
+        /// 
+        tf2::Quaternion q;
+        q.setRPY(M_PI/2, 0, M_PI);
+        pose.orientation.x = q.getX();
+        pose.orientation.y = q.getY();
+        pose.orientation.z = q.getZ();
+        pose.orientation.w = q.getW();
+
     } else {
         tf2::Quaternion q;
         q.setRPY(req.xr, req.yp, req.zy);

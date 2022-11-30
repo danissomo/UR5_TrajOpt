@@ -20,7 +20,7 @@
   </xacro:robotiq_85_gripper>
 
   <!-- Pilar property -->
-  <xacro:property name="pilar_height" value="0.09"/>
+  <xacro:property name="pilar_height" value="0.2"/>
   <xacro:property name="pilar_radius" value="0.07"/>
 
 
