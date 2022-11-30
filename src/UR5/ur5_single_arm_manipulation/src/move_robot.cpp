@@ -16,6 +16,10 @@
 #include <moveit/kinematic_constraints/utils.h>
 #include <boost/scoped_ptr.hpp>
 
+#include <tf2/LinearMath/Quaternion.h>
+// #include <physics/physics.hh>
+// #include <gazebo/gazebo.hh>
+
 #include <iostream>
 #include <math.h> 
 #include <stdio.h>
@@ -37,9 +41,19 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
     geometry_msgs::Pose pose;
     bool success = true;
 
-    pose.position.x = req.x;
-    pose.position.y = req.y;
-    pose.position.z = req.z;
+    if (req.is_pos) {
+        pose.position.x = req.xr;
+        pose.position.y = req.yp;
+        pose.position.z = req.zy;
+    } else {
+        tf2::Quaternion q;
+        q.setRPY(req.xr, req.yp, req.zy);
+
+        pose.orientation.x = q.getX();
+        pose.orientation.y = q.getY();
+        pose.orientation.z = q.getZ();
+        pose.orientation.w = q.getW();
+    }
 
     move_group->move->setApproximateJointValueTarget(pose,"gripper_base_link");
     moveit::planning_interface::MoveGroupInterface::Plan plan;
@@ -115,6 +129,16 @@ int main(int argc, char *argv[]) {
     // Получает позицию из position
     ros::ServiceServer setPositionService = n.advertiseService<ur5_single_arm_manipulation::SetPosition::Request, ur5_single_arm_manipulation::SetPosition::Response>
                                 ("set_position", boost::bind(setPosition, _1, _2, move_group, joint_model_group));
+
+
+    // Получить маркер
+    // Get the world (named "default")
+    // gazebo::physics::WorldPtr world = physics::get_world("default");
+
+    // Get a model by name
+    // gazebo::physics::ModelPtr door = world->GetModel("robot::door");
+    // door->SetKinematic(false);
+
 
     ros::Duration(1).sleep();
     ros::waitForShutdown();

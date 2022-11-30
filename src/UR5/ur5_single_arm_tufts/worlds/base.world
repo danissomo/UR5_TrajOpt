@@ -8,6 +8,7 @@
       <uri>model://sun</uri>
     </include>
     <model name="hinged_door">
+      <pose>-0.3 -0.3 0 0 0 0</pose>
       <link name="frame">
         <pose>0.06 -0.0005 0 0 0 0</pose>
         <collision name="collision_1">
@@ -211,6 +212,7 @@
     </model>
     <model name="walls">
       <static>true</static>
+      <pose>-0.3 -0.3 0 0 0 0</pose>
       <link name="wall_1">
         <collision name="wall_1_collision">
           <pose>0.03 1.49911 1.05342 0 0 0</pose>
