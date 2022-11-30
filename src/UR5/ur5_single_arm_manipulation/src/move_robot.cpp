@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 
 #include <ur5_single_arm_manipulation/SetPosition.h>
+#include <ur5_single_arm_manipulation/SetDefaultPose.h>
 #include <std_msgs/String.h>
 #include <trajectory_msgs/JointTrajectoryPoint.h>
 
@@ -17,8 +18,6 @@
 #include <boost/scoped_ptr.hpp>
 
 #include <tf2/LinearMath/Quaternion.h>
-// #include <physics/physics.hh>
-// #include <gazebo/gazebo.hh>
 
 #include <iostream>
 #include <math.h> 
@@ -29,6 +28,8 @@
 #include <cmath>
 
 #include "MoveOperationClass.hpp"
+
+#define PLANNING_GROUP "manipulator"
 
 
 bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req, 
@@ -86,6 +87,22 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
     return true;
 }
 
+bool setDefaultPose(ur5_single_arm_manipulation::SetDefaultPose::Request &req, ur5_single_arm_manipulation::SetDefaultPose::Response &res) {
+
+    moveit::planning_interface::MoveGroupInterface arm(PLANNING_GROUP);
+
+    arm.setGoalJointTolerance(0.001);
+
+    arm.setMaxAccelerationScalingFactor(0.2);
+    arm.setMaxVelocityScalingFactor(0.2);
+    arm.setNamedTarget(req.name);
+    arm.move();
+    sleep(1);
+
+    res.result = "Set default pose END";
+    return true;
+}
+
 
 int main(int argc, char *argv[]) {
     ROS_INFO("start:");
@@ -100,7 +117,6 @@ int main(int argc, char *argv[]) {
         ROS_FATAL_STREAM("Could not find planner plugin name");
     }
 
-    std::string PLANNING_GROUP = "manipulator";
     MoveOperationClass *move_group = new MoveOperationClass(PLANNING_GROUP);
 
     robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
@@ -130,14 +146,9 @@ int main(int argc, char *argv[]) {
     ros::ServiceServer setPositionService = n.advertiseService<ur5_single_arm_manipulation::SetPosition::Request, ur5_single_arm_manipulation::SetPosition::Response>
                                 ("set_position", boost::bind(setPosition, _1, _2, move_group, joint_model_group));
 
-
-    // Получить маркер
-    // Get the world (named "default")
-    // gazebo::physics::WorldPtr world = physics::get_world("default");
-
-    // Get a model by name
-    // gazebo::physics::ModelPtr door = world->GetModel("robot::door");
-    // door->SetKinematic(false);
+    // Установить позу из поз по умолчанию
+    ros::ServiceServer setDefaultPoseService = n.advertiseService<ur5_single_arm_manipulation::SetDefaultPose::Request, ur5_single_arm_manipulation::SetDefaultPose::Response>
+                                ("set_default_pose", boost::bind(setDefaultPose, _1, _2));
 
 
     ros::Duration(1).sleep();
