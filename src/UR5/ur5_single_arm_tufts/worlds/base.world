@@ -47,15 +47,15 @@
       <link name="door">
         <pose>-0.0 0.000 2.040 3.14159 0 1.57</pose>
         <inertial>
-          <mass>41.3256</mass>
+          <mass>1.0</mass>
           <pose>0.4569 0.0349 1.016 0 0 0</pose>
           <inertia>
-            <ixx>14.2053</ixx>
-            <ixy>0.0004</ixy>
-            <ixz>0.0000</ixz>
-            <iyy>17.1997</iyy>
-            <iyz>0.0000</iyz>
-            <izz>3.0298</izz>
+            <ixx>0.16666667</ixx>
+            <ixy>0.0</ixy>
+            <ixz>0.0</ixz>
+            <iyy>0.16666667</iyy>
+            <iyz>0.0</iyz>
+            <izz>0.16666667</izz>
           </inertia>
         </inertial>
         <collision name="collision">
@@ -180,10 +180,10 @@
         <parent>frame</parent>
         <child>door</child>
         <axis>
-          <xyz>0 0 0</xyz>
+          <xyz>0 0 1</xyz>
           <limit>
-            <lower>0</lower>
-            <upper>0</upper>
+            <lower>-1.58</lower>
+            <upper>-0.1</upper>
           </limit>
           <dynamics>
             <spring_reference>1</spring_reference>

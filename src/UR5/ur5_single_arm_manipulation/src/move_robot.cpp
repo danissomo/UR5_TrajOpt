@@ -134,13 +134,13 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
 
         //// Поворот
         double step = 0.1;
-        int minAngular = 2;
-        while (joint_values[0] < minAngular) {
+        int minAngular = 1.5;
+        while (joint_values[0] > minAngular) {
             std::cout << "=================" << std::endl;
 
             for (std::size_t i = 0; i < joint_names.size(); i++) {
                 if (joint_names[i] == "shoulder_pan_joint") {
-                    joint_values[i] += step;
+                    joint_values[i] -= step;
                     std::cout << "step === " << joint_values[i] << std::endl;
                 }
 

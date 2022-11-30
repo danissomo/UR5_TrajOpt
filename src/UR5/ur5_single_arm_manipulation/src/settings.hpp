@@ -8,7 +8,7 @@ float handlePosition_y = 0.4;
 float handlePosition_z = 1.05;
 
 float gripperOpen = 0;
-float gripperPickHandle = 0.6;
+float gripperPickHandle = 0.56;
 
 
 #endif
