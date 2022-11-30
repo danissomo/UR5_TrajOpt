@@ -4,9 +4,11 @@
   <arg name="gui" default="true"/>
   <arg name="sim" default="true" />
   <arg name="debug" default="false"/>
+  <arg name="gazebo" default="true" />
+  <arg name="rviz" default="false" />
 
   <!-- startup simulated world -->
-  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+  <include file="$(find gazebo_ros)/launch/empty_world.launch" if="$(arg gazebo)">
     <arg name="world_name" value="$(find ur5_single_arm_tufts)/worlds/base.world"/>
     <arg name="paused" value="$(arg paused)"/>
     <arg name="gui" value="$(arg gui)"/>
@@ -16,7 +18,7 @@
   <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find ur5_single_arm_tufts)/urdf/ur5_single_arm.urdf.xacro'"/>
   
   <!-- push robot_description to factory and spawn robot in gazebo -->
-  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot -x 0 -y 0 -z 0" respawn="false" output="screen"/>
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot -x 0 -y 0 -z 0" respawn="false" output="screen" if="$(arg gazebo)"/>
 
   <include file="$(find ur_gazebo)/launch/controller_utils.launch"/>
   
@@ -29,6 +31,13 @@
     <arg name="debug" default="$(arg debug)" />
     <arg name="sim" default="$(arg sim)" />
   </include>
+
+  <include file="$(find ur5_single_arm_moveit_config)/launch/moveit_rviz.launch" if="$(arg rviz)">
+    <arg name="debug" default="$(arg debug)" />
+    <arg name="config" default="true" />
+  </include>
+
+  <node pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" name="joint_state_publisher_gui" output="screen" if="$(arg rviz)"/>
 
   <node pkg="ur5_single_arm_manipulation" name="update_scene" type="update_scene.py" output="screen"/>
 

@@ -65,6 +65,7 @@ add_service_files(
    FILES
    SetPosition.srv
    SetDefaultPose.srv
+   SetGripperState.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -146,6 +147,7 @@ add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY)
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(position src/set_position.cpp)
 add_executable(pose src/set_default_pose.cpp)
+add_executable(gripper src/set_gripper_state.cpp)
 add_executable(move src/move_robot.cpp)
 
 ## Rename C++ executable without prefix
@@ -161,6 +163,10 @@ add_executable(move src/move_robot.cpp)
 ## Specify libraries to link a library or executable target against
 
 target_link_libraries(position
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(gripper
    ${catkin_LIBRARIES}
 )
 
