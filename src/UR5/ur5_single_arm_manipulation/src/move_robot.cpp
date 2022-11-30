@@ -66,6 +66,7 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
                 ur5_single_arm_manipulation::SetPosition::Response &res,
                 MoveOperationClass *move_group,
                 MoveOperationClass *move_group_gripper,
+                const robot_state::JointModelGroup *arm_joint_group,
                 const robot_state::JointModelGroup *gripper_joint_group,
                 moveit::core::RobotStatePtr kinematic_state) {
 
@@ -116,6 +117,40 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
 
         success = setGripperAngular(move_group_gripper, gripper_joint_group, kinematic_state, gripperPickHandle);
 
+        if (success) {
+            result = "SUCCESS";
+        }
+
+        //////////
+        ROS_INFO("Current joints");
+
+        const std::vector<std::string>& joint_names = arm_joint_group->getVariableNames();
+        std::vector<double> joint_values = move_group->move->getCurrentJointValues();
+
+        for (std::size_t i = 0; i < joint_names.size(); i++) {
+            ROS_INFO("Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
+        }
+        //////////
+
+        //// Поворот
+        double step = 0.1;
+        int minAngular = 2;
+        while (joint_values[0] < minAngular) {
+            std::cout << "=================" << std::endl;
+
+            for (std::size_t i = 0; i < joint_names.size(); i++) {
+                if (joint_names[i] == "shoulder_pan_joint") {
+                    joint_values[i] += step;
+                    std::cout << "step === " << joint_values[i] << std::endl;
+                }
+
+                ROS_INFO("Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
+            }
+
+            move_group->move->setJointValueTarget(joint_values);
+            move_group->move->move();
+            joint_values = move_group->move->getCurrentJointValues();
+        }
 
     } else {
         ROS_ERROR("Trajectory calculation error. A series of commands will not be sent to the robot.");
@@ -196,7 +231,7 @@ int main(int argc, char *argv[]) {
 
     // Получает позицию из position
     ros::ServiceServer setPositionService = n.advertiseService<ur5_single_arm_manipulation::SetPosition::Request, ur5_single_arm_manipulation::SetPosition::Response>
-                                ("set_position", boost::bind(setPosition, _1, _2, move_group, move_group_gripper, gripper_joint_group, kinematic_state));
+                                ("set_position", boost::bind(setPosition, _1, _2, move_group, move_group_gripper, arm_joint_group, gripper_joint_group, kinematic_state));
 
     // Установить позу из поз по умолчанию
     ros::ServiceServer setDefaultPoseService = n.advertiseService<ur5_single_arm_manipulation::SetDefaultPose::Request, ur5_single_arm_manipulation::SetDefaultPose::Response>
