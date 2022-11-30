@@ -3,6 +3,7 @@
 
 #include <ur5_single_arm_manipulation/SetPosition.h>
 #include <ur5_single_arm_manipulation/SetDefaultPose.h>
+#include <ur5_single_arm_manipulation/SetGripperState.h>
 #include <std_msgs/String.h>
 #include <trajectory_msgs/JointTrajectoryPoint.h>
 
@@ -28,14 +29,45 @@
 #include <cmath>
 
 #include "MoveOperationClass.hpp"
+#include "settings.hpp"
 
 #define PLANNING_GROUP "manipulator"
+#define GRIPPER_GROUP "gripper"
+#define M_PI 3.14159265358979323846
+
+
+bool setGripperAngular(MoveOperationClass *move_group_gripper,
+                       const robot_state::JointModelGroup *gripper_joint_group,
+                       moveit::core::RobotStatePtr kinematic_state,
+                       float value) {
+
+    ROS_INFO("Get value of angular for gripper = %f", value);
+
+    const std::vector<std::string>& joint_names = gripper_joint_group->getVariableNames();
+    std::vector<double> joint_values;
+    kinematic_state->copyJointGroupPositions(gripper_joint_group, joint_values);
+
+
+    for (std::size_t i = 0; i < joint_names.size(); ++i) {
+        if (joint_names[i] == "gripper_finger1_joint") {
+            joint_values[i] = value;
+        }
+        ROS_INFO("Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
+    }
+
+    move_group_gripper->move->setJointValueTarget(joint_values);
+    move_group_gripper->move->move();
+
+    return true;
+}
 
 
 bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req, 
                 ur5_single_arm_manipulation::SetPosition::Response &res,
                 MoveOperationClass *move_group,
-                const robot_state::JointModelGroup *joint_model_group) {
+                MoveOperationClass *move_group_gripper,
+                const robot_state::JointModelGroup *gripper_joint_group,
+                moveit::core::RobotStatePtr kinematic_state) {
 
     std::string result = "ERROR";
 
@@ -46,6 +78,15 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
         pose.position.x = req.xr;
         pose.position.y = req.yp;
         pose.position.z = req.zy;
+
+        /// 
+        tf2::Quaternion q;
+        q.setRPY(M_PI/2, 0, M_PI);
+        pose.orientation.x = q.getX();
+        pose.orientation.y = q.getY();
+        pose.orientation.z = q.getZ();
+        pose.orientation.w = q.getW();
+
     } else {
         tf2::Quaternion q;
         q.setRPY(req.xr, req.yp, req.zy);
@@ -73,8 +114,8 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
         move_group->move->setStartState(current_state);
         move_group->move->move();
 
-        std::vector<double> joints = move_group->move->getCurrentJointValues();
-        result = "SUCCESS";
+        success = setGripperAngular(move_group_gripper, gripper_joint_group, kinematic_state, gripperPickHandle);
+
 
     } else {
         ROS_ERROR("Trajectory calculation error. A series of commands will not be sent to the robot.");
@@ -104,6 +145,15 @@ bool setDefaultPose(ur5_single_arm_manipulation::SetDefaultPose::Request &req, u
 }
 
 
+bool setGripperState(ur5_single_arm_manipulation::SetGripperState::Request &req, ur5_single_arm_manipulation::SetGripperState::Response &res,
+                        MoveOperationClass *move_group_gripper,
+                       const robot_state::JointModelGroup *gripper_joint_group,
+                       moveit::core::RobotStatePtr kinematic_state) {
+
+    return setGripperAngular(move_group_gripper, gripper_joint_group, kinematic_state, req.angular);
+}
+
+
 int main(int argc, char *argv[]) {
     ROS_INFO("start:");
     ros::init(argc, argv, "move");
@@ -118,11 +168,13 @@ int main(int argc, char *argv[]) {
     }
 
     MoveOperationClass *move_group = new MoveOperationClass(PLANNING_GROUP);
+    MoveOperationClass *move_group_gripper = new MoveOperationClass(GRIPPER_GROUP);
 
     robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
 
     robot_state::RobotState start_state(*(move_group->move)->getCurrentState());
-    const robot_state::JointModelGroup* joint_model_group = move_group->move->getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+    const robot_state::JointModelGroup* arm_joint_group = move_group->move->getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+    const robot_state::JointModelGroup* gripper_joint_group = move_group->move->getCurrentState()->getJointModelGroup(GRIPPER_GROUP);
 
     const moveit::core::RobotModelPtr& kinematic_model = robot_model_loader.getModel();
     moveit::core::RobotStatePtr kinematic_state(new moveit::core::RobotState(kinematic_model));
@@ -144,12 +196,16 @@ int main(int argc, char *argv[]) {
 
     // Получает позицию из position
     ros::ServiceServer setPositionService = n.advertiseService<ur5_single_arm_manipulation::SetPosition::Request, ur5_single_arm_manipulation::SetPosition::Response>
-                                ("set_position", boost::bind(setPosition, _1, _2, move_group, joint_model_group));
+                                ("set_position", boost::bind(setPosition, _1, _2, move_group, move_group_gripper, gripper_joint_group, kinematic_state));
 
     // Установить позу из поз по умолчанию
     ros::ServiceServer setDefaultPoseService = n.advertiseService<ur5_single_arm_manipulation::SetDefaultPose::Request, ur5_single_arm_manipulation::SetDefaultPose::Response>
                                 ("set_default_pose", boost::bind(setDefaultPose, _1, _2));
 
+
+    // Установить угол размыкания схвата
+    ros::ServiceServer setGripperStateService = n.advertiseService<ur5_single_arm_manipulation::SetGripperState::Request, ur5_single_arm_manipulation::SetGripperState::Response>
+                                ("set_gripper_state", boost::bind(setGripperState, _1, _2, move_group_gripper, gripper_joint_group, kinematic_state));
 
     ros::Duration(1).sleep();
     ros::waitForShutdown();
