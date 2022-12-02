@@ -75,28 +75,16 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
     geometry_msgs::Pose pose;
     bool success = true;
 
-    if (req.is_pos) {
-        pose.position.x = req.xr;
-        pose.position.y = req.yp;
-        pose.position.z = req.zy;
+    pose.position.x = req.xr;
+    pose.position.y = req.yp;
+    pose.position.z = req.zy;
 
-        /// 
-        tf2::Quaternion q;
-        q.setRPY(M_PI/2, 0, M_PI);
-        pose.orientation.x = q.getX();
-        pose.orientation.y = q.getY();
-        pose.orientation.z = q.getZ();
-        pose.orientation.w = q.getW();
-
-    } else {
-        tf2::Quaternion q;
-        q.setRPY(req.xr, req.yp, req.zy);
-
-        pose.orientation.x = q.getX();
-        pose.orientation.y = q.getY();
-        pose.orientation.z = q.getZ();
-        pose.orientation.w = q.getW();
-    }
+    tf2::Quaternion q;
+    q.setRPY(M_PI/2, 0, M_PI);
+    pose.orientation.x = q.getX();
+    pose.orientation.y = q.getY();
+    pose.orientation.z = q.getZ();
+    pose.orientation.w = q.getW();
 
     move_group->move->setApproximateJointValueTarget(pose,"gripper_base_link");
     moveit::planning_interface::MoveGroupInterface::Plan plan;

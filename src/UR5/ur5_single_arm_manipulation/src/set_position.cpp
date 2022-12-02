@@ -10,7 +10,6 @@ int startMoveToPosition(ros::ServiceClient client, ur5_single_arm_manipulation::
     srv.request.xr = std::stof(params[0].c_str());
     srv.request.yp = std::stof(params[1].c_str());
     srv.request.zy = std::stof(params[2].c_str());
-    srv.request.is_pos = std::atoi(params[3].c_str());
 
     if (client.call(srv)) {
         ROS_INFO("Result: %s", srv.response.result.c_str());

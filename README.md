@@ -38,7 +38,7 @@
 
 <p><b>Новый терминал:</b></p>
 
-<p>Отправить команду с координатой: <code>rosrun ur5_single_arm_manipulation position _param:="1 2 3"</code> (для ориентации введите 4й символ)</p>
+<p>Отправить команду с координатой: <code>rosrun ur5_single_arm_manipulation position _param:="1 2 3"</code></p>
 
 <p>Вернуть робота в позу по умолчанию <code>rosrun ur5_single_arm_manipulation pose _param:="up"</code> (варианты поз: home, up, pickup)</p>
 
