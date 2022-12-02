@@ -119,16 +119,23 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
 }
 
 
-bool setDefaultPose(ur5_single_arm_manipulation::SetDefaultPose::Request &req, ur5_single_arm_manipulation::SetDefaultPose::Response &res) {
-
+bool _setDefaultPose(std::string name) {
     moveit::planning_interface::MoveGroupInterface arm(PLANNING_GROUP);
 
     arm.setGoalJointTolerance(0.001);
     arm.setMaxAccelerationScalingFactor(0.2);
     arm.setMaxVelocityScalingFactor(0.2);
-    arm.setNamedTarget(req.name);
+    arm.setNamedTarget(name);
     arm.move();
     sleep(1);
+
+    return true;
+}
+
+
+bool setDefaultPose(ur5_single_arm_manipulation::SetDefaultPose::Request &req, ur5_single_arm_manipulation::SetDefaultPose::Response &res) {
+
+    _setDefaultPose(req.name);
 
     res.result = "Set default pose END";
     return true;
@@ -187,7 +194,11 @@ bool openDoor(ur5_single_arm_manipulation::OpenDoor::Request &req,
         joint_values = move_group->move->getCurrentJointValues();
     }
 
-     res.result = "SUCCESS. Robot tried to close the door.";
+    // Вернуться в исходное положение
+    _setDefaultPose(robotDefaultPose);
+    setGripperAngular(move_group_gripper, gripper_joint_group, kinematic_state, 0);
+
+    res.result = "SUCCESS. Robot tried to close the door.";
 
     return true;
 }
