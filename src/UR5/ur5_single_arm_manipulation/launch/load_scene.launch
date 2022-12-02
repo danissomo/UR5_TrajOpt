@@ -7,6 +7,14 @@
   <arg name="gazebo" default="true" />
   <arg name="rviz" default="false" />
 
+  <!-- Задержка загрузки робота (время, чтобы закрылась дверь) -->
+  <arg name="node_start_delay" default="2.0" />
+
+  <!-- Начальное положение робота -->
+  <arg name="x" default="0" />
+  <arg name="y" default="0" />
+  <arg name="z" default="0" />
+
   <!-- startup simulated world -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch" if="$(arg gazebo)">
     <arg name="world_name" value="$(find ur5_single_arm_tufts)/worlds/base.world"/>
@@ -18,7 +26,7 @@
   <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find ur5_single_arm_tufts)/urdf/ur5_single_arm.urdf.xacro'"/>
   
   <!-- push robot_description to factory and spawn robot in gazebo -->
-  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot -x 0 -y 0 -z 0" respawn="false" output="screen" if="$(arg gazebo)"/>
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot -x $(arg x) -y $(arg y) -z $(arg z)" respawn="false" output="screen" if="$(arg gazebo)" launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@'"/>
 
   <include file="$(find ur_gazebo)/launch/controller_utils.launch"/>
   
@@ -38,7 +46,5 @@
   </include>
 
   <node pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" name="joint_state_publisher_gui" output="screen" if="$(arg rviz)"/>
-
-  <node pkg="ur5_single_arm_manipulation" name="update_scene" type="update_scene.py" output="screen"/>
 
 </launch>

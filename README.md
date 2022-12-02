@@ -10,7 +10,7 @@
 
 <p> 4. Запустить робота</p>
 
-<p><b>1 терминал:</b></p>
+<p><b>Новое окно терминала:</b></p>
 
 <p>Запустить docker-контейнер с окружением для робота: <code>sudo ./scripts/docker/run_armbot_docker.sh</code></p>
 
@@ -20,33 +20,44 @@
 
 <p>Прописать пути <code>source devel/setup.bash</code> (или <code>source devel_isolated/setup.bash</code>)</p>
 
-<p>Запустить окружение робота <code>roslaunch ur5_single_arm_manipulation load_scene.launch</code></p>
+<p>Запустить окружение робота <code>roslaunch ur5_single_arm_manipulation load_scene.launch</code> (загрузка с параметрами: <code>roslaunch ur5_single_arm_manipulation load_scene.launch x:=2 y:=2 z:=0</code>).</p>
 
 <p><br /></p>
 
 <p>5. Запустить управление роботом</p>
 
-<p><b>2 терминал:</b></p>
+<p><b>Новое окно терминала:</b></p>
 
 <p>Зайти в docker-контейнер <code>sudo docker exec -ti trajopt bash</code></p>
 
 <p>Перейти в рабочую директорию <code>cd workspace</code></p>
 
-<p>Прописать пути <code>source devel/setup.bash</code></p></p>
+<p>Прописать пути <code>source devel/setup.bash</code> (или <code>source devel_isolated/setup.bash</code>)</p>
 
 <p>Управление движениями: <code>roslaunch ur5_single_arm_manipulation move.launch pipeline:=trajopt</code></p>
 
-<p><b>Новый терминал:</b></p>
+<p><br /></p>
 
-<p>Отправить команду с координатой: <code>rosrun ur5_single_arm_manipulation position _param:="1 2 3"</code> (для ориентации введите 4й символ)</p>
+<p>6. Запустить команду открытия двери</p>
+
+<p><b>Новое окно терминала:</b></p>
+
+<p>Зайти в docker-контейнер <code>sudo docker exec -ti trajopt bash</code></p>
+
+<p>Перейти в рабочую директорию <code>cd workspace</code></p>
+
+<p>Прописать пути <code>source devel/setup.bash</code> (или <code>source devel_isolated/setup.bash</code>)</p>
+
+<p>Управление движениями: <code>rosrun ur5_single_arm_manipulation open</code></p>
+
+<p><br /></p>
+
+<hr />
+
+<p><b>Другие команды:</b></p>
+
+<p>Отправить команду с координатой для схвата робота: <code>rosrun ur5_single_arm_manipulation position _param:="1 2 3"</code></p>
 
 <p>Вернуть робота в позу по умолчанию <code>rosrun ur5_single_arm_manipulation pose _param:="up"</code> (варианты поз: home, up, pickup)</p>
 
 <p>Разомкнуть схват на определенный угол: <code>rosrun ur5_single_arm_manipulation gripper _param:="0.564"</code> (0 - открыт полностью)</p>
-
-<hr />
-
-<p>Создать библиотеки:</p>
-<p>
-<pre><code>cd your catkin_ws_path/src/package</code>
-<code>PKG_CONFIG_PATH=`rospack find gazebo`/gazebo/lib/pkgconfig cmake ../..</code></pre></p>

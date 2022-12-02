@@ -39,4 +39,7 @@
   <!-- Подключение  joint_subscriber -->
   <node name="joint_subscriber" pkg="ur5_single_arm_manipulation" type="joint_subscriber"/>
 
+  <!-- Загрузка начальной конфигурации робота -->
+  <node pkg="ur5_single_arm_manipulation" name="update_scene" type="update_scene.py" output="screen"/>
+
 </launch>

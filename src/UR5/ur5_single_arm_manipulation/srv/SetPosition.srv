@@ -1,6 +1,5 @@
-float32 xr
-float32 yp
-float32 zy
-int32 is_pos
+float32 x
+float32 y
+float32 z
 ---
 string result

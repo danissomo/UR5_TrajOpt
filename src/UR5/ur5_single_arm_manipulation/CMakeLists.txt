@@ -66,6 +66,7 @@ add_service_files(
    SetPosition.srv
    SetDefaultPose.srv
    SetGripperState.srv
+   OpenDoor.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -149,6 +150,7 @@ add_executable(position src/set_position.cpp)
 add_executable(pose src/set_default_pose.cpp)
 add_executable(gripper src/set_gripper_state.cpp)
 add_executable(move src/move_robot.cpp)
+add_executable(open src/open_door.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -175,6 +177,10 @@ target_link_libraries(pose
 )
 
 target_link_libraries(move
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(open
    ${catkin_LIBRARIES}
 )
 
