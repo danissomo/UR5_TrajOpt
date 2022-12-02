@@ -73,9 +73,9 @@
 <p><b>Видео</b></p>
 
 <p>
-    <img src="media/video1.png" alt="Start demo" style="max-width: 100%;">
+    <img src="media/video1.gif" alt="Start demo" style="max-width: 100%;">
 </p>
 
 <p>
-    <img src="media/video2.png" alt="Move" style="max-width: 100%;">
+    <img src="media/video2.gif" alt="Move" style="max-width: 100%;">
 </p>
