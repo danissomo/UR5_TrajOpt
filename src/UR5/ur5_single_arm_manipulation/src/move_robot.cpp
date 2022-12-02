@@ -4,6 +4,7 @@
 #include <ur5_single_arm_manipulation/SetPosition.h>
 #include <ur5_single_arm_manipulation/SetDefaultPose.h>
 #include <ur5_single_arm_manipulation/SetGripperState.h>
+#include <ur5_single_arm_manipulation/OpenDoor.h>
 #include <std_msgs/String.h>
 #include <trajectory_msgs/JointTrajectoryPoint.h>
 
@@ -31,10 +32,6 @@
 #include "MoveOperationClass.hpp"
 #include "settings.hpp"
 
-#define PLANNING_GROUP "manipulator"
-#define GRIPPER_GROUP "gripper"
-#define M_PI 3.14159265358979323846
-
 
 bool setGripperAngular(MoveOperationClass *move_group_gripper,
                        const robot_state::JointModelGroup *gripper_joint_group,
@@ -49,7 +46,7 @@ bool setGripperAngular(MoveOperationClass *move_group_gripper,
 
 
     for (std::size_t i = 0; i < joint_names.size(); ++i) {
-        if (joint_names[i] == "gripper_finger1_joint") {
+        if (joint_names[i] == robotDefaultJoint) {
             joint_values[i] = value;
         }
         ROS_INFO("Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
@@ -62,22 +59,13 @@ bool setGripperAngular(MoveOperationClass *move_group_gripper,
 }
 
 
-bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req, 
-                ur5_single_arm_manipulation::SetPosition::Response &res,
-                MoveOperationClass *move_group,
-                MoveOperationClass *move_group_gripper,
-                const robot_state::JointModelGroup *arm_joint_group,
-                const robot_state::JointModelGroup *gripper_joint_group,
-                moveit::core::RobotStatePtr kinematic_state) {
-
-    std::string result = "ERROR";
-
+bool robotMove(float x, float y, float z, MoveOperationClass *move_group) {
     geometry_msgs::Pose pose;
     bool success = true;
 
-    pose.position.x = req.xr;
-    pose.position.y = req.yp;
-    pose.position.z = req.zy;
+    pose.position.x = x;
+    pose.position.y = y;
+    pose.position.z = z;
 
     tf2::Quaternion q;
     q.setRPY(M_PI/2, 0, M_PI);
@@ -86,7 +74,7 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
     pose.orientation.z = q.getZ();
     pose.orientation.w = q.getW();
 
-    move_group->move->setApproximateJointValueTarget(pose,"gripper_base_link");
+    move_group->move->setApproximateJointValueTarget(pose,robotDefaultLink);
     moveit::planning_interface::MoveGroupInterface::Plan plan;
 
     robot_state::RobotState current_state(*(move_group->move)->getCurrentState());
@@ -103,48 +91,26 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
         move_group->move->setStartState(current_state);
         move_group->move->move();
 
-        success = setGripperAngular(move_group_gripper, gripper_joint_group, kinematic_state, gripperPickHandle);
-
-        if (success) {
-            result = "SUCCESS";
-        }
-
-        //////////
-        ROS_INFO("Current joints");
-
-        const std::vector<std::string>& joint_names = arm_joint_group->getVariableNames();
-        std::vector<double> joint_values = move_group->move->getCurrentJointValues();
-
-        for (std::size_t i = 0; i < joint_names.size(); i++) {
-            ROS_INFO("Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
-        }
-        //////////
-
-        //// Поворот
-        double step = 0.1;
-        int minAngular = 1.5;
-        while (joint_values[0] > minAngular) {
-            std::cout << "=================" << std::endl;
-
-            for (std::size_t i = 0; i < joint_names.size(); i++) {
-                if (joint_names[i] == "shoulder_pan_joint") {
-                    joint_values[i] -= step;
-                    std::cout << "step === " << joint_values[i] << std::endl;
-                }
-
-                ROS_INFO("Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
-            }
-
-            move_group->move->setJointValueTarget(joint_values);
-            move_group->move->move();
-            joint_values = move_group->move->getCurrentJointValues();
-        }
-
     } else {
         ROS_ERROR("Trajectory calculation error. A series of commands will not be sent to the robot.");
     }
 
-    res.result = result;
+    return true;
+}
+
+
+bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req, 
+                ur5_single_arm_manipulation::SetPosition::Response &res,
+                MoveOperationClass *move_group,
+                MoveOperationClass *move_group_gripper,
+                const robot_state::JointModelGroup *arm_joint_group,
+                const robot_state::JointModelGroup *gripper_joint_group,
+                moveit::core::RobotStatePtr kinematic_state) {
+
+    bool success = true;
+
+    success = robotMove(req.x, req.y, req.z, move_group);
+    res.result = success ? "SUCCESS" : "ERROR";
 
     ros::spinOnce();
 
@@ -156,7 +122,6 @@ bool setDefaultPose(ur5_single_arm_manipulation::SetDefaultPose::Request &req, u
     moveit::planning_interface::MoveGroupInterface arm(PLANNING_GROUP);
 
     arm.setGoalJointTolerance(0.001);
-
     arm.setMaxAccelerationScalingFactor(0.2);
     arm.setMaxVelocityScalingFactor(0.2);
     arm.setNamedTarget(req.name);
@@ -174,6 +139,56 @@ bool setGripperState(ur5_single_arm_manipulation::SetGripperState::Request &req,
                        moveit::core::RobotStatePtr kinematic_state) {
 
     return setGripperAngular(move_group_gripper, gripper_joint_group, kinematic_state, req.angular);
+}
+
+
+
+bool openDoor(ur5_single_arm_manipulation::OpenDoor::Request &req, 
+             ur5_single_arm_manipulation::OpenDoor::Response &res,
+             MoveOperationClass *move_group,
+             MoveOperationClass *move_group_gripper,
+             const robot_state::JointModelGroup *arm_joint_group,
+             const robot_state::JointModelGroup *gripper_joint_group,
+             moveit::core::RobotStatePtr kinematic_state) {
+
+
+    robotMove(handlePosition_x, handlePosition_y, handlePosition_z, move_group);
+    setGripperAngular(move_group_gripper, gripper_joint_group, kinematic_state, gripperPickHandle);
+
+    //////////
+    ROS_INFO("Current joints");
+
+    const std::vector<std::string>& joint_names = arm_joint_group->getVariableNames();
+    std::vector<double> joint_values = move_group->move->getCurrentJointValues();
+
+    for (std::size_t i = 0; i < joint_names.size(); i++) {
+        ROS_INFO("Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
+    }
+    //////////
+
+    //// Поворот
+    double step = 0.1;
+    int minAngular = 1.5;
+    while (joint_values[0] > minAngular) {
+        std::cout << "=================" << std::endl;
+
+        for (std::size_t i = 0; i < joint_names.size(); i++) {
+            if (joint_names[i] == "shoulder_pan_joint") {
+                joint_values[i] -= step;
+                std::cout << "step === " << joint_values[i] << std::endl;
+            }
+
+            ROS_INFO("Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
+        }
+
+        move_group->move->setJointValueTarget(joint_values);
+        move_group->move->move();
+        joint_values = move_group->move->getCurrentJointValues();
+    }
+
+    res.result = "SUCCESS. Robot tried to close the door.";
+
+    return true;
 }
 
 
@@ -225,10 +240,13 @@ int main(int argc, char *argv[]) {
     ros::ServiceServer setDefaultPoseService = n.advertiseService<ur5_single_arm_manipulation::SetDefaultPose::Request, ur5_single_arm_manipulation::SetDefaultPose::Response>
                                 ("set_default_pose", boost::bind(setDefaultPose, _1, _2));
 
-
     // Установить угол размыкания схвата
     ros::ServiceServer setGripperStateService = n.advertiseService<ur5_single_arm_manipulation::SetGripperState::Request, ur5_single_arm_manipulation::SetGripperState::Response>
                                 ("set_gripper_state", boost::bind(setGripperState, _1, _2, move_group_gripper, gripper_joint_group, kinematic_state));
+
+    // Открыть дверь одной командой
+    ros::ServiceServer openDoorService = n.advertiseService<ur5_single_arm_manipulation::OpenDoor::Request, ur5_single_arm_manipulation::OpenDoor::Response>
+                                ("robot_open_door", boost::bind(openDoor, _1, _2, move_group, move_group_gripper, arm_joint_group, gripper_joint_group, kinematic_state));
 
     ros::Duration(1).sleep();
     ros::waitForShutdown();
