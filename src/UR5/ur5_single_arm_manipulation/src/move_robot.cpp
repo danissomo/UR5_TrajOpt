@@ -60,6 +60,8 @@ bool setGripperAngular(MoveOperationClass *move_group_gripper,
 
 
 bool robotMove(float x, float y, float z, MoveOperationClass *move_group) {
+    ROS_INFO("Got x = %f, y = %f, z = %f", x, y, z);
+
     geometry_msgs::Pose pose;
     bool success = true;
 
@@ -82,7 +84,6 @@ bool robotMove(float x, float y, float z, MoveOperationClass *move_group) {
     success = (move_group->move->plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 
     ROS_INFO("Visualizing move 1 (pose goal) %s", success ? "" : "FAILED");
-
 
     if (success) {
         ROS_INFO("Start move");
@@ -117,6 +118,7 @@ bool setPosition(ur5_single_arm_manipulation::SetPosition::Request &req,
     return true;
 }
 
+
 bool setDefaultPose(ur5_single_arm_manipulation::SetDefaultPose::Request &req, ur5_single_arm_manipulation::SetDefaultPose::Response &res) {
 
     moveit::planning_interface::MoveGroupInterface arm(PLANNING_GROUP);
@@ -142,7 +144,6 @@ bool setGripperState(ur5_single_arm_manipulation::SetGripperState::Request &req,
 }
 
 
-
 bool openDoor(ur5_single_arm_manipulation::OpenDoor::Request &req, 
              ur5_single_arm_manipulation::OpenDoor::Response &res,
              MoveOperationClass *move_group,
@@ -155,7 +156,7 @@ bool openDoor(ur5_single_arm_manipulation::OpenDoor::Request &req,
     robotMove(handlePosition_x, handlePosition_y, handlePosition_z, move_group);
     setGripperAngular(move_group_gripper, gripper_joint_group, kinematic_state, gripperPickHandle);
 
-    //////////
+    // Информация о joint`ах
     ROS_INFO("Current joints");
 
     const std::vector<std::string>& joint_names = arm_joint_group->getVariableNames();
@@ -164,18 +165,18 @@ bool openDoor(ur5_single_arm_manipulation::OpenDoor::Request &req,
     for (std::size_t i = 0; i < joint_names.size(); i++) {
         ROS_INFO("Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
     }
-    //////////
 
-    //// Поворот
+    // Поворот для открытия двери
+    // Траектория неправильная
+    // Есть вариант перестроить положение робота, чтобы иметь возможность поворачивать еще один сустав в сторону, обратную направлению вращения
+    // Планировщик считает криво (если задавать координаты в цикле)
     double step = 0.1;
     int minAngular = 1.5;
     while (joint_values[0] > minAngular) {
-        std::cout << "=================" << std::endl;
 
         for (std::size_t i = 0; i < joint_names.size(); i++) {
             if (joint_names[i] == "shoulder_pan_joint") {
                 joint_values[i] -= step;
-                std::cout << "step === " << joint_values[i] << std::endl;
             }
 
             ROS_INFO("Joint %s: %f", joint_names[i].c_str(), joint_values[i]);
@@ -186,7 +187,7 @@ bool openDoor(ur5_single_arm_manipulation::OpenDoor::Request &req,
         joint_values = move_group->move->getCurrentJointValues();
     }
 
-    res.result = "SUCCESS. Robot tried to close the door.";
+     res.result = "SUCCESS. Robot tried to close the door.";
 
     return true;
 }
