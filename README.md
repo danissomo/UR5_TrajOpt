@@ -20,7 +20,7 @@
 
 <p>Прописать пути <code>source devel/setup.bash</code> (или <code>source devel_isolated/setup.bash</code>)</p>
 
-<p>Запустить окружение робота <code>roslaunch ur5_single_arm_manipulation load_scene.launch</code></p>
+<p>Запустить окружение робота <code>roslaunch ur5_single_arm_manipulation load_scene.launch</code> (загрузка с параметрами: <code>roslaunch ur5_single_arm_manipulation load_scene.launch x:=2 y:=2 z:=0</code>).</p>
 
 <p><br /></p>
 
