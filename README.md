@@ -10,7 +10,7 @@
 
 <p> 4. Запустить робота</p>
 
-<p><b>Новое окно терминала:</b></p>
+<p><u>Новое окно терминала:</u></p>
 
 <p>Запустить docker-контейнер с окружением для робота: <code>sudo ./scripts/docker/run_armbot_docker.sh</code></p>
 
@@ -22,11 +22,15 @@
 
 <p>Запустить окружение робота <code>roslaunch ur5_single_arm_manipulation load_scene.launch</code> (загрузка с параметрами: <code>roslaunch ur5_single_arm_manipulation load_scene.launch x:=2 y:=2 z:=0</code>).</p>
 
+<p>
+    <img src="media/pic1.png" alt="Demo" style="max-width: 100%;" />
+</p>
+
 <p><br /></p>
 
 <p>5. Запустить управление роботом</p>
 
-<p><b>Новое окно терминала:</b></p>
+<p><u>Новое окно терминала:</u></p>
 
 <p>Зайти в docker-контейнер <code>sudo docker exec -ti trajopt bash</code></p>
 
@@ -40,7 +44,7 @@
 
 <p>6. Запустить команду открытия двери</p>
 
-<p><b>Новое окно терминала:</b></p>
+<p><u>Новое окно терминала:</u></p>
 
 <p>Зайти в docker-контейнер <code>sudo docker exec -ti trajopt bash</code></p>
 
@@ -61,3 +65,17 @@
 <p>Вернуть робота в позу по умолчанию <code>rosrun ur5_single_arm_manipulation pose _param:="up"</code> (варианты поз: home, up, pickup)</p>
 
 <p>Разомкнуть схват на определенный угол: <code>rosrun ur5_single_arm_manipulation gripper _param:="0.564"</code> (0 - открыт полностью)</p>
+
+<p><br /></p>
+
+<hr />
+
+<p><b>Видео</b></p>
+
+<p>
+    <img src="media/video1.png" alt="Start demo" style="max-width: 100%;">
+</p>
+
+<p>
+    <img src="media/video2.png" alt="Move" style="max-width: 100%;">
+</p>
