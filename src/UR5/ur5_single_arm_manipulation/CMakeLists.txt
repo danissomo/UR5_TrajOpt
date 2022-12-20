@@ -9,14 +9,15 @@ add_compile_options(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
     roscpp
-    # rospy
+    rospy
     sensor_msgs
     std_msgs
     urdf
     message_generation
     moveit_core 
     moveit_ros_planning 
-    moveit_ros_planning_interface 
+    moveit_ros_planning_interface
+    # trajopt
     # moveit_visual_tools
 )
 
@@ -80,6 +81,7 @@ add_service_files(
 generate_messages(
    DEPENDENCIES
    std_msgs  # Or other packages containing msgs
+   sensor_msgs
 )
 
 ################################################
@@ -112,7 +114,8 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   CATKIN_DEPENDS message_runtime
+   CATKIN_DEPENDS message_runtime std_msgs roscpp
+#  LIBRARIES ur5_single_arm_manipulation
 #  INCLUDE_DIRS include
 #  LIBRARIES armbot_move
 #  CATKIN_DEPENDS roscpp
@@ -151,6 +154,7 @@ add_executable(pose src/set_default_pose.cpp)
 add_executable(gripper src/set_gripper_state.cpp)
 add_executable(move src/move_robot.cpp)
 add_executable(open src/open_door.cpp)
+add_executable(trajopt_example src/trajopt_example.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -161,6 +165,12 @@ add_executable(open src/open_door.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(position ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(gripper ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(pose ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(move ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(open ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(trajopt_example ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 
@@ -181,6 +191,10 @@ target_link_libraries(move
 )
 
 target_link_libraries(open
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(trajopt_example
    ${catkin_LIBRARIES}
 )
 

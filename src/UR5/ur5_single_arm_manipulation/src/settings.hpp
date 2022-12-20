@@ -9,6 +9,7 @@
 #define gripperDefaultPose "open"
 #define PLANNING_GROUP "manipulator"
 #define GRIPPER_GROUP "gripper"
+#define ROBOT_DESCRIPTION "robot_description"
 #define M_PI 3.14159265358979323846
 
 float handlePosition_x = -0.3;
