@@ -3,12 +3,11 @@
   <!-- By default, we are not in debug mode -->
   <arg name="debug" default="false" />
   <arg name="use_gui" default="false" />
+  <arg name="pipeline" default="ompl" />
 
 
   <node name="move" pkg="ur5_single_arm_manipulation" type="move" respawn="false" output="screen">
     <rosparam command="load" file="$(find ur5_single_arm_moveit_config)/config/kinematics.yaml"/>
-    <param name="planning_plugin" value="ompl_interface/OMPLPlanner"/>
-    <rosparam command="load" file="$(find ur5_single_arm_moveit_config)/config/ompl_planning.yaml"/>
   </node>
 
   <rosparam command="load" file="$(find ur5_single_arm_moveit_config)/config/joints_name.yaml"/>
@@ -34,10 +33,12 @@
   <!-- Run the main MoveIt! executable without trajectory execution (we do not have controllers configured by default) -->
   <include file="$(find ur5_single_arm_moveit_config)/launch/move_group.launch">
     <arg name="publish_monitored_planning_scene" value="true" />
+    <!-- <arg name="pipeline" value="$(arg pipeline)" /> -->
+    <arg name="pipeline" value="ompl" />
   </include>
 
   <!-- Подключение  joint_subscriber -->
-  <node name="joint_subscriber" pkg="ur5_single_arm_manipulation" type="joint_subscriber"/>
+  <!-- <node name="joint_subscriber" pkg="ur5_single_arm_manipulation" type="joint_subscriber"/> -->
 
   <!-- Загрузка начальной конфигурации робота -->
   <node pkg="ur5_single_arm_manipulation" name="update_scene" type="update_scene.py" output="screen"/>
