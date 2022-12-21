@@ -56,8 +56,11 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main"
             ros-noetic-rosserial-arduino \
             ros-noetic-rosserial \
             ros-noetic-moveit-planners-chomp \
+            ros-noetic-catkin python3-catkin-tools \
             ros-noetic-moveit-visual-tools \
             ros-noetic-rosbridge-server \
+            ros-noetic-rosparam-shortcuts \
+            ros-noetic-ros-industrial-cmake-boilerplate \
             ros-noetic-visp* && \
     rosdep init && rosdep update && \
     echo "source /opt/ros/noetic/setup.bash"  >> ~/.bashrc && \

@@ -12,9 +12,9 @@
 #define ROBOT_DESCRIPTION "robot_description"
 #define M_PI 3.14159265358979323846
 
-float handlePosition_x = -0.3;
-float handlePosition_y = 0.45;
-float handlePosition_z = 1.095;
+float handlePosition_x = -0.4;
+float handlePosition_y = -0.2;
+float handlePosition_z = 1.1;
 int doorFrameHeight = 0.9144;
 
 float gripperOpen = 0;

@@ -33,7 +33,8 @@
   <!-- Run the main MoveIt! executable without trajectory execution (we do not have controllers configured by default) -->
   <include file="$(find ur5_single_arm_moveit_config)/launch/move_group.launch">
     <arg name="publish_monitored_planning_scene" value="true" />
-    <arg name="pipeline" value="$(arg pipeline)" />
+    <!-- <arg name="pipeline" value="$(arg pipeline)" /> -->
+    <arg name="pipeline" value="ompl" />
   </include>
 
   <!-- Подключение  joint_subscriber -->
