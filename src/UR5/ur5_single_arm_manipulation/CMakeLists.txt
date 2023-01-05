@@ -8,22 +8,24 @@ add_compile_options(-std=c++11)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-    roscpp
-    rospy
-    sensor_msgs
-    std_msgs
-    urdf
-    message_generation
-    moveit_core 
-    moveit_ros_planning 
-    moveit_ros_planning_interface
-    # trajopt
-    # moveit_visual_tools
+   roscpp
+   rospy
+   sensor_msgs
+   std_msgs
+   urdf
+   message_generation
+   moveit_core 
+   moveit_ros_planning 
+   moveit_ros_planning_interface
+   tesseract_monitoring
+   tesseract_rosutils
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED)
+find_package(tesseract_environment REQUIRED)
+find_package(tesseract_examples REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
