@@ -16,8 +16,6 @@
 
 <p>Перейти в рабочую директорию <code>cd workspace</code></p>
 
-Обновить зависимости: rosinstall .
-
 <p>Собрать проект <code>catkin build</code></p>
 
 <p>Прописать пути <code>source devel/setup.bash</code></p>

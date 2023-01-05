@@ -45,6 +45,7 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main"
             ros-noetic-urdf-sim-tutorial \
             libsdl-image1.2-dev \
             libsdl-dev \
+            libbullet-extras-dev \
             python3-rosdep \
             python3-rosinstall \
             python3-rosinstall-generator \
@@ -52,6 +53,10 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main"
             python3-catkin-tools \
             libcanberra-gtk-module \
             libcanberra-gtk3-module \
+            cmake \
+            libeigen3-dev \
+            coinor-libipopt-dev \
+            lcov \
             ros-noetic-pid \
             ros-noetic-rosserial-arduino \
             ros-noetic-rosserial \
@@ -61,6 +66,7 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main"
             ros-noetic-rosbridge-server \
             ros-noetic-rosparam-shortcuts \
             ros-noetic-ros-industrial-cmake-boilerplate \
+            ros-noetic-ifopt \
             ros-noetic-visp* && \
     rosdep init && rosdep update && \
     echo "source /opt/ros/noetic/setup.bash"  >> ~/.bashrc && \
@@ -68,6 +74,14 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main"
 
 RUN apt-get install -y python3-pip
 RUN pip install pathlib statistics scipy
+RUN apt install python3-pip python3-numpy
+RUN python3 -m pip install -U pip 
+RUN python3 -m pip install --user  tesseract_robotics tesseract_robotics_viewer
+
+RUN sudo apt-get install -y software-properties-common
+RUN add-apt-repository ppa:ros-industrial/ppa
+RUN apt-get update
+RUN apt-get install taskflow
 
 RUN apt-get install ros-noetic-joint-state-publisher-gui
 RUN apt-get install ros-noetic-franka-description
