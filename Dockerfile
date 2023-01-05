@@ -53,10 +53,12 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main"
             python3-catkin-tools \
             libcanberra-gtk-module \
             libcanberra-gtk3-module \
+            libignition-rendering6-dev \
             cmake \
             libeigen3-dev \
             coinor-libipopt-dev \
             lcov \
+            graphviz-dev \
             ros-noetic-pid \
             ros-noetic-rosserial-arduino \
             ros-noetic-rosserial \
@@ -66,6 +68,7 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main"
             ros-noetic-rosbridge-server \
             ros-noetic-rosparam-shortcuts \
             ros-noetic-ros-industrial-cmake-boilerplate \
+            ros-noetic-qt-advanced-docking \
             ros-noetic-ifopt \
             ros-noetic-visp* && \
     rosdep init && rosdep update && \
@@ -83,6 +86,12 @@ RUN add-apt-repository ppa:ros-industrial/ppa
 RUN apt-get update
 RUN apt-get install taskflow
 
+RUN apt install libqt5svg5-dev
+RUN apt install -y libignition-common4-dev
+# RUN apt install qtbase5-private-dev
+# RUN apt-get install -y libqt-advanced-docking-system-dev
+
 RUN apt-get install ros-noetic-joint-state-publisher-gui
 RUN apt-get install ros-noetic-franka-description
 RUN apt-get install ros-noetic*joint-trajectory-controller*
+
