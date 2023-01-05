@@ -1,6 +1,27 @@
-[submodule "src/libs/navigation"]
-	path = src/libs/navigation
-	url = ../../ros-planning/navigation.git
-[submodule "src/libs/navigation_msgs"]
-	path = src/libs/navigation_msgs
-	url = ../../ros-planning/navigation_msgs.git
+[submodule "src/libs/trajopt"]
+	path = src/libs/trajopt
+	url = ../../tesseract-robotics/trajopt.git
+[submodule "src/libs/opw_kinematics"]
+	path = src/libs/opw_kinematics
+	url = ../../Jmeyer1292/opw_kinematics.git
+[submodule "src/libs/ros_industrial_cmake_boilerplate"]
+	path = src/libs/ros_industrial_cmake_boilerplate
+	url = ../../ros-industrial/ros_industrial_cmake_boilerplate.git
+[submodule "src/libs/tesseract_ros"]
+	path = src/libs/tesseract_ros
+	url = ../../tesseract-robotics/tesseract_ros
+[submodule "src/libs/descartes_light"]
+	path = src/libs/descartes_light
+	url = ../../swri-robotics/descartes_light.git
+[submodule "src/libs/tesseract_planning"]
+	path = src/libs/tesseract_planning
+	url = ../../tesseract-robotics/tesseract_planning
+[submodule "src/libs/ifopt"]
+	path = src/libs/ifopt
+	url = ../../ethz-adrl/ifopt.git
+[submodule "src/libs/tesseract"]
+	path = src/libs/tesseract
+	url = ../../tesseract-robotics/tesseract
+[submodule "src/libs/tesseract_qt"]
+	path = src/libs/tesseract_qt
+	url = ../../tesseract-robotics/tesseract_qt

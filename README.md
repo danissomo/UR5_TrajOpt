@@ -4,7 +4,7 @@
 
 <p> 2. Перейти в папку проекта <code>cd trajopt_ur5</code>.</p>
 
-<p> 3. Собрать окружение для робота в docker-контейнер: <code>sudo docker build -t trajopt-img . --network=host --build-arg from=ubuntu:18.04</code></p>
+<p> 3. Собрать окружение для робота в docker-контейнер: <code>sudo docker build -t trajopt-img . --network=host --build-arg from=ubuntu:20.04</code></p>
 
 <p><br /></p>
 
