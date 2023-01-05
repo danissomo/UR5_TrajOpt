@@ -13,3 +13,5 @@ docker run  -it --rm \
        --net=host \
        --privileged \
        --name trajopt trajopt-img
+
+# wstool init /workspace/src/libs/ /workspace/src/libs/tesseract_planning/dependencies.rosinstall
