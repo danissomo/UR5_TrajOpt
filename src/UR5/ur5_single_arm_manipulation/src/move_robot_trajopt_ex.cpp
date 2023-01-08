@@ -1,51 +1,43 @@
-#include <ros/ros.h>
-#include <tesseract_monitoring/environment_monitor.h>
-#include <tesseract_rosutils/plotting.h>
+#include <tesseract_common/macros.h>
+TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
+#include <jsoncpp/json/json.h>
+#include <console_bridge/console.h>
+TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
-using namespace tesseract_rosutils;
+// #include "MoveRobotTrajopt.hpp"
+#include <tesseract_environment/utils.h>
+#include <tesseract_common/timer.h>
+#include <tesseract_command_language/composite_instruction.h>
+#include <tesseract_command_language/state_waypoint.h>
+#include <tesseract_command_language/cartesian_waypoint.h>
+#include <tesseract_command_language/joint_waypoint.h>
+#include <tesseract_command_language/move_instruction.h>
+#include <tesseract_command_language/utils.h>
+#include <tesseract_task_composer/task_composer_problem.h>
+#include <tesseract_task_composer/task_composer_input.h>
+#include <tesseract_task_composer/task_composer_node_names.h>
+#include <tesseract_task_composer/nodes/trajopt_motion_pipeline_task.h>
+#include <tesseract_task_composer/nodes/trajopt_ifopt_motion_pipeline_task.h>
+#include <tesseract_task_composer/taskflow/taskflow_task_composer_executor.h>
+#include <tesseract_visualization/markers/toolpath_marker.h>
 
-/** @brief Default ROS parameter for robot description */
-const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
+#include <tesseract_motion_planners/core/utils.h>
+#include <tesseract_motion_planners/default_planner_namespaces.h>
 
-/** @brief Default ROS parameter for robot description */
-const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
+#include <tesseract_motion_planners/trajopt_ifopt/profile/trajopt_ifopt_default_composite_profile.h>
+#include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
 
-/** @brief RViz Example Namespace */
-const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
+#include <tesseract_motion_planners/trajopt_ifopt/profile/trajopt_ifopt_default_plan_profile.h>
+#include <tesseract_motion_planners/trajopt/profile/trajopt_default_plan_profile.h>
 
-int main(int argc, char** argv) {
-  ros::init(argc, argv, "move_robot_trajopt");
-  ros::NodeHandle pnh("~");
-  ros::NodeHandle nh;
+using namespace trajopt;
+using namespace tesseract_environment;
+using namespace tesseract_scene_graph;
+using namespace tesseract_collision;
+using namespace tesseract_visualization;
+using namespace tesseract_planning;
+using tesseract_common::ManipulatorInfo;
 
-  bool plotting = true;
-  bool rviz = true;
-
-  // Get ROS Parameters
-  pnh.param("plotting", plotting, plotting);
-  pnh.param("rviz", rviz, rviz);
-
-  // Initial setup
-  std::string urdf_xml_string, srdf_xml_string;
-  nh.getParam(ROBOT_DESCRIPTION_PARAM, urdf_xml_string);
-  nh.getParam(ROBOT_SEMANTIC_PARAM, srdf_xml_string);
-
-  auto env = std::make_shared<tesseract_environment::Environment>();
-  auto locator = std::make_shared<tesseract_rosutils::ROSResourceLocator>();
-  if (!env->init(urdf_xml_string, srdf_xml_string, locator))
-    exit(1);
-
-  // Create monitor
-  auto monitor = std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(env, EXAMPLE_MONITOR_NAMESPACE);
-  if (rviz)
-    monitor->startPublishingEnvironment();
-
-  ROSPlottingPtr plotter;
-  if (plotting)
-    plotter = std::make_shared<ROSPlotting>(env->getSceneGraph()->getRoot());
-
-  
-  /////////
-  // RUN //
-  /////////
+int main(int argc, char**argv) {
+  return 0;
 }

@@ -178,6 +178,7 @@ add_executable(gripper src/set_gripper_state.cpp)
 add_executable(move src/move_robot.cpp)
 add_executable(open src/open_door.cpp)
 add_executable(move_robot_trajopt src/move_robot_trajopt_ex.cpp)
+add_executable(move_robot_trajopt_node src/move_robot_trajopt_ex_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -194,6 +195,7 @@ add_dependencies(pose ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARG
 add_dependencies(move ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(open ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(move_robot_trajopt ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(move_robot_trajopt_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 
@@ -218,6 +220,18 @@ target_link_libraries(open
 )
 
 target_link_libraries(move_robot_trajopt
+   tesseract::tesseract_environment
+   tesseract::tesseract_motion_planners_core
+   tesseract::tesseract_motion_planners_ompl
+   tesseract::tesseract_motion_planners_trajopt
+   trajopt::trajopt_sqp
+   trajopt::trajopt_ifopt
+   tesseract::tesseract_task_composer
+   console_bridge::console_bridge
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(move_robot_trajopt_node
    tesseract::tesseract_environment
    ${catkin_LIBRARIES}
 )
