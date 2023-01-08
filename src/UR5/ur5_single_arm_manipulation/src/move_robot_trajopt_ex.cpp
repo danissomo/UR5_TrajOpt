@@ -30,8 +30,19 @@ int main(int argc, char** argv) {
   nh.getParam(ROBOT_DESCRIPTION_PARAM, urdf_xml_string);
   nh.getParam(ROBOT_SEMANTIC_PARAM, srdf_xml_string);
 
-  // auto env = std::make_shared<tesseract_environment::Environment>();
-  // auto locator = std::make_shared<tesseract_rosutils::ROSResourceLocator>();
+  auto env = std::make_shared<tesseract_environment::Environment>();
+  auto locator = std::make_shared<tesseract_rosutils::ROSResourceLocator>();
+  if (!env->init(urdf_xml_string, srdf_xml_string, locator))
+    exit(1);
+
+  // Create monitor
+  auto monitor = std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(env, EXAMPLE_MONITOR_NAMESPACE);
+  if (rviz)
+    monitor->startPublishingEnvironment();
+
+  ROSPlottingPtr plotter;
+  if (plotting)
+    plotter = std::make_shared<ROSPlotting>(env->getSceneGraph()->getRoot());
 
   
   /////////

@@ -218,6 +218,7 @@ target_link_libraries(open
 )
 
 target_link_libraries(move_robot_trajopt
+   tesseract::tesseract_environment
    ${catkin_LIBRARIES}
 )
 
