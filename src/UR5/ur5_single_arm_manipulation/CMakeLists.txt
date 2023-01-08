@@ -1,8 +1,17 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5.0)
 project(ur5_single_arm_manipulation)
 
-## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+find_package(ros_industrial_cmake_boilerplate REQUIRED)
+extract_package_metadata(pkg)
+
+add_compile_options(
+ -std=c++17
+ #-Wall
+ #-Wextra
+ #-Wsuggest-override
+ #-Wconversion
+ #-Wsign-conversion
+ )
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -25,7 +34,19 @@ find_package(catkin REQUIRED COMPONENTS
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED)
 find_package(tesseract_environment REQUIRED)
-find_package(tesseract_examples REQUIRED)
+find_package(tesseract_command_language REQUIRED)
+find_package(tesseract_motion_planners REQUIRED)
+find_package(tesseract_task_composer REQUIRED)
+find_package(tesseract_collision REQUIRED)
+find_package(tesseract_common REQUIRED)
+find_package(tesseract_support REQUIRED)
+find_package(trajopt_sqp REQUIRED)
+find_package(trajopt_ifopt REQUIRED)
+find_package(tesseract_kinematics REQUIRED)
+
+
+# Load variable for clang tidy args, compiler options and cxx version
+tesseract_variables()
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
