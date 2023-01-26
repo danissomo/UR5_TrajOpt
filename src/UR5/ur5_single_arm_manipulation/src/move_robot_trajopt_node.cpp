@@ -50,6 +50,6 @@ int main(int argc, char** argv) {
   // RUN //
   /////////
 
-  // MoveRobotTrajopt example(env, plotter);
+  // MoveRobotTrajopt example();
   // example.run();
 }

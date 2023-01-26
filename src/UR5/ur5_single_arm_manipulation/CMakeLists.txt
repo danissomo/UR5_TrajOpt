@@ -177,8 +177,8 @@ add_executable(pose src/set_default_pose.cpp)
 add_executable(gripper src/set_gripper_state.cpp)
 add_executable(move src/move_robot.cpp)
 add_executable(open src/open_door.cpp)
-add_executable(move_robot_trajopt src/move_robot_trajopt_ex.cpp)
-add_executable(move_robot_trajopt_node src/move_robot_trajopt_ex_node.cpp)
+add_executable(move_robot_trajopt src/move_robot_trajopt.cpp)
+add_executable(move_robot_trajopt_node src/move_robot_trajopt_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
