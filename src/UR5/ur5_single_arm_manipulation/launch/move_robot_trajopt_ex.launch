@@ -6,6 +6,7 @@
   <arg name="steps_per_phase" default="10"/>
   <arg name="plotting" default="true" />
   <arg name="file_write_cb" default="false" />
+  <arg name="ifopt" default="false"/>
 
   <!-- send robot urdf to param server -->
   <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find ur5_single_arm_tufts)/urdf/ur5_single_arm.urdf.xacro'"/>
@@ -17,11 +18,11 @@
     <arg name="config" default="true" />
   </include>
 
-  <node name="move_robot_trajopt" pkg="ur5_single_arm_manipulation" type="move_robot_trajopt_node" output="screen">
-      <param name="steps_per_phase" value="$(arg steps_per_phase)"/>
-      <param name="plotting" value="$(arg plotting)"/>
-      <param name="file_write_cb" value="$(arg file_write_cb)" />
-      <param name="rviz" type="bool" value="$(arg rviz)"/>
+  <node pkg="tesseract_ros_examples" type="tesseract_ros_examples_ur5_trajopt_node" name="tesseract_ros_examples_ur5_trajopt_node" output="screen">
+    <param name="plotting" type="bool" value="$(arg plotting)"/>
+    <param name="rviz" type="bool" value="$(arg rviz)"/>
+    <param name="ifopt" type="bool" value="$(arg ifopt)"/>
+    <param name="debug" type="bool" value="$(arg debug)"/>
   </node>
 
   <node pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" name="joint_state_publisher_gui" output="screen"/>
