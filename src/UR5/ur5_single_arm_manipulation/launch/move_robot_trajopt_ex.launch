@@ -27,8 +27,18 @@
     </node>
 
     <!-- Launch visualization -->
-    <node if="$(arg rviz)" pkg="rviz" type="rviz" name="tesseract_ros_examples_ur5_trajopt_example_rviz"
-        args="-d $(find tesseract_ros_examples)/config/examples.rviz" />
+    <node if="$(arg rviz)" pkg="rviz" type="rviz" name="test"
+        args="-d $(find ur5_single_arm_manipulation)/urdf/rviz.rviz" />
+
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <rosparam param="source_list">["joint_states"]</rosparam>
+</node>
+
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /> 
+
+    <node pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" name="joint_state_publisher_gui" output="screen"/>
+
   </group>
 
 </launch>
