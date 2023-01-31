@@ -19,6 +19,8 @@
 #include <moveit/kinematic_constraints/utils.h>
 #include <boost/scoped_ptr.hpp>
 
+#include <ur5_settings/settings.hpp>
+
 #include <tf2/LinearMath/Quaternion.h>
 
 #include <iostream>
@@ -30,7 +32,6 @@
 #include <cmath>
 
 #include "MoveOperationClass.hpp"
-#include "settings.hpp"
 
 
 bool setGripperAngular(MoveOperationClass *move_group_gripper,
