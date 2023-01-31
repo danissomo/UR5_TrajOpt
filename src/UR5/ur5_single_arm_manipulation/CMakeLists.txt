@@ -1,8 +1,17 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5.0)
 project(ur5_single_arm_manipulation)
 
-## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+find_package(ros_industrial_cmake_boilerplate REQUIRED)
+extract_package_metadata(pkg)
+
+add_compile_options(
+ -std=c++17
+ #-Wall
+ #-Wextra
+ #-Wsuggest-override
+ #-Wconversion
+ #-Wsign-conversion
+ )
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -25,7 +34,19 @@ find_package(catkin REQUIRED COMPONENTS
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(Eigen3 REQUIRED)
 find_package(tesseract_environment REQUIRED)
-find_package(tesseract_examples REQUIRED)
+find_package(tesseract_command_language REQUIRED)
+find_package(tesseract_motion_planners REQUIRED)
+find_package(tesseract_task_composer REQUIRED)
+find_package(tesseract_collision REQUIRED)
+find_package(tesseract_common REQUIRED)
+find_package(tesseract_support REQUIRED)
+find_package(trajopt_sqp REQUIRED)
+find_package(trajopt_ifopt REQUIRED)
+find_package(tesseract_kinematics REQUIRED)
+
+
+# Load variable for clang tidy args, compiler options and cxx version
+tesseract_variables()
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -156,7 +177,6 @@ add_executable(pose src/set_default_pose.cpp)
 add_executable(gripper src/set_gripper_state.cpp)
 add_executable(move src/move_robot.cpp)
 add_executable(open src/open_door.cpp)
-add_executable(trajopt_example src/trajopt_example.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -172,7 +192,6 @@ add_dependencies(gripper ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_T
 add_dependencies(pose ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(move ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(open ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(trajopt_example ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 
@@ -193,10 +212,6 @@ target_link_libraries(move
 )
 
 target_link_libraries(open
-   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(trajopt_example
    ${catkin_LIBRARIES}
 )
 

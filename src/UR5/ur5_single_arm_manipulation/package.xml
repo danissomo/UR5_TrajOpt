@@ -49,6 +49,7 @@
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>ros_industrial_cmake_boilerplate</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>std_msgs</build_depend>
@@ -79,11 +80,24 @@
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>message_generation</exec_depend>
 
-  <depend>tesseract_common</depend>
-  <depend>tesseract_environment</depend>
-  <depend>tesseract_examples</depend>
+  <depend>roslib</depend>
+  <depend>std_srvs</depend>
   <depend>tesseract_monitoring</depend>
   <depend>tesseract_rosutils</depend>
+  <exec_depend>tesseract_rviz</exec_depend>
+
+  <depend>libconsole-bridge-dev</depend>
+  <depend>tesseract_collision</depend>
+  <depend>tesseract_command_language</depend>
+  <depend>tesseract_motion_planners</depend>
+  <depend>tesseract_task_composer</depend>
+  <depend>tesseract_kinematics</depend>
+  <depend>tesseract_environment</depend>
+  <depend>tesseract_scene_graph</depend>
+  <depend>tesseract_common</depend>
+  <depend>tesseract_support</depend>
+  <depend>trajopt_sqp</depend>
+  <depend>trajopt_ifopt</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
