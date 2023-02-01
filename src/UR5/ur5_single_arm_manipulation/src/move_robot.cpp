@@ -19,6 +19,8 @@
 #include <moveit/kinematic_constraints/utils.h>
 #include <boost/scoped_ptr.hpp>
 
+#include <settings/Settings.hpp>
+
 #include <tf2/LinearMath/Quaternion.h>
 
 #include <iostream>
@@ -30,7 +32,8 @@
 #include <cmath>
 
 #include "MoveOperationClass.hpp"
-#include "settings.hpp"
+
+SettingsClass settingsConfig;
 
 
 bool setGripperAngular(MoveOperationClass *move_group_gripper,
@@ -241,6 +244,8 @@ int main(int argc, char *argv[]) {
 
     move_group->move->setPlanningTime(60*5);
     move_group->move->setGoalTolerance(0.001);
+
+    settingsConfig.update();
 
     ros::NodeHandle n;
 

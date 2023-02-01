@@ -1,53 +1,19 @@
-cmake_minimum_required(VERSION 3.5.0)
-project(ur5_single_arm_manipulation)
+cmake_minimum_required(VERSION 3.0.2)
+project(settings)
 
-find_package(ros_industrial_cmake_boilerplate REQUIRED)
-extract_package_metadata(pkg)
-
-add_compile_options(
- -std=c++17
- #-Wall
- #-Wextra
- #-Wsuggest-override
- #-Wconversion
- #-Wsign-conversion
- )
+## Compile as C++11, supported in ROS Kinetic and newer
+# add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-   roscpp
-   rospy
-   sensor_msgs
-   std_msgs
-   urdf
-   message_generation
-   moveit_core 
-   moveit_ros_planning 
-   moveit_ros_planning_interface
-   tesseract_monitoring
-   tesseract_rosutils
-   settings
+  roscpp
+  rospy
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_package(Eigen3 REQUIRED)
-find_package(tesseract_environment REQUIRED)
-find_package(tesseract_command_language REQUIRED)
-find_package(tesseract_motion_planners REQUIRED)
-find_package(tesseract_task_composer REQUIRED)
-find_package(tesseract_collision REQUIRED)
-find_package(tesseract_common REQUIRED)
-find_package(tesseract_support REQUIRED)
-find_package(trajopt_sqp REQUIRED)
-find_package(trajopt_ifopt REQUIRED)
-find_package(tesseract_kinematics REQUIRED)
-
-
-# Load variable for clang tidy args, compiler options and cxx version
-tesseract_variables()
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -82,17 +48,16 @@ tesseract_variables()
 ## Generate messages in the 'msg' folder
 # add_message_files(
 #   FILES
-#   move_position.msg
-#)
+#   Message1.msg
+#   Message2.msg
+# )
 
 ## Generate services in the 'srv' folder
-add_service_files(
-   FILES
-   SetPosition.srv
-   SetDefaultPose.srv
-   SetGripperState.srv
-   OpenDoor.srv
-)
+# add_service_files(
+#   FILES
+#   Service1.srv
+#   Service2.srv
+# )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -102,11 +67,10 @@ add_service_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-   DEPENDENCIES
-   std_msgs  # Or other packages containing msgs
-   sensor_msgs
-)
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs  # Or other packages containing msgs
+# )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -138,11 +102,9 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-   CATKIN_DEPENDS message_runtime std_msgs roscpp
-#  LIBRARIES ur5_single_arm_manipulation
-#  INCLUDE_DIRS include
-#  LIBRARIES armbot_move
-#  CATKIN_DEPENDS roscpp
+  INCLUDE_DIRS include
+#  LIBRARIES settings
+#  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
 )
 
@@ -153,31 +115,23 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
-  ${catkin_INCLUDE_DIRS}
-  SYSTEM ${EIGEN3_INCLUDE_DIRS}
+  include ${catkin_INCLUDE_DIRS}
 )
 
-add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY)
-
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/ur5_single_arm_manipulation.cpp
-# )
+add_library(settings_lib
+   src/settings.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(settings_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(position src/set_position.cpp)
-add_executable(pose src/set_default_pose.cpp)
-add_executable(gripper src/set_gripper_state.cpp)
-add_executable(move src/move_robot.cpp)
-add_executable(open src/open_door.cpp)
+# add_executable(${PROJECT_NAME}_node src/settings_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -188,32 +142,10 @@ add_executable(open src/open_door.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(position ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(gripper ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(pose ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(move ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(open ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-
-target_link_libraries(position
-   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(gripper
-   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(pose
-   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(move
-   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(open
-   ${catkin_LIBRARIES}
+target_link_libraries(settings_lib
+  ${catkin_LIBRARIES}
 )
 
 #############
@@ -258,18 +190,12 @@ target_link_libraries(open
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
 
-install(DIRECTORY 
-   launch 
-   DESTINATION 
-   ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
-
 #############
 ## Testing ##
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_ur5_single_arm_manipulation.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_settings.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

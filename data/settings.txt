@@ -1,0 +1,10 @@
+# Файл с настройками для робота
+
+# Настройки для MoveIt
+
+handlePosition_x = -0.6
+handlePosition_y = -0.2
+handlePosition_z = 1.1
+gripperPickHandle = 0.5
+
+# Настройки для Tesseract
