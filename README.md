@@ -58,6 +58,14 @@
 
 <hr />
 
+
+
+<p>Запуск trajopt <code>roslaunch ur5_single_arm_manipulation move_robot_trajopt_ex.launch</code></p>
+
+<p><br /></p>
+
+<hr />
+
 <p><b>Другие команды:</b></p>
 
 <p>Отправить команду с координатой для схвата робота: <code>rosrun ur5_single_arm_manipulation position _param:="1 2 3"</code></p>
