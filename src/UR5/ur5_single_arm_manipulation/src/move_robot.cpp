@@ -33,6 +33,8 @@
 
 #include "MoveOperationClass.hpp"
 
+SettingsClass settingsConfig;
+
 
 bool setGripperAngular(MoveOperationClass *move_group_gripper,
                        const robot_state::JointModelGroup *gripper_joint_group,
@@ -242,6 +244,8 @@ int main(int argc, char *argv[]) {
 
     move_group->move->setPlanningTime(60*5);
     move_group->move->setGoalTolerance(0.001);
+
+    settingsConfig.update();
 
     ros::NodeHandle n;
 

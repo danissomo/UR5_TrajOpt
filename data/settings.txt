@@ -2,21 +2,9 @@
 
 # Настройки для MoveIt
 
-robotDefaultPose = up
-robotDefaultLink = gripper_base_link
-robotDefaultJoint = gripper_finger1_joint
-gripperDefaultPose = open
-PLANNING_GROUP = manipulator
-GRIPPER_GROUP = gripper
-ROBOT_DESCRIPTION = robot_description
-M_PI = 3.14159265358979323846
-
-handlePosition_x = -0.4
+handlePosition_x = -0.6
 handlePosition_y = -0.2
 handlePosition_z = 1.1
-doorFrameHeight = 0.9144
-
-gripperOpen = 0
 gripperPickHandle = 0.5
 
 # Настройки для Tesseract
