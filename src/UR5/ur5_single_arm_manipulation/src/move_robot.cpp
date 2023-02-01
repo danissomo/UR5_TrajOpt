@@ -19,7 +19,7 @@
 #include <moveit/kinematic_constraints/utils.h>
 #include <boost/scoped_ptr.hpp>
 
-#include <ur5_settings/settings.hpp>
+#include <settings/Settings.hpp>
 
 #include <tf2/LinearMath/Quaternion.h>
 

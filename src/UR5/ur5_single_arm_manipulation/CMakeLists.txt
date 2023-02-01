@@ -28,6 +28,7 @@ find_package(catkin REQUIRED COMPONENTS
    moveit_ros_planning_interface
    tesseract_monitoring
    tesseract_rosutils
+   settings
 )
 
 ## System dependencies are found with CMake's conventions

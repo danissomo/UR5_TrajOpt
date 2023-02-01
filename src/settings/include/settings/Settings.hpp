@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/algorithm/string.hpp>
+#include <ros/ros.h>
 #include <iostream>
 #include <stdio.h>
 #include <string>
