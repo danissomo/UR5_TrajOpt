@@ -2,13 +2,13 @@
 
 <p>1. Склонировать репозиторий <code>git clone https://github.com/allicen/trajopt_ur5</code>.</p>
 
-<p> 2. Перейти в папку проекта <code>cd trajopt_ur5</code>.</p>
+<p>2. Перейти в папку проекта <code>cd trajopt_ur5</code>.</p>
 
-<p> 3. Собрать окружение для робота в docker-контейнер: <code>sudo docker build -t trajopt-img . --network=host --build-arg from=ubuntu:20.04</code></p>
+<p>3. Собрать окружение для робота в docker-контейнер: <code>sudo docker build -t trajopt-img . --network=host --build-arg from=ubuntu:20.04</code></p>
 
 <p><br /></p>
 
-<p> 4. Запустить робота</p>
+<p>4. Запустить робота</p>
 
 <p><u>Новое окно терминала:</u></p>
 
@@ -19,6 +19,18 @@
 <p>Собрать проект <code>catkin build</code></p>
 
 <p>Прописать пути <code>source devel/setup.bash</code></p>
+
+<p>5. Запуск сцены</p>
+
+<p>Запуск trajopt <code>roslaunch ur5_single_arm_manipulation move_robot_trajopt_ex.launch</code></p>
+
+<p>Запуск rViz для подбора поз робота  <code>roslaunch ur5_single_arm_manipulation ur5.rviz.launch</code></p>
+
+<p><br /></p>
+
+<hr />
+
+## Для Gazebo (не TrajOpt)
 
 <p>Запустить окружение робота <code>roslaunch ur5_single_arm_manipulation load_scene.launch</code> (загрузка с параметрами: <code>roslaunch ur5_single_arm_manipulation load_scene.launch x:=2 y:=2 z:=0</code>).</p>
 
@@ -53,14 +65,6 @@
 <p>Прописать пути <code>source devel/setup.bash</code></p>
 
 <p>Управление движениями: <code>rosrun ur5_single_arm_manipulation open</code></p>
-
-<p><br /></p>
-
-<hr />
-
-
-
-<p>Запуск trajopt <code>roslaunch ur5_single_arm_manipulation move_robot_trajopt_ex.launch</code></p>
 
 <p><br /></p>
 
