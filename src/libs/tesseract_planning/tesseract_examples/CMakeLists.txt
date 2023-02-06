@@ -51,7 +51,7 @@ add_library(
   src/puzzle_piece_auxillary_axes_example.cpp
   src/puzzle_piece_example.cpp
   src/scene_graph_example.cpp
-  src/ur5_trajopt)
+  src/ur5_trajopt.cpp)
 target_link_libraries(
   ${PROJECT_NAME}
   tesseract::tesseract_environment

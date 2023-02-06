@@ -119,14 +119,14 @@ include_directories(
 )
 
 ## Declare a C++ library
-add_library(settings_lib
+add_library(settings_custom_lib
    src/settings_custom_lib.cpp
 )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(settings_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(settings_custom_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -144,7 +144,7 @@ add_dependencies(settings_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPOR
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(settings_lib
+target_link_libraries(settings_custom_lib
   ${catkin_LIBRARIES}
 )
 

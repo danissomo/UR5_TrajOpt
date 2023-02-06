@@ -8,3 +8,8 @@ handlePosition_z = 1.1
 gripperPickHandle = 0.5
 
 # Настройки для Tesseract
+
+
+
+# Настройки визуализации
+eigenVector3d = 1.0

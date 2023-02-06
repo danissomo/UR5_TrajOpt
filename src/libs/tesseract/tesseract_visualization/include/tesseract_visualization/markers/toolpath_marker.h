@@ -9,6 +9,8 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <tesseract_visualization/markers/marker.h>
 #include <tesseract_common/types.h>
 
+// #include <settings_custom_lib/SettingsCustomLib.hpp>
+
 namespace tesseract_visualization
 {
 /** @brief An arrow defined by two points */
@@ -25,7 +27,7 @@ public:
   bool show_path{ true };
   bool show_axis{ true };
   tesseract_common::Toolpath toolpath;
-  Eigen::Vector3d scale{ Eigen::Vector3d::Constant(0.03) };
+  Eigen::Vector3d scale{ Eigen::Vector3d::Constant(0.45) };
 };
 
 }  // namespace tesseract_visualization

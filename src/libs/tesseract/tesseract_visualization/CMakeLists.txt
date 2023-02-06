@@ -17,6 +17,8 @@ find_package(tesseract_environment REQUIRED)
 find_package(tesseract_scene_graph REQUIRED)
 find_package(tesseract_state_solver REQUIRED)
 
+find_package(settings_custom_lib REQUIRED)
+
 # Optional to build ignition visualization
 find_package(ignition-common3 COMPONENTS profiler events av QUIET)
 find_package(ignition-transport8 QUIET)
