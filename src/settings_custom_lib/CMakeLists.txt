@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(settings)
+project(settings_custom_lib)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -120,7 +120,7 @@ include_directories(
 
 ## Declare a C++ library
 add_library(settings_lib
-   src/settings.cpp
+   src/settings_custom_lib.cpp
 )
 
 ## Add cmake target dependencies of the library

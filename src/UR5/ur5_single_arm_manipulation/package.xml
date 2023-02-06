@@ -84,7 +84,7 @@
   <depend>std_srvs</depend>
   <depend>tesseract_monitoring</depend>
   <depend>tesseract_rosutils</depend>
-  <depend>settings</depend>
+  <depend>settings_custom_lib</depend>
   <exec_depend>tesseract_rviz</exec_depend>
 
   <depend>libconsole-bridge-dev</depend>

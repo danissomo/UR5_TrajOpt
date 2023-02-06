@@ -19,7 +19,7 @@
 #include <moveit/kinematic_constraints/utils.h>
 #include <boost/scoped_ptr.hpp>
 
-#include <settings/Settings.hpp>
+#include <settings_custom_lib/SettingsCustomLib.hpp>
 
 #include <tf2/LinearMath/Quaternion.h>
 
@@ -33,7 +33,7 @@
 
 #include "MoveOperationClass.hpp"
 
-SettingsClass settingsConfig;
+SettingsCustomLibClass settingsConfig;
 
 
 bool setGripperAngular(MoveOperationClass *move_group_gripper,

@@ -7,8 +7,8 @@
 #include <string>
 #include <fstream>
 
-#ifndef settings
-#define settings
+#ifndef settings_custom_lib
+#define settings_custom_lib
 
 // Настройки для MoveIt
 #define robotDefaultPose "up"
@@ -25,13 +25,13 @@ float handlePosition_y = -0.2;
 float handlePosition_z = 1.1;
 float gripperPickHandle = 0.5;
 
-class SettingsClass {
+class SettingsCustomLibClass {
     public:
         void update();
 };
 
 // Перезаписать конфиги из файла
-inline void SettingsClass::update() {
+inline void SettingsCustomLibClass::update() {
     std::ifstream infile("/workspace/data/settings.txt");
     std::string line;
 
