@@ -26,6 +26,8 @@
 
 <p>Запуск rViz для подбора поз робота  <code>roslaunch ur5_single_arm_manipulation ur5.rviz.launch</code></p>
 
+<p>Основной файл запуска: tesseract_planning/tesseract_examples/src/ur5_trajopt.cpp</p>
+
 <p><br /></p>
 
 <hr />

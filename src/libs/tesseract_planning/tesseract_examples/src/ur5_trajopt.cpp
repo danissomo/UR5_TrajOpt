@@ -74,10 +74,11 @@ tesseract_environment::Command::Ptr UR5Trajopt::addSphere()
 
 bool UR5Trajopt::run()
 {
+  // Добавить препятствие тут
   // Add sphere to environment
-  Command::Ptr cmd = addSphere();
-  if (!env_->applyCommand(cmd))
-    return false;
+  // Command::Ptr cmd = addSphere();
+  // if (!env_->applyCommand(cmd))
+  //   return false;
 
   if (plotter_ != nullptr)
     plotter_->waitForConnection();
