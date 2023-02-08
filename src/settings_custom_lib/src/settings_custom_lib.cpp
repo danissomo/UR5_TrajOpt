@@ -1,3 +1,4 @@
+#include <ros/ros.h>
 #include "settings_custom_lib/SettingsCustomLib.hpp"
 
 SettingsCustomLibClass settingsConfig;
