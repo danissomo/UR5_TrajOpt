@@ -93,20 +93,20 @@ bool UR5Trajopt::run()
   joint_names.emplace_back("wrist_3_joint");
 
   Eigen::VectorXd joint_start_pos(6);
-  joint_start_pos(0) = -0.4;
-  joint_start_pos(1) = 0.2762;
-  joint_start_pos(2) = 0.0;
-  joint_start_pos(3) = -1.3348;
+  joint_start_pos(0) = 0.0;
+  joint_start_pos(1) = -0.06;
+  joint_start_pos(2) = -2.72;
+  joint_start_pos(3) = -0.34;
   joint_start_pos(4) = 0.0;
-  joint_start_pos(5) = 1.4959;
+  joint_start_pos(5) = 0.0;
 
   Eigen::VectorXd joint_end_pos(6);
-  joint_end_pos(0) = 0.4;
-  joint_end_pos(1) = 0.2762;
-  joint_end_pos(2) = 0.0;
-  joint_end_pos(3) = -1.3348;
+  joint_end_pos(0) = 0.0;
+  joint_end_pos(1) = -0.68;
+  joint_end_pos(2) = -1.75;
+  joint_end_pos(3) = -0.68;
   joint_end_pos(4) = 0.0;
-  joint_end_pos(5) = 1.4959;
+  joint_end_pos(5) = 0.0;
 
   env_->setState(joint_names, joint_start_pos);
 
