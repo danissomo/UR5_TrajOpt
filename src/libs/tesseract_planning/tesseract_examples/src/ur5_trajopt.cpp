@@ -17,7 +17,6 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <tesseract_task_composer/task_composer_input.h>
 #include <tesseract_task_composer/task_composer_node_names.h>
 #include <tesseract_task_composer/nodes/trajopt_motion_pipeline_task.h>
-#include <tesseract_task_composer/nodes/trajopt_ifopt_motion_pipeline_task.h>
 #include <tesseract_task_composer/taskflow/taskflow_task_composer_executor.h>
 #include <tesseract_visualization/markers/toolpath_marker.h>
 
@@ -76,8 +75,9 @@ bool UR5Trajopt::run()
   // if (!env_->applyCommand(cmd))
   //   return false;
 
-  if (plotter_ != nullptr)
+  if (plotter_ != nullptr) {
     plotter_->waitForConnection();
+  }
 
   // Set the robot initial state
   std::vector<std::string> joint_names;
@@ -106,8 +106,9 @@ bool UR5Trajopt::run()
 
   env_->setState(joint_names, joint_start_pos);
 
-  if (debug_)
+  if (debug_) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
+  }
 
   // Solve Trajectory
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
@@ -173,8 +174,9 @@ bool UR5Trajopt::run()
   // Create Task Composer Problem
   TaskComposerProblem problem(env_, input_data);
 
-  if (plotter_ != nullptr && plotter_->isConnected())
+  if (plotter_ != nullptr && plotter_->isConnected()) {
     plotter_->waitForInput("Hit Enter to solve for trajectory.");
+  }
 
   // Solve process plan
   tesseract_common::Timer stopwatch;
@@ -187,8 +189,7 @@ bool UR5Trajopt::run()
   CONSOLE_BRIDGE_logInform("Planning took %f seconds.", stopwatch.elapsedSeconds());
 
   // Plot Process Trajectory
-  if (plotter_ != nullptr && plotter_->isConnected())
-  {
+  if (plotter_ != nullptr && plotter_->isConnected()) {
     plotter_->waitForInput();
     auto ci = input.data_storage.getData("output_program").as<CompositeInstruction>();
     tesseract_common::Toolpath toolpath = toToolpath(ci, *env_);
