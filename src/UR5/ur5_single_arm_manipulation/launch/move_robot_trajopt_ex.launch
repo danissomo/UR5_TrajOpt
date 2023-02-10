@@ -5,7 +5,7 @@
   <arg name="trajopt_description" default="trajopt_description"/>
   <arg name="plotting" default="true"/>
   <arg name="rviz" default="true"/>
-  <arg name="debug" default="false"/>
+  <arg name="debug" default="true"/> <!-- Включить для вывода результатов расчетов -->
   <arg name="testing" default="false"/>
 
   <!-- Load universal robot description format (URDF) -->
