@@ -24,10 +24,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <tesseract_motion_planners/core/utils.h>
 #include <tesseract_motion_planners/default_planner_namespaces.h>
 
-#include <tesseract_motion_planners/trajopt_ifopt/profile/trajopt_ifopt_default_composite_profile.h>
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
-
-#include <tesseract_motion_planners/trajopt_ifopt/profile/trajopt_ifopt_default_plan_profile.h>
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_plan_profile.h>
 
 using namespace trajopt;
@@ -42,9 +39,8 @@ namespace tesseract_examples
 {
 UR5Trajopt::UR5Trajopt(tesseract_environment::Environment::Ptr env,
                                          tesseract_visualization::Visualization::Ptr plotter,
-                                         bool ifopt,
                                          bool debug)
-  : Example(std::move(env), std::move(plotter)), ifopt_(ifopt), debug_(debug)
+  : Example(std::move(env), std::move(plotter)), debug_(debug)
 {
 }
 
@@ -143,59 +139,32 @@ bool UR5Trajopt::run()
 
   // Create profile dictionary
   auto profiles = std::make_shared<ProfileDictionary>();
-  if (ifopt_)
-  {
-    auto composite_profile = std::make_shared<TrajOptIfoptDefaultCompositeProfile>();
-    composite_profile->collision_cost_config->type = tesseract_collision::CollisionEvaluatorType::LVS_DISCRETE;
-    composite_profile->collision_cost_config->contact_manager_config = tesseract_collision::ContactManagerConfig(0.01);
-    composite_profile->collision_cost_config->collision_margin_buffer = 0.01;
-    composite_profile->collision_constraint_config->type = tesseract_collision::CollisionEvaluatorType::LVS_DISCRETE;
-    composite_profile->collision_constraint_config->contact_manager_config =
-        tesseract_collision::ContactManagerConfig(0.01);
-    composite_profile->collision_constraint_config->collision_margin_buffer = 0.01;
-    composite_profile->smooth_velocities = true;
-    composite_profile->smooth_accelerations = false;
-    composite_profile->smooth_jerks = false;
-    composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
-    profiles->addProfile<TrajOptIfoptCompositeProfile>(
-        profile_ns::TRAJOPT_IFOPT_DEFAULT_NAMESPACE, "UR5", composite_profile);
 
-    auto plan_profile = std::make_shared<TrajOptIfoptDefaultPlanProfile>();
-    plan_profile->joint_coeff = Eigen::VectorXd::Ones(7);
-    plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
-    plan_profile->cartesian_coeff(0) = 0;
-    plan_profile->cartesian_coeff(1) = 0;
-    plan_profile->cartesian_coeff(2) = 0;
-    profiles->addProfile<TrajOptIfoptPlanProfile>(profile_ns::TRAJOPT_IFOPT_DEFAULT_NAMESPACE, "UR5", plan_profile);
-  }
-  else
-  {
-    auto composite_profile = std::make_shared<TrajOptDefaultCompositeProfile>();
-    composite_profile->collision_cost_config.enabled = true;
-    composite_profile->collision_cost_config.type = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
-    composite_profile->collision_cost_config.safety_margin = 0.01;
-    composite_profile->collision_cost_config.safety_margin_buffer = 0.01;
-    composite_profile->collision_cost_config.coeff = 1;
-    composite_profile->collision_constraint_config.enabled = true;
-    composite_profile->collision_constraint_config.type = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
-    composite_profile->collision_constraint_config.safety_margin = 0.01;
-    composite_profile->collision_constraint_config.safety_margin_buffer = 0.01;
-    composite_profile->collision_constraint_config.coeff = 1;
-    composite_profile->smooth_velocities = true;
-    composite_profile->smooth_accelerations = false;
-    composite_profile->smooth_jerks = false;
-    composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
-    profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", composite_profile);
+  auto composite_profile = std::make_shared<TrajOptDefaultCompositeProfile>();
+  composite_profile->collision_cost_config.enabled = true;
+  composite_profile->collision_cost_config.type = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
+  composite_profile->collision_cost_config.safety_margin = 0.01;
+  composite_profile->collision_cost_config.safety_margin_buffer = 0.01;
+  composite_profile->collision_cost_config.coeff = 1;
+  composite_profile->collision_constraint_config.enabled = true;
+  composite_profile->collision_constraint_config.type = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
+  composite_profile->collision_constraint_config.safety_margin = 0.01;
+  composite_profile->collision_constraint_config.safety_margin_buffer = 0.01;
+  composite_profile->collision_constraint_config.coeff = 1;
+  composite_profile->smooth_velocities = true;
+  composite_profile->smooth_accelerations = false;
+  composite_profile->smooth_jerks = false;
+  composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
+  profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", composite_profile);
 
-    auto plan_profile = std::make_shared<TrajOptDefaultPlanProfile>();
-    plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
-    plan_profile->cartesian_coeff(0) = 0;
-    plan_profile->cartesian_coeff(1) = 0;
-    plan_profile->cartesian_coeff(2) = 0;
+  auto plan_profile = std::make_shared<TrajOptDefaultPlanProfile>();
+  plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
+  plan_profile->cartesian_coeff(0) = 0;
+  plan_profile->cartesian_coeff(1) = 0;
+  plan_profile->cartesian_coeff(2) = 0;
 
-    // Add profile to Dictionary
-    profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", plan_profile);
-  }
+  // Add profile to Dictionary
+  profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", plan_profile);
 
   // Create Task Input Data
   TaskComposerDataStorage input_data;
@@ -211,18 +180,9 @@ bool UR5Trajopt::run()
   tesseract_common::Timer stopwatch;
   stopwatch.start();
   TaskComposerInput input(problem, profiles);
-  if (ifopt_)
-  {
-    TrajOptIfoptMotionPipelineTask task("input_program", "output_program");
-    TaskComposerFuture::UPtr future = executor->run(task, input);
-    future->wait();
-  }
-  else
-  {
-    TrajOptMotionPipelineTask task("input_program", "output_program");
-    TaskComposerFuture::UPtr future = executor->run(task, input);
-    future->wait();
-  }
+  TrajOptMotionPipelineTask task("input_program", "output_program");
+  TaskComposerFuture::UPtr future = executor->run(task, input);
+  future->wait();
   stopwatch.stop();
   CONSOLE_BRIDGE_logInform("Planning took %f seconds.", stopwatch.elapsedSeconds());
 

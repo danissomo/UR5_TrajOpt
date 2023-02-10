@@ -5,7 +5,6 @@
   <arg name="trajopt_description" default="trajopt_description"/>
   <arg name="plotting" default="true"/>
   <arg name="rviz" default="true"/>
-  <arg name="ifopt" default="false"/>
   <arg name="debug" default="false"/>
   <arg name="testing" default="false"/>
 
@@ -24,7 +23,6 @@
     <node pkg="tesseract_ros_examples" type="tesseract_ros_examples_ur5_trajopt_node" name="tesseract_ros_examples_ur5_trajopt_node" output="screen">
       <param name="plotting" type="bool" value="$(arg plotting)"/>
       <param name="rviz" type="bool" value="$(arg rviz)"/>
-      <param name="ifopt" type="bool" value="$(arg ifopt)"/>
       <param name="debug" type="bool" value="$(arg debug)"/>
     </node>
 

@@ -22,13 +22,11 @@ int main(int argc, char** argv)
 
   bool plotting = true;
   bool rviz = true;
-  bool ifopt = false;
   bool debug = false;
 
   // Get ROS Parameters
   pnh.param("plotting", plotting, plotting);
   pnh.param("rviz", rviz, rviz);
-  pnh.param("ifopt", ifopt, ifopt);
   pnh.param("debug", debug, debug);
 
   // Initial setup
@@ -50,6 +48,6 @@ int main(int argc, char** argv)
   if (plotting)
     plotter = std::make_shared<ROSPlotting>(env->getSceneGraph()->getRoot());
 
-  UR5Trajopt example(env, plotter, ifopt, debug);
+  UR5Trajopt example(env, plotter, debug);
   example.run();
 }
