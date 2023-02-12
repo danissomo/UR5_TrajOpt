@@ -16,7 +16,8 @@ class UR5Trajopt : public Example
 public:
   UR5Trajopt(tesseract_environment::Environment::Ptr env,
                       tesseract_visualization::Visualization::Ptr plotter = nullptr,
-                      bool debug = false);
+                      bool debug = false,
+                      bool sim_robot = true);
   ~UR5Trajopt() override = default;
   UR5Trajopt(const UR5Trajopt&) = default;
   UR5Trajopt& operator=(const UR5Trajopt&) = default;
@@ -27,7 +28,7 @@ public:
 
 private:
   bool debug_;
-  static tesseract_environment::Command::Ptr addSphere();
+  bool sim_robot_;
 };
 
 }

@@ -38,8 +38,9 @@ namespace tesseract_examples
 {
 UR5Trajopt::UR5Trajopt(tesseract_environment::Environment::Ptr env,
                                          tesseract_visualization::Visualization::Ptr plotter,
-                                         bool debug)
-  : Example(std::move(env), std::move(plotter)), debug_(debug)
+                                         bool debug,
+                                         bool sim_robot)
+  : Example(std::move(env), std::move(plotter)), debug_(debug), sim_robot_(sim_robot)
 {
 }
 
@@ -59,12 +60,21 @@ bool UR5Trajopt::run() {
   joint_names.emplace_back("wrist_3_joint");
 
   Eigen::VectorXd joint_start_pos(6);
-  joint_start_pos(0) = 0.0;
-  joint_start_pos(1) = -0.06;
-  joint_start_pos(2) = -2.72;
-  joint_start_pos(3) = -0.34;
-  joint_start_pos(4) = 0.0;
-  joint_start_pos(5) = 0.0;
+
+  if (sim_robot_) {
+    joint_start_pos(0) = 0.0;
+    joint_start_pos(1) = -0.06;
+    joint_start_pos(2) = -2.72;
+    joint_start_pos(3) = -0.34;
+    joint_start_pos(4) = 0.0;
+    joint_start_pos(5) = 0.0;
+
+  } else {
+    // тут надо получить данные с робота
+
+  }
+
+  
 
   Eigen::VectorXd joint_end_pos(6);
   joint_end_pos(0) = 0.0;
@@ -171,6 +181,24 @@ bool UR5Trajopt::run() {
   }
 
   CONSOLE_BRIDGE_logInform("Final trajectory is collision free");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   return input.isSuccessful();
 }
 }  // namespace tesseract_examples

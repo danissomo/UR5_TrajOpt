@@ -23,11 +23,13 @@ int main(int argc, char** argv)
   bool plotting = true;
   bool rviz = true;
   bool debug = false;
+  bool sim_robot = true;
 
   // Get ROS Parameters
   pnh.param("plotting", plotting, plotting);
   pnh.param("rviz", rviz, rviz);
   pnh.param("debug", debug, debug);
+  pnh.param("sim_robot", sim_robot, sim_robot);
 
   // Initial setup
   std::string urdf_xml_string, srdf_xml_string;
@@ -48,6 +50,6 @@ int main(int argc, char** argv)
   if (plotting)
     plotter = std::make_shared<ROSPlotting>(env->getSceneGraph()->getRoot());
 
-  UR5Trajopt example(env, plotter, debug);
+  UR5Trajopt example(env, plotter, debug, sim_robot);
   example.run();
 }
