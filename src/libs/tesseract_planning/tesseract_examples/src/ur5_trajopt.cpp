@@ -43,37 +43,7 @@ UR5Trajopt::UR5Trajopt(tesseract_environment::Environment::Ptr env,
 {
 }
 
-tesseract_environment::Command::Ptr UR5Trajopt::addSphere()
-{
-  // Add sphere to environment
-  Link link_sphere("sphere_attached");
-
-  Visual::Ptr visual = std::make_shared<Visual>();
-  visual->origin = Eigen::Isometry3d::Identity();
-  visual->origin.translation() = Eigen::Vector3d(0.5, 0, 0.55);
-  visual->geometry = std::make_shared<tesseract_geometry::Sphere>(0.15);
-  link_sphere.visual.push_back(visual);
-
-  Collision::Ptr collision = std::make_shared<Collision>();
-  collision->origin = visual->origin;
-  collision->geometry = visual->geometry;
-  link_sphere.collision.push_back(collision);
-
-  Joint joint_sphere("joint_sphere_attached");
-  joint_sphere.parent_link_name = "base_link";
-  joint_sphere.child_link_name = link_sphere.getName();
-  joint_sphere.type = JointType::FIXED;
-
-  return std::make_shared<tesseract_environment::AddLinkCommand>(link_sphere, joint_sphere);
-}
-
-bool UR5Trajopt::run()
-{
-  // Добавить препятствие тут
-  // Add sphere to environment
-  // Command::Ptr cmd = addSphere();
-  // if (!env_->applyCommand(cmd))
-  //   return false;
+bool UR5Trajopt::run() {
 
   if (plotter_ != nullptr) {
     plotter_->waitForConnection();
