@@ -19,6 +19,7 @@
   <depend>tesseract_examples</depend>
   <depend>tesseract_monitoring</depend>
   <depend>tesseract_rosutils</depend>
+  <depend>settings_custom_lib</depend>
 
   <exec_depend>tesseract_rviz</exec_depend>
   <exec_depend>xacro</exec_depend>

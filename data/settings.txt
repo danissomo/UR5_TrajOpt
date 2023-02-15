@@ -13,3 +13,13 @@ gripperPickHandle = 0.5
 
 # Настройки визуализации
 eigenVector3d = 1.0
+
+# Начальное положение робота по умолчанию
+joint_start_pos_0 = 0.0
+joint_start_pos_1 = -0.06
+joint_start_pos_2 = -2.72
+joint_start_pos_3 = -0.34
+joint_start_pos_4 = 0.0
+joint_start_pos_5 = 0.0
+
+# Конечное положение робота по умолчанию

@@ -7,10 +7,14 @@
 #include <thread>
 #include <chrono>
 
+#include <settings_custom_lib/SettingsCustomLib.hpp>
+
 using namespace ur_rtde;
 
 using namespace tesseract_examples;
 using namespace tesseract_rosutils;
+
+// SettingsCustomLibClass settingsConfig;
 
 /** @brief Default ROS parameter for robot description */
 const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
@@ -60,12 +64,12 @@ int main(int argc, char** argv) {
   }
 
   Eigen::VectorXd joint_start_pos(6);
-  joint_start_pos(0) = 0.0;
-  joint_start_pos(1) = -0.06;
-  joint_start_pos(2) = -2.72;
-  joint_start_pos(3) = -0.34;
-  joint_start_pos(4) = 0.0;
-  joint_start_pos(5) = 0.0;
+  joint_start_pos(0) = joint_start_pos_0;
+  joint_start_pos(1) = joint_start_pos_1;
+  joint_start_pos(2) = joint_start_pos_2;
+  joint_start_pos(3) = joint_start_pos_3;
+  joint_start_pos(4) = joint_start_pos_4;
+  joint_start_pos(5) = joint_start_pos_5;
 
   ROS_INFO("Start connect with UR5...");
 

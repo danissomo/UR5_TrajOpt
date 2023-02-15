@@ -25,6 +25,14 @@ float handlePosition_y = -0.2;
 float handlePosition_z = 1.1;
 float gripperPickHandle = 0.5;
 
+float joint_start_pos_0 = 0.0;
+float joint_start_pos_1 = -0.06;
+float joint_start_pos_2 = -2.72;
+float joint_start_pos_3 = -0.34;
+float joint_start_pos_4 = 0.0;
+float joint_start_pos_5 = 0.0;
+
+
 class SettingsCustomLibClass {
     public:
         void update();
@@ -68,6 +76,30 @@ inline void SettingsCustomLibClass::update() {
             } else if (strcmp("gripperPickHandle", token.c_str()) == 0) {
                 gripperPickHandle = stof(line);
                 ROS_INFO("Setting updated. New value gripperPickHandle = %f", gripperPickHandle);
+
+            } else if (strcmp("joint_start_pos_0", token.c_str()) == 0) {
+                joint_start_pos_0 = stof(line);
+                ROS_INFO("Setting updated. New value joint_start_pos_0 = %f", joint_start_pos_0);
+
+            } else if (strcmp("joint_start_pos_1", token.c_str()) == 0) {
+                joint_start_pos_1 = stof(line);
+                ROS_INFO("Setting updated. New value joint_start_pos_1 = %f", joint_start_pos_1);
+
+            } else if (strcmp("joint_start_pos_2", token.c_str()) == 0) {
+                joint_start_pos_2 = stof(line);
+                ROS_INFO("Setting updated. New value joint_start_pos_2 = %f", joint_start_pos_2);
+
+            } else if (strcmp("joint_start_pos_3", token.c_str()) == 0) {
+                joint_start_pos_3 = stof(line);
+                ROS_INFO("Setting updated. New value joint_start_pos_3 = %f", joint_start_pos_3);
+
+            } else if (strcmp("joint_start_pos_4", token.c_str()) == 0) {
+                joint_start_pos_4 = stof(line);
+                ROS_INFO("Setting updated. New value joint_start_pos_4 = %f", joint_start_pos_4);
+
+            } else if (strcmp("joint_start_pos_5", token.c_str()) == 0) {
+                joint_start_pos_5 = stof(line);
+                ROS_INFO("Setting updated. New value joint_start_pos_5 = %f", joint_start_pos_5);
 
             }
         }

@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_srvs
   tesseract_monitoring
   tesseract_rosutils
+  settings_custom_lib
 )
 
 find_package(tesseract_environment REQUIRED)
