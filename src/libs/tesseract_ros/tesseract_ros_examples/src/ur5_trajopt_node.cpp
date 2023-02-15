@@ -69,27 +69,29 @@ int main(int argc, char** argv) {
 
   ROS_INFO("Start connect with UR5...");
 
-  try {
-    RTDEReceiveInterface rtde_receive("127.0.0.1");
-    std::vector<double> joint_positions = rtde_receive.getActualQ();
+  if (!sim_robot) {
+    try {
+      RTDEReceiveInterface rtde_receive("127.0.0.1");
+      std::vector<double> joint_positions = rtde_receive.getActualQ();
 
-    if (joint_positions.size() != 6) {
+      if (joint_positions.size() != 6) {
 
-      for (auto i = 0; i < joint_positions.size(); i++ ) {
-        joint_start_pos(i) = joint_positions[i];
+        for (auto i = 0; i < joint_positions.size(); i++ ) {
+          joint_start_pos(i) = joint_positions[i];
+        }
+
+      } else {
+        throw "There should be 6 joints.";
       }
 
-    } else {
-      throw "Count of joints should be 6";
+      ROS_INFO("Connect success!");
+
+    } catch (const char* exception) {
+      std::cerr << "Error: " << exception << '\n';
+
+    } catch (...) {
+        ROS_ERROR("I can't connect");
     }
-
-    ROS_INFO("Connect success!");
-
-  } catch (const char* exception) () {
-    std::cerr << "Error: " << exception << '\n';
-
-  } catch (...) {
-      ROS_ERROR("I can't connect");
   }
 
   UR5Trajopt example(env, plotter, debug, sim_robot, joint_start_pos);
