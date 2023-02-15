@@ -14,8 +14,7 @@ const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 /** @brief RViz Example Namespace */
 const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
   ros::NodeHandle pnh("~");
   ros::NodeHandle nh;
@@ -38,17 +37,20 @@ int main(int argc, char** argv)
 
   auto env = std::make_shared<tesseract_environment::Environment>();
   auto locator = std::make_shared<tesseract_rosutils::ROSResourceLocator>();
-  if (!env->init(urdf_xml_string, srdf_xml_string, locator))
+  if (!env->init(urdf_xml_string, srdf_xml_string, locator)) {
     exit(1);
+  }
 
   // Create monitor
   auto monitor = std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(env, EXAMPLE_MONITOR_NAMESPACE);
-  if (rviz)
+  if (rviz) {
     monitor->startPublishingEnvironment();
+  }
 
   ROSPlottingPtr plotter;
-  if (plotting)
+  if (plotting) {
     plotter = std::make_shared<ROSPlotting>(env->getSceneGraph()->getRoot());
+  }
 
   UR5Trajopt example(env, plotter, debug, sim_robot);
   example.run();

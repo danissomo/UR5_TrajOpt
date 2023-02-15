@@ -7,7 +7,7 @@
   <arg name="rviz" default="true"/>
   <arg name="debug" default="true"/> <!-- Включить для вывода результатов расчетов -->
   <arg name="testing" default="false"/>
-  <arg name="sim_robot" default="true"/> <!-- Если это симуляция -->
+  <arg name="sim_robot" default="false"/> <!-- Если это симуляция -->
 
   <!-- Load universal robot description format (URDF) -->
   <param name="$(arg robot_description)" command="$(find xacro)/xacro --inorder '$(find ur5_single_arm_tufts)/urdf/ur5_single_arm.urdf.xacro'" />

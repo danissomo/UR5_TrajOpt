@@ -26,6 +26,12 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_plan_profile.h>
 
+#include <ur_rtde/rtde_control_interface.h>
+#include <ur_rtde/rtde_receive_interface.h>
+#include <thread>
+#include <chrono>
+#include <iostream>
+
 using namespace trajopt;
 using namespace tesseract_environment;
 using namespace tesseract_scene_graph;
@@ -33,6 +39,8 @@ using namespace tesseract_collision;
 using namespace tesseract_visualization;
 using namespace tesseract_planning;
 using tesseract_common::ManipulatorInfo;
+
+using namespace ur_rtde;
 
 namespace tesseract_examples
 {
@@ -71,7 +79,11 @@ bool UR5Trajopt::run() {
 
   } else {
     // тут надо получить данные с робота
-
+    std::cout << "1 - TEST!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
+    // RTDEReceiveInterface rtde_receive("127.0.0.1");
+    RTDEControlInterface rtde_control("127.0.0.1");
+    //std::vector<double> joint_positions = rtde_receive.getActualQ();
+    std::cout << "2 - TEST!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
   }
 
   
