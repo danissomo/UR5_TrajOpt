@@ -5,9 +5,6 @@ find_package(ros_industrial_cmake_boilerplate REQUIRED)
 extract_package_metadata(pkg)
 project(${pkg_extracted_name} VERSION ${pkg_extracted_version} LANGUAGES CXX)
 
-
-find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde/build/ur_rtde")
-
 find_package(tesseract_environment REQUIRED)
 find_package(tesseract_command_language REQUIRED)
 find_package(tesseract_motion_planners REQUIRED)
@@ -65,7 +62,6 @@ target_link_libraries(
   trajopt::trajopt_ifopt
   tesseract::tesseract_task_composer
   console_bridge::console_bridge
-  ur_rtde::rtde
   ${PCL_LIBRARIES})
 target_compile_options(${PROJECT_NAME} PUBLIC ${TESSERACT_COMPILE_OPTIONS})
 target_clang_tidy(${PROJECT_NAME} ARGUMENTS ${TESSERACT_CLANG_TIDY_ARGS} ENABLE ${TESSERACT_ENABLE_CLANG_TIDY})

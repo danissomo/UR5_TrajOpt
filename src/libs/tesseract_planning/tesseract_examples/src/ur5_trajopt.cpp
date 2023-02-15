@@ -25,11 +25,6 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_plan_profile.h>
-
-#include <ur_rtde/rtde_control_interface.h>
-#include <ur_rtde/rtde_receive_interface.h>
-#include <thread>
-#include <chrono>
 #include <iostream>
 
 using namespace trajopt;
@@ -40,15 +35,14 @@ using namespace tesseract_visualization;
 using namespace tesseract_planning;
 using tesseract_common::ManipulatorInfo;
 
-using namespace ur_rtde;
-
 namespace tesseract_examples
 {
 UR5Trajopt::UR5Trajopt(tesseract_environment::Environment::Ptr env,
                                          tesseract_visualization::Visualization::Ptr plotter,
                                          bool debug,
-                                         bool sim_robot)
-  : Example(std::move(env), std::move(plotter)), debug_(debug), sim_robot_(sim_robot)
+                                         bool sim_robot,
+                                         Eigen::VectorXd joint_start_pos)
+  : Example(std::move(env), std::move(plotter)), debug_(debug), sim_robot_(sim_robot), joint_start_pos_(joint_start_pos)
 {
 }
 
@@ -66,26 +60,6 @@ bool UR5Trajopt::run() {
   joint_names.emplace_back("wrist_1_joint");
   joint_names.emplace_back("wrist_2_joint");
   joint_names.emplace_back("wrist_3_joint");
-
-  Eigen::VectorXd joint_start_pos(6);
-
-  if (sim_robot_) {
-    joint_start_pos(0) = 0.0;
-    joint_start_pos(1) = -0.06;
-    joint_start_pos(2) = -2.72;
-    joint_start_pos(3) = -0.34;
-    joint_start_pos(4) = 0.0;
-    joint_start_pos(5) = 0.0;
-
-  } else {
-    // тут надо получить данные с робота
-    std::cout << "1 - TEST!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
-    // RTDEReceiveInterface rtde_receive("127.0.0.1");
-    RTDEControlInterface rtde_control("127.0.0.1");
-    //std::vector<double> joint_positions = rtde_receive.getActualQ();
-    std::cout << "2 - TEST!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
-  }
-
   
 
   Eigen::VectorXd joint_end_pos(6);
@@ -96,7 +70,7 @@ bool UR5Trajopt::run() {
   joint_end_pos(4) = 0.0;
   joint_end_pos(5) = 0.0;
 
-  env_->setState(joint_names, joint_start_pos);
+  env_->setState(joint_names, joint_start_pos_);
 
   if (debug_) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
@@ -110,7 +84,7 @@ bool UR5Trajopt::run() {
       "UR5", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "tool0"));
 
   // Start and End Joint Position for the program
-  StateWaypointPoly wp0{ StateWaypoint(joint_names, joint_start_pos) };
+  StateWaypointPoly wp0{ StateWaypoint(joint_names, joint_start_pos_) };
   StateWaypointPoly wp1{ StateWaypoint(joint_names, joint_end_pos) };
 
   MoveInstruction start_instruction(wp0, MoveInstructionType::START);

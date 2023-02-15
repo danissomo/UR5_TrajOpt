@@ -2,6 +2,13 @@
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 
+#include <ur_rtde/rtde_control_interface.h>
+#include <ur_rtde/rtde_receive_interface.h>
+#include <thread>
+#include <chrono>
+
+using namespace ur_rtde;
+
 using namespace tesseract_examples;
 using namespace tesseract_rosutils;
 
@@ -52,6 +59,39 @@ int main(int argc, char** argv) {
     plotter = std::make_shared<ROSPlotting>(env->getSceneGraph()->getRoot());
   }
 
-  UR5Trajopt example(env, plotter, debug, sim_robot);
+  Eigen::VectorXd joint_start_pos(6);
+  joint_start_pos(0) = 0.0;
+  joint_start_pos(1) = -0.06;
+  joint_start_pos(2) = -2.72;
+  joint_start_pos(3) = -0.34;
+  joint_start_pos(4) = 0.0;
+  joint_start_pos(5) = 0.0;
+
+  ROS_INFO("Start connect with UR5...");
+
+  try {
+    RTDEReceiveInterface rtde_receive("127.0.0.1");
+    std::vector<double> joint_positions = rtde_receive.getActualQ();
+
+    if (joint_positions.size() != 6) {
+
+      for (auto i = 0; i < joint_positions.size(); i++ ) {
+        joint_start_pos(i) = joint_positions[i];
+      }
+
+    } else {
+      throw "Count of joints should be 6";
+    }
+
+    ROS_INFO("Connect success!");
+
+  } catch (const char* exception) () {
+    std::cerr << "Error: " << exception << '\n';
+
+  } catch (...) {
+      ROS_ERROR("I can't connect");
+  }
+
+  UR5Trajopt example(env, plotter, debug, sim_robot, joint_start_pos);
   example.run();
 }
