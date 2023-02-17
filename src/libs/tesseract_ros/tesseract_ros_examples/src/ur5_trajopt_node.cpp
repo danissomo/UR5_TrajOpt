@@ -14,7 +14,7 @@ using namespace ur_rtde;
 using namespace tesseract_examples;
 using namespace tesseract_rosutils;
 
-// SettingsCustomLibClass settingsConfig;
+SettingsCustomLibClass settingsConfig;
 
 /** @brief Default ROS parameter for robot description */
 const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
@@ -46,6 +46,8 @@ int main(int argc, char** argv) {
   nh.getParam(ROBOT_DESCRIPTION_PARAM, urdf_xml_string);
   nh.getParam(ROBOT_SEMANTIC_PARAM, srdf_xml_string);
 
+  settingsConfig.update();
+
   auto env = std::make_shared<tesseract_environment::Environment>();
   auto locator = std::make_shared<tesseract_rosutils::ROSResourceLocator>();
   if (!env->init(urdf_xml_string, srdf_xml_string, locator)) {
@@ -71,11 +73,19 @@ int main(int argc, char** argv) {
   joint_start_pos(4) = joint_start_pos_4;
   joint_start_pos(5) = joint_start_pos_5;
 
-  ROS_INFO("Start connect with UR5...");
+  Eigen::VectorXd joint_end_pos(6);
+  joint_end_pos(0) = joint_end_pos_0;
+  joint_end_pos(1) = joint_end_pos_1;
+  joint_end_pos(2) = joint_end_pos_2;
+  joint_end_pos(3) = joint_end_pos_3;
+  joint_end_pos(4) = joint_end_pos_4;
+  joint_end_pos(5) = joint_end_pos_5;
+
+  ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
 
   if (!sim_robot) {
     try {
-      RTDEReceiveInterface rtde_receive("127.0.0.1");
+      RTDEReceiveInterface rtde_receive(robot_ip);
       std::vector<double> joint_positions = rtde_receive.getActualQ();
 
       if (joint_positions.size() != 6) {
@@ -98,6 +108,6 @@ int main(int argc, char** argv) {
     }
   }
 
-  UR5Trajopt example(env, plotter, debug, sim_robot, joint_start_pos);
+  UR5Trajopt example(env, plotter, debug, sim_robot, joint_start_pos, joint_end_pos);
   example.run();
 }

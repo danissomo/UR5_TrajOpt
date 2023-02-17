@@ -8,9 +8,6 @@ handlePosition_z = 1.1
 gripperPickHandle = 0.5
 
 # Настройки для Tesseract
-
-
-
 # Настройки визуализации
 eigenVector3d = 1.0
 
@@ -23,3 +20,12 @@ joint_start_pos_4 = 0.0
 joint_start_pos_5 = 0.0
 
 # Конечное положение робота по умолчанию
+joint_end_pos_0 = 0.0
+joint_end_pos_1 = -0.06
+joint_end_pos_2 = -2.72
+joint_end_pos_3 = -0.34
+joint_end_pos_4 = 0.0
+joint_end_pos_5 = 0.0
+
+# IP робота
+robot_ip = 127.0.0.1

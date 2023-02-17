@@ -38,11 +38,12 @@ using tesseract_common::ManipulatorInfo;
 namespace tesseract_examples
 {
 UR5Trajopt::UR5Trajopt(tesseract_environment::Environment::Ptr env,
-                                         tesseract_visualization::Visualization::Ptr plotter,
-                                         bool debug,
-                                         bool sim_robot,
-                                         Eigen::VectorXd joint_start_pos)
-  : Example(std::move(env), std::move(plotter)), debug_(debug), sim_robot_(sim_robot), joint_start_pos_(joint_start_pos)
+                       tesseract_visualization::Visualization::Ptr plotter,
+                       bool debug,
+                       bool sim_robot,
+                       Eigen::VectorXd joint_start_pos,
+                       Eigen::VectorXd joint_end_pos)
+  : Example(std::move(env), std::move(plotter)), debug_(debug), sim_robot_(sim_robot), joint_start_pos_(joint_start_pos), joint_end_pos_(joint_end_pos)
 {
 }
 
@@ -60,15 +61,6 @@ bool UR5Trajopt::run() {
   joint_names.emplace_back("wrist_1_joint");
   joint_names.emplace_back("wrist_2_joint");
   joint_names.emplace_back("wrist_3_joint");
-  
-
-  Eigen::VectorXd joint_end_pos(6);
-  joint_end_pos(0) = 0.0;
-  joint_end_pos(1) = -0.68;
-  joint_end_pos(2) = -1.75;
-  joint_end_pos(3) = -0.68;
-  joint_end_pos(4) = 0.0;
-  joint_end_pos(5) = 0.0;
 
   env_->setState(joint_names, joint_start_pos_);
 
@@ -85,7 +77,7 @@ bool UR5Trajopt::run() {
 
   // Start and End Joint Position for the program
   StateWaypointPoly wp0{ StateWaypoint(joint_names, joint_start_pos_) };
-  StateWaypointPoly wp1{ StateWaypoint(joint_names, joint_end_pos) };
+  StateWaypointPoly wp1{ StateWaypoint(joint_names, joint_end_pos_) };
 
   MoveInstruction start_instruction(wp0, MoveInstructionType::START);
   program.setStartInstruction(start_instruction);
