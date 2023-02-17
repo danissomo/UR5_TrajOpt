@@ -1,6 +1,8 @@
 #include <tesseract_examples/ur5_trajopt.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
+#include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
+#include <trajectory_msgs/JointTrajectory.h>
 
 #include <ur_rtde/rtde_control_interface.h>
 #include <ur_rtde/rtde_receive_interface.h>
@@ -13,6 +15,7 @@ using namespace ur_rtde;
 
 using namespace tesseract_examples;
 using namespace tesseract_rosutils;
+using namespace tesseract_planning;
 
 SettingsCustomLibClass settingsConfig;
 
@@ -24,6 +27,50 @@ const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 
 /** @brief RViz Example Namespace */
 const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
+
+
+
+
+// trajectory_msgs::JointTrajectory trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names,
+//                                                                tesseract::TrajArray traj_array, ros::Duration time_increment) {
+//   // Create the joint trajectory
+//   trajectory_msgs::JointTrajectory traj_msg;
+//   traj_msg.header.stamp = ros::Time::now();
+//   traj_msg.header.frame_id = "0";
+//   traj_msg.joint_names = joint_names;
+
+//   // Seperate out the time data in the last column from the joint position data
+//   auto pos_mat = traj_array.leftCols(traj_array.cols()-1);
+//   auto time_mat = traj_array.rightCols(1);
+
+// //  std::cout << traj_array <<'\n';
+// //  std::cout << "pos: " << pos_mat <<'\n';
+// //  std::cout << "time: "<< time_mat <<'\n';
+
+
+//   ros::Duration time_from_start(0);
+//   for (int ind = 0; ind < traj_array.rows(); ind++)
+//   {
+//     // Create trajectory point
+//     trajectory_msgs::JointTrajectoryPoint traj_point;
+
+//     //Set the position for this time step
+//     auto mat = pos_mat.row(ind);
+//     std::vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
+//     traj_point.positions = vec;
+
+//     //Add the current dt to the time_from_start
+//     time_from_start += ros::Duration(time_mat(ind, time_mat.cols()-1));
+//     traj_point.time_from_start = time_from_start;
+
+//     traj_msg.points.push_back(traj_point);
+
+//   }
+//   return traj_msg;
+// }
+
+
+
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
@@ -45,6 +92,8 @@ int main(int argc, char** argv) {
   std::string urdf_xml_string, srdf_xml_string;
   nh.getParam(ROBOT_DESCRIPTION_PARAM, urdf_xml_string);
   nh.getParam(ROBOT_SEMANTIC_PARAM, srdf_xml_string);
+
+  ros::Publisher test_pub = nh.advertise<trajectory_msgs::JointTrajectory>("joint_traj", 10);
 
   settingsConfig.update();
 
@@ -110,4 +159,17 @@ int main(int argc, char** argv) {
 
   UR5Trajopt example(env, plotter, debug, sim_robot, joint_start_pos, joint_end_pos);
   example.run();
+
+  PlannerResponse planning_response_place;
+
+
+  trajectory_msgs::JointTrajectory traj_msg4;
+  ros::Duration t2(0.25);
+  // traj_msg4 = trajArrayToJointTrajectoryMsg(planning_response_place.joint_names, planning_response_place.trajectory, t2);
+  //test_pub.publish(traj_msg4);
+
+
+
+
+
 }
