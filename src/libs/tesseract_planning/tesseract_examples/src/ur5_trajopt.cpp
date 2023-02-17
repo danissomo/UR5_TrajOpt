@@ -159,24 +159,6 @@ bool UR5Trajopt::run() {
   }
 
   CONSOLE_BRIDGE_logInform("Final trajectory is collision free");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   return input.isSuccessful();
 }
 }  // namespace tesseract_examples
