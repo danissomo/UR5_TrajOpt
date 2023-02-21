@@ -22,6 +22,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
 #include <tesseract_motion_planners/core/utils.h>
 #include <tesseract_motion_planners/default_planner_namespaces.h>
+#include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
 
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_plan_profile.h>
@@ -146,10 +147,19 @@ bool UR5Trajopt::run() {
   stopwatch.stop();
   CONSOLE_BRIDGE_logInform("Planning took %f seconds.", stopwatch.elapsedSeconds());
 
+
+  auto ci = input.data_storage.getData("output_program").as<CompositeInstruction>();
+  std::vector<tesseract_planning::InstructionPoly> points = ci.getInstructions();;
+  std::vector<StateWaypointPoly> data;
+
+  for (int i = 0; i < points.size(); i++) {
+    StateWaypointPoly point = points[i].as<MoveInstructionPoly>().getWaypoint().as<StateWaypointPoly>();
+    data.push_back(point);
+  }
+
   // Plot Process Trajectory
   if (plotter_ != nullptr && plotter_->isConnected()) {
     plotter_->waitForInput();
-    auto ci = input.data_storage.getData("output_program").as<CompositeInstruction>();
     tesseract_common::Toolpath toolpath = toToolpath(ci, *env_);
     tesseract_common::JointTrajectory trajectory = toJointTrajectory(ci);
     auto state_solver = env_->getStateSolver();
