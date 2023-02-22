@@ -59,10 +59,42 @@ const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
 
 
+// trajectory_msgs::JointTrajectory trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names,
+//                                                                std::vector<StateWaypointPoly> data_trajectory,
+//                                                                ros::Duration time_increment) {
+//   // Create the joint trajectory
+//   trajectory_msgs::JointTrajectory traj_msg;
+//   traj_msg.header.stamp = ros::Time::now();
+//   traj_msg.header.frame_id = "0";
+//   traj_msg.joint_names = joint_names;
+
+//   std::vector<double> test = {0.0, -0.68, -1.75, -0.68, 0.0, 0.0};
+
+//   ros::Duration time_from_start(0);
+//   for (int i = 0; i < data_trajectory.size(); i++) {
+//     // Create trajectory point
+//     trajectory_msgs::JointTrajectoryPoint traj_point;
+
+//     //Set the position for this time step
+//     traj_point.positions = test;//data_trajectory[i].getPosition();
+
+//     //Add the current dt to the time_from_start
+//     time_from_start += ros::Duration(1); // тут надо сделать зависимость от пред значения
+//     traj_point.time_from_start = time_from_start;
+
+//     traj_msg.points.push_back(traj_point);
+
+//   }
+//   return traj_msg;
+// }
+
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
   ros::NodeHandle pnh("~");
   ros::NodeHandle nh;
+
+  ros::Rate loop_rate(20);
 
   bool plotting = true;
   bool rviz = true;
@@ -80,7 +112,7 @@ int main(int argc, char** argv) {
   nh.getParam(ROBOT_DESCRIPTION_PARAM, urdf_xml_string);
   nh.getParam(ROBOT_SEMANTIC_PARAM, srdf_xml_string);
 
-  ros::Publisher test_pub = nh.advertise<trajectory_msgs::JointTrajectory>("joint_traj", 10);
+  ros::Publisher test_pub = nh.advertise<trajectory_msgs::JointTrajectory>("/arm_controller/command", 10);
 
   settingsConfig.update();
 
@@ -239,24 +271,38 @@ int main(int argc, char** argv) {
 
 
   auto ci = input.data_storage.getData("output_program").as<CompositeInstruction>();
+  tesseract_common::JointTrajectory trajectory = toJointTrajectory(ci);
   std::vector<tesseract_planning::InstructionPoly> points = ci.getInstructions();
   std::vector<StateWaypointPoly> data_trajectory;
 
   for (int i = 0; i < points.size(); i++) {
     StateWaypointPoly point = points[i].as<MoveInstructionPoly>().getWaypoint().as<StateWaypointPoly>();
     data_trajectory.push_back(point);
+    ROS_INFO("%d. Added a trajectory point: ", i+1);
+    point.print();
   }
 
   // Plot Process Trajectory
   if (plotter != nullptr && plotter->isConnected()) {
     plotter->waitForInput();
     tesseract_common::Toolpath toolpath = toToolpath(ci, *env);
-    tesseract_common::JointTrajectory trajectory = toJointTrajectory(ci);
     auto state_solver = env->getStateSolver();
 
     plotter->plotMarker(ToolpathMarker(toolpath));
     plotter->plotTrajectory(trajectory, *state_solver);
   }
 
+
+  while(ros::ok()) {
+    trajectory_msgs::JointTrajectory msg = toMsg(trajectory, env->getState());
+    test_pub.publish(msg);
+    loop_rate.sleep();
+  }
+
+
+
+  
+
   CONSOLE_BRIDGE_logInform("Final trajectory is collision free");
+
 }
