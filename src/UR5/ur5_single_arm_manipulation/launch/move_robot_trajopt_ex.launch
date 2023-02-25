@@ -2,12 +2,13 @@
 <launch>
 
   <arg name="robot_description" default="robot_description"/>
-  <arg name="trajopt_description" default="trajopt_description"/>
   <arg name="plotting" default="true"/>
   <arg name="rviz" default="true"/>
+   <arg name="paused" default="true" />
+   <arg name="use_sim_time" default="true"/>
   <arg name="debug" default="true"/> <!-- Включить для вывода результатов расчетов -->
-  <arg name="testing" default="false"/>
   <arg name="sim_robot" default="false"/> <!-- Если это симуляция -->
+  <arg name="delay" default="2.0" />  <!-- Задержка для запуска ноды -->
 
   <!-- Load universal robot description format (URDF) -->
   <param name="$(arg robot_description)" command="$(find xacro)/xacro --inorder '$(find ur5_single_arm_tufts)/urdf/ur5_single_arm.urdf.xacro'" />
@@ -15,54 +16,53 @@
   <!-- The semantic description that corresponds to the URDF -->
   <param name="$(arg robot_description)_semantic" textfile="$(find ur5_single_arm_manipulation)/urdf/ur5_trajopt.srdf" />
 
-  <node name="state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
-    <rosparam param="source_list">["joint_states"]</rosparam>
-  </node>
-
   <!-- Подключение  joint_subscriber -->
   <!-- <node name="joint_subscriber" pkg="ur5_single_arm_manipulation" type="joint_subscriber"/> -->
 
-  <group unless="$(arg testing)">
-    <!-- If needed, broadcast static tf for robot root -->
-    <node pkg="tf" type="static_transform_publisher" name="virtual_joint_broadcaster_0" args="0 0 0 0 0 0 world base_link 100" />
+  <!-- If needed, broadcast static tf for robot root -->
+  <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_joint_broadcaster_0" args="0 0 0 0 0 0 world base_link 100" /> -->
 
-    <node pkg="tesseract_ros_examples" type="tesseract_ros_examples_ur5_trajopt_node" name="tesseract_ros_examples_ur5_trajopt_node" output="screen">
-      <param name="plotting" type="bool" value="$(arg plotting)"/>
-      <param name="rviz" type="bool" value="$(arg rviz)"/>
-      <param name="debug" type="bool" value="$(arg debug)"/>
-      <param name="sim_robot" type="bool" value="$(arg sim_robot)"/>
-    </node>
+  <node pkg="tesseract_ros_examples" type="tesseract_ros_examples_ur5_trajopt_node"
+    name="tesseract_ros_examples_ur5_trajopt_node" output="screen" launch-prefix="bash -c 'sleep $(arg delay); $0 $@' ">
+    <param name="plotting" type="bool" value="$(arg plotting)"/>
+    <param name="rviz" type="bool" value="$(arg rviz)"/>
+    <param name="debug" type="bool" value="$(arg debug)"/>
+    <param name="sim_robot" type="bool" value="$(arg sim_robot)"/>
+  </node>
 
-    <!-- Launch visualization -->
-    <node if="$(arg rviz)" pkg="rviz" type="rviz" name="tesseract_ros_examples_ur5_trajopt_example_rviz"
-        args="-d $(find tesseract_ros_examples)/config/examples.rviz" />
+  <!-- Launch visualization -->
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="tesseract_ros_examples_ur5_trajopt_example_rviz"
+      args="-d $(find tesseract_ros_examples)/config/examples.rviz"  launch-prefix="bash -c 'sleep $(arg delay); $0 $@' " />
 
-      <rosparam file="$(find ur_gazebo)/controller/arm_controller_ur5.yaml" command="load"/>
+    <rosparam file="$(find ur_gazebo)/controller/arm_controller_ur5.yaml" command="load"/>
 
-      <!-- Start joint state controller -->
-      <node name="joint_state_controller_spawner" pkg="controller_manager" type="controller_manager" output="screen" args="spawn joint_state_controller" respawn="false"/>
+    <!-- Start joint state controller -->
+    <node name="joint_state_controller_spawner" pkg="controller_manager" type="controller_manager" output="screen" args="spawn joint_state_controller" respawn="false"/>
 
-      <node name="arm_controller_spawner" pkg="controller_manager" type="controller_manager" respawn="false"  output="screen" args="spawn arm_controller" />
+    <node name="arm_controller_spawner" pkg="controller_manager" type="controller_manager" respawn="false"  output="screen" args="spawn arm_controller" />
 
-      <!-- start robot state publisher -->
-      <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
-        <param name="publish_frequency" type="double" value="100.0" />
-        <param name="tf_prefix" type="string" value="" />
-      </node>
+    <!-- GAZEBO start -->
+    <!-- startup simulated world -->
+<!--     <include file="$(find gazebo_ros)/launch/empty_world.launch">
+      <arg name="world_name" value="$(find ur5_single_arm_tufts)/worlds/base.world"/>
+      <arg name="paused" value="false"/>
+      <arg name="gui" value="true"/>
+    </include> -->
 
-      <!-- GAZEBO start -->
-      <!-- startup simulated world -->
-      <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="world_name" value="$(find ur5_single_arm_tufts)/worlds/base.world"/>
-        <arg name="paused" value="false"/>
-        <arg name="gui" value="true"/>
-      </include>
+    <!-- push robot_description to factory and spawn robot in gazebo -->
+<!--       <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot" respawn="false" output="screen"/> -->
 
-      <!-- push robot_description to factory and spawn robot in gazebo -->
-      <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot" respawn="false" output="screen"/>
+    <!-- GAZEBO finish -->
 
-      <!-- GAZEBO finish -->
 
-  </group>
+    <!-- Launch GUI to drive joints   -->
+    <!-- start robot state publisher -->
+    <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" /> -->
+
+    <!-- Launch robot state publisher -->
+    <!-- <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /> -->
+
+    <node pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" name="joint_state_publisher_gui" output="screen"  launch-prefix="bash -c 'sleep $(arg delay); $0 $@' "/>
+
 
 </launch>

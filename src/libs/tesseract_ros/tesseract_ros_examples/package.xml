@@ -10,8 +10,19 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>ros_industrial_cmake_boilerplate</build_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
   <build_export_depend>roscpp</build_export_depend>
   <exec_depend>roscpp</exec_depend>
+  <exec_depend>tesseract_rviz</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>tf</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
   <depend>roslib</depend>
   <depend>std_srvs</depend>
   <depend>tesseract_common</depend>
@@ -20,10 +31,7 @@
   <depend>tesseract_monitoring</depend>
   <depend>tesseract_rosutils</depend>
   <depend>settings_custom_lib</depend>
-
-  <exec_depend>tesseract_rviz</exec_depend>
-  <exec_depend>xacro</exec_depend>
-  <exec_depend>rviz</exec_depend>
+  <depend>urdf</depend>
 
   <export>
   </export>

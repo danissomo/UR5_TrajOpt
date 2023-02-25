@@ -12,6 +12,10 @@ find_package(catkin REQUIRED COMPONENTS
   tesseract_monitoring
   tesseract_rosutils
   settings_custom_lib
+  urdf
+  std_msgs
+  message_generation
+  visualization_msgs
 )
 
 find_package(tesseract_environment REQUIRED)

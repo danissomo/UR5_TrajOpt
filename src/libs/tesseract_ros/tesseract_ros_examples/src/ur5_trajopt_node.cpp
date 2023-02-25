@@ -25,14 +25,23 @@
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_plan_profile.h>
 
+// #include <tesseract_rviz/joint_trajectory_monitor_properties.h>
+
 #include <ur_rtde/rtde_control_interface.h>
 #include <ur_rtde/rtde_receive_interface.h>
 
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <vector>
 
 #include <settings_custom_lib/SettingsCustomLib.hpp>
+
+
+// #include <tf/transform_listener.h>
+// #include <tf_conversions/tf_eigen.h>
+#include <urdf_parser/urdf_parser.h>
+#include <srdfdom/model.h>
 
 using namespace ur_rtde;
 
@@ -59,42 +68,12 @@ const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
 
 
-// trajectory_msgs::JointTrajectory trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names,
-//                                                                std::vector<StateWaypointPoly> data_trajectory,
-//                                                                ros::Duration time_increment) {
-//   // Create the joint trajectory
-//   trajectory_msgs::JointTrajectory traj_msg;
-//   traj_msg.header.stamp = ros::Time::now();
-//   traj_msg.header.frame_id = "0";
-//   traj_msg.joint_names = joint_names;
-
-//   std::vector<double> test = {0.0, -0.68, -1.75, -0.68, 0.0, 0.0};
-
-//   ros::Duration time_from_start(0);
-//   for (int i = 0; i < data_trajectory.size(); i++) {
-//     // Create trajectory point
-//     trajectory_msgs::JointTrajectoryPoint traj_point;
-
-//     //Set the position for this time step
-//     traj_point.positions = test;//data_trajectory[i].getPosition();
-
-//     //Add the current dt to the time_from_start
-//     time_from_start += ros::Duration(1); // тут надо сделать зависимость от пред значения
-//     traj_point.time_from_start = time_from_start;
-
-//     traj_msg.points.push_back(traj_point);
-
-//   }
-//   return traj_msg;
-// }
-
-
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
   ros::NodeHandle pnh("~");
   ros::NodeHandle nh;
 
-  ros::Rate loop_rate(20);
+  ros::Rate loop_rate(0.2);
 
   bool plotting = true;
   bool rviz = true;
@@ -112,7 +91,7 @@ int main(int argc, char** argv) {
   nh.getParam(ROBOT_DESCRIPTION_PARAM, urdf_xml_string);
   nh.getParam(ROBOT_SEMANTIC_PARAM, srdf_xml_string);
 
-  ros::Publisher test_pub = nh.advertise<trajectory_msgs::JointTrajectory>("/arm_controller/command", 10);
+  ros::Publisher test_pub = nh.advertise<trajectory_msgs::JointTrajectory>("traj", 10);
 
   settingsConfig.update();
 
@@ -196,7 +175,7 @@ int main(int argc, char** argv) {
 
   // Create Program
   CompositeInstruction program(
-      "UR5", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "tool0"));
+      "UR5-1", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "tool0"));
 
   // Start and End Joint Position for the program
   StateWaypointPoly wp0{ StateWaypoint(joint_names, joint_start_pos) };
@@ -237,16 +216,16 @@ int main(int argc, char** argv) {
   composite_profile->smooth_accelerations = false;
   composite_profile->smooth_jerks = false;
   composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
-  profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", composite_profile);
+  profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5-1", composite_profile);
 
   auto plan_profile = std::make_shared<TrajOptDefaultPlanProfile>();
-  plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
-  plan_profile->cartesian_coeff(0) = 0;
-  plan_profile->cartesian_coeff(1) = 0;
-  plan_profile->cartesian_coeff(2) = 0;
+  // plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
+  // plan_profile->cartesian_coeff(0) = 0;
+  // plan_profile->cartesian_coeff(1) = 0;
+  // plan_profile->cartesian_coeff(2) = 0;
 
   // Add profile to Dictionary
-  profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", plan_profile);
+  profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5-2", plan_profile);
 
   // Create Task Input Data
   TaskComposerDataStorage input_data;
@@ -255,9 +234,9 @@ int main(int argc, char** argv) {
   // Create Task Composer Problem
   TaskComposerProblem problem(env, input_data);
 
-  if (plotter != nullptr && plotter->isConnected()) {
-    plotter->waitForInput("Hit Enter to solve for trajectory.");
-  }
+  //if (plotter != nullptr && plotter->isConnected()) {
+    //plotter->waitForInput("Hit Enter to solve for trajectory.");  // Тут загружается робот
+  //}
 
   // Solve process plan
   tesseract_common::Timer stopwatch;
@@ -275,13 +254,6 @@ int main(int argc, char** argv) {
   std::vector<tesseract_planning::InstructionPoly> points = ci.getInstructions();
   std::vector<StateWaypointPoly> data_trajectory;
 
-  for (int i = 0; i < points.size(); i++) {
-    StateWaypointPoly point = points[i].as<MoveInstructionPoly>().getWaypoint().as<StateWaypointPoly>();
-    data_trajectory.push_back(point);
-    ROS_INFO("%d. Added a trajectory point: ", i+1);
-    point.print();
-  }
-
   // Plot Process Trajectory
   if (plotter != nullptr && plotter->isConnected()) {
     plotter->waitForInput();
@@ -293,16 +265,58 @@ int main(int argc, char** argv) {
   }
 
 
-  while(ros::ok()) {
-    trajectory_msgs::JointTrajectory msg = toMsg(trajectory, env->getState());
-    test_pub.publish(msg);
-    loop_rate.sleep();
+  for (int i = 0; i < points.size(); i++) {
+    StateWaypointPoly point = points[i].as<MoveInstructionPoly>().getWaypoint().as<StateWaypointPoly>();
+    data_trajectory.push_back(point);
+    ROS_INFO("%d. Added intermediate joints: ", i+1);
+    point.print();
   }
 
 
+  while(ros::ok()) {
+     plotter->plotTrajectory(*env, ci);
+     env->setState(joint_names, joint_end_pos);
 
-  
+    // trajectory_msgs::JointTrajectory msg = toMsg(trajectory, env->getState());
+    // test_pub.publish(msg);
+
+    // trajectory_msgs::JointTrajectory msg;
+    // msg.header.stamp = ros::Time::now();
+    // msg.joint_names = joint_names;
+
+    // std::vector<trajectory_msgs::JointTrajectoryPoint> points_n(1);
+    // points_n[0].positions.resize(1);
+    // points_n[0].velocities.resize(1);
+
+    // points_n[0].positions.push_back(joint_end_pos_0);
+    // points_n[0].positions.push_back(joint_end_pos_1);
+    // points_n[0].positions.push_back(joint_end_pos_2);
+    // points_n[0].positions.push_back(joint_end_pos_3);
+    // points_n[0].positions.push_back(joint_end_pos_4);
+    // points_n[0].positions.push_back(joint_end_pos_5);
+
+    // points_n[0].velocities.push_back(0.1);
+    // points_n[0].velocities.push_back(0.1);
+    // points_n[0].velocities.push_back(0.1);
+    // points_n[0].velocities.push_back(0.1);
+    // points_n[0].velocities.push_back(0.1);
+    // points_n[0].velocities.push_back(0.1);
+
+    // points_n[0].time_from_start = ros::Duration(0.01);
+
+    // msg.points = points_n;
+    // test_pub.publish(msg);
+
+    // env->setState(joint_names, joint_end_pos);
+    // plotter->waitForInput("*********************");
+
+
+    ros::spinOnce();
+    loop_rate.sleep();
+  }
 
   CONSOLE_BRIDGE_logInform("Final trajectory is collision free");
+
+  return 0;
 
 }
