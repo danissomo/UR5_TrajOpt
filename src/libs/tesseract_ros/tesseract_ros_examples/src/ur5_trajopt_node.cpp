@@ -1,3 +1,10 @@
+// ROS headers
+#include <ros/ros.h>
+#include <actionlib/client/simple_action_client.h>
+#include <control_msgs/FollowJointTrajectoryAction.h>
+#include <ros/topic.h>
+
+
 #include <tesseract_examples/ur5_trajopt.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
@@ -25,8 +32,6 @@
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_plan_profile.h>
 
-// #include <tesseract_rviz/joint_trajectory_monitor_properties.h>
-
 #include <ur_rtde/rtde_control_interface.h>
 #include <ur_rtde/rtde_receive_interface.h>
 
@@ -37,9 +42,6 @@
 
 #include <settings_custom_lib/SettingsCustomLib.hpp>
 
-
-// #include <tf/transform_listener.h>
-// #include <tf_conversions/tf_eigen.h>
 #include <urdf_parser/urdf_parser.h>
 #include <srdfdom/model.h>
 
@@ -288,6 +290,38 @@ int main(int argc, char** argv) {
     data_trajectory.push_back(point);
     ROS_INFO("%d. Added intermediate joints: ", i+1);
     point.print();
+  }
+
+  std::cout << "Execute Trajectory on rViz or other simelator? y/n \n";
+  char input_simbol = 'n';
+  std::cin >> input_simbol;
+  if (input_simbol == 'y') {
+    std::cout << "Executing... \n";
+
+    actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> execution_client("follow_joint_trajectory",
+                                                                                              true);
+
+    control_msgs::FollowJointTrajectoryGoal trajectory_action;
+    trajectory_msgs::JointTrajectory traj_msg;
+    ros::Duration t(0.25);
+    traj_msg = toMsg(trajectory, env->getState());
+    trajectory_action.trajectory = traj_msg;
+
+
+    execution_client.sendGoal(trajectory_action);
+    execution_client.waitForResult(ros::Duration(20.0));
+
+    if (execution_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
+      std::cout << "Action succeeded! \n";
+    } else {
+      std::cout << "Action failed \n";
+    }
+
+
+
+
+  } else {
+    std::cout << "The trajectory in the simulator will not be executed. \n";
   }
 
 
