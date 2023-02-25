@@ -68,6 +68,24 @@ const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
 
 
+
+// Convert to joint trajectory
+// tesseract_common::JointTrajectory getJointTrajectory(const std::vector<std::string>& joint_names,
+//                                                      const tesseract_common::TrajArray& current_trajectory) {
+//   tesseract_common::JointTrajectory joint_traj;
+//   joint_traj.reserve(static_cast<std::size_t>(current_trajectory.rows()));
+//   double total_time = 0;
+//   for (long i = 0; i < current_trajectory.rows(); ++i)
+//   {
+//     tesseract_common::JointState js(joint_names, current_trajectory.row(i));
+//     js.time = total_time;
+//     joint_traj.push_back(js);
+//     total_time += 0.1;
+//   }
+//   return joint_traj;
+// }
+
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
   ros::NodeHandle pnh("~");
@@ -273,44 +291,11 @@ int main(int argc, char** argv) {
   }
 
 
+
+
+
+
   while(ros::ok()) {
-     plotter->plotTrajectory(*env, ci);
-     env->setState(joint_names, joint_end_pos);
-
-    // trajectory_msgs::JointTrajectory msg = toMsg(trajectory, env->getState());
-    // test_pub.publish(msg);
-
-    // trajectory_msgs::JointTrajectory msg;
-    // msg.header.stamp = ros::Time::now();
-    // msg.joint_names = joint_names;
-
-    // std::vector<trajectory_msgs::JointTrajectoryPoint> points_n(1);
-    // points_n[0].positions.resize(1);
-    // points_n[0].velocities.resize(1);
-
-    // points_n[0].positions.push_back(joint_end_pos_0);
-    // points_n[0].positions.push_back(joint_end_pos_1);
-    // points_n[0].positions.push_back(joint_end_pos_2);
-    // points_n[0].positions.push_back(joint_end_pos_3);
-    // points_n[0].positions.push_back(joint_end_pos_4);
-    // points_n[0].positions.push_back(joint_end_pos_5);
-
-    // points_n[0].velocities.push_back(0.1);
-    // points_n[0].velocities.push_back(0.1);
-    // points_n[0].velocities.push_back(0.1);
-    // points_n[0].velocities.push_back(0.1);
-    // points_n[0].velocities.push_back(0.1);
-    // points_n[0].velocities.push_back(0.1);
-
-    // points_n[0].time_from_start = ros::Duration(0.01);
-
-    // msg.points = points_n;
-    // test_pub.publish(msg);
-
-    // env->setState(joint_names, joint_end_pos);
-    // plotter->waitForInput("*********************");
-
-
     ros::spinOnce();
     loop_rate.sleep();
   }
