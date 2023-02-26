@@ -9,6 +9,7 @@
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
+#include <sensor_msgs/JointState.h>
 
 #include <tesseract_environment/utils.h>
 #include <tesseract_common/timer.h>
@@ -31,6 +32,8 @@
 
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_plan_profile.h>
+
+#include <tesseract_visualization/trajectory_player.h>
 
 #include <ur_rtde/rtde_control_interface.h>
 #include <ur_rtde/rtde_receive_interface.h>
@@ -112,6 +115,7 @@ int main(int argc, char** argv) {
   nh.getParam(ROBOT_SEMANTIC_PARAM, srdf_xml_string);
 
   ros::Publisher test_pub = nh.advertise<trajectory_msgs::JointTrajectory>("traj", 10);
+  ros::Publisher test_pub_state = pnh.advertise<sensor_msgs::JointState>("/joint_states", 10);
 
   settingsConfig.update();
 
@@ -254,10 +258,6 @@ int main(int argc, char** argv) {
   // Create Task Composer Problem
   TaskComposerProblem problem(env, input_data);
 
-  //if (plotter != nullptr && plotter->isConnected()) {
-    //plotter->waitForInput("Hit Enter to solve for trajectory.");  // Тут загружается робот
-  //}
-
   // Solve process plan
   tesseract_common::Timer stopwatch;
   stopwatch.start();
@@ -272,24 +272,62 @@ int main(int argc, char** argv) {
   auto ci = input.data_storage.getData("output_program").as<CompositeInstruction>();
   tesseract_common::JointTrajectory trajectory = toJointTrajectory(ci);
   std::vector<tesseract_planning::InstructionPoly> points = ci.getInstructions();
-  std::vector<StateWaypointPoly> data_trajectory;
 
   // Plot Process Trajectory
   if (plotter != nullptr && plotter->isConnected()) {
     plotter->waitForInput();
     tesseract_common::Toolpath toolpath = toToolpath(ci, *env);
     auto state_solver = env->getStateSolver();
+    auto scene_state = env->getState();
 
     plotter->plotMarker(ToolpathMarker(toolpath));
-    plotter->plotTrajectory(trajectory, *state_solver);
+    // plotter->plotTrajectory(trajectory, *state_solver);
+
+    // plotter->plotEnvironment(*env);
+    plotter->plotEnvironmentState(scene_state);
   }
 
 
+  TrajectoryPlayer player;
+  player.setTrajectory(trajectory);
+
+
+  std::vector<tesseract_common::JointState> j_states;
+
+  ROS_INFO("Added intermediate joints: ");
   for (int i = 0; i < points.size(); i++) {
-    StateWaypointPoly point = points[i].as<MoveInstructionPoly>().getWaypoint().as<StateWaypointPoly>();
-    data_trajectory.push_back(point);
-    ROS_INFO("%d. Added intermediate joints: ", i+1);
-    point.print();
+    loop_rate.sleep();
+
+    ROS_INFO("%d joint: ", i+1);
+
+    tesseract_common::JointState j_state = player.getByIndex(i);
+    j_states.push_back(j_state);
+
+    std::cout << "joint_names: ";
+    for (const auto& name: j_state.joint_names) {
+      std::cout << name.c_str() << ' ';
+    }
+    std::cout << std::endl;
+    
+    std::cout << "positions: " << j_state.position.transpose() << std::endl;
+    std::cout << "velocity: " << j_state.velocity.transpose() << std::endl;
+    std::cout << "acceleration: " << j_state.acceleration.transpose() << std::endl;
+    std::cout << "effort: " << j_state.effort.transpose() << std::endl;
+    std::cout << "====================" << std::endl;
+
+    env->setState(joint_names, j_state.position);
+
+    std::vector<double> v2;
+    v2.resize(j_state.position.size());
+    Eigen::VectorXd::Map(&v2[0], j_state.position.size()) = j_state.position;
+
+    sensor_msgs::JointState joint_state_msg;
+    joint_state_msg.name = j_state.joint_names;
+    joint_state_msg.position = v2;
+    // joint_state_msg.velocity
+    // joint_state_msg.effort
+
+    test_pub_state.publish(joint_state_msg);
   }
 
   std::cout << "Execute Trajectory on rViz or other simelator? y/n \n";
