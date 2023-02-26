@@ -44,6 +44,7 @@ find_package(tesseract_support REQUIRED)
 find_package(trajopt_sqp REQUIRED)
 find_package(trajopt_ifopt REQUIRED)
 find_package(tesseract_kinematics REQUIRED)
+find_package(ur_rtde REQUIRED PATH "/workspace/src/ur_rtde/build/ur_rtde")
 
 
 # Load variable for clang tidy args, compiler options and cxx version
@@ -179,6 +180,7 @@ add_executable(gripper src/set_gripper_state.cpp)
 add_executable(move src/move_robot.cpp)
 add_executable(open src/open_door.cpp)
 add_executable(joint_subscriber src/jointSubscriber.cpp)
+add_executable(set_joints src/ur5_set_joint_pos.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -194,6 +196,7 @@ add_dependencies(gripper ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_T
 add_dependencies(pose ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(move ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(open ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(set_joints ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(joint_subscriber
@@ -217,6 +220,11 @@ target_link_libraries(move
 )
 
 target_link_libraries(open
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(set_joints
+   PRIVATE ur_rtde::rtde
    ${catkin_LIBRARIES}
 )
 
