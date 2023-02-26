@@ -317,16 +317,19 @@ int main(int argc, char** argv) {
       std::cout << "Action failed \n";
     }
 
-
-
-
   } else {
     std::cout << "The trajectory in the simulator will not be executed. \n";
   }
 
+  input_simbol = 'n';
+  std::cout << "Execute Trajectory on hardware? y/n \n";
+  std::cin >> input_simbol;
+  if (input_simbol == 'y') {
+    std::cout << "Executing... \n";
 
+    //TODO 
 
-
+  }
 
 
   while(ros::ok()) {
