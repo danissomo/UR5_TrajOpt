@@ -178,6 +178,7 @@ add_executable(pose src/set_default_pose.cpp)
 add_executable(gripper src/set_gripper_state.cpp)
 add_executable(move src/move_robot.cpp)
 add_executable(open src/open_door.cpp)
+add_executable(joint_subscriber src/jointSubscriber.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -195,6 +196,9 @@ add_dependencies(move ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARG
 add_dependencies(open ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
+target_link_libraries(joint_subscriber
+   ${catkin_LIBRARIES}
+)
 
 target_link_libraries(position
    ${catkin_LIBRARIES}

@@ -10,15 +10,27 @@
   <!-- The semantic description that corresponds to the URDF -->
   <param name="$(arg robot_description)_semantic" textfile="$(find ur5_single_arm_manipulation)/urdf/ur5_trajopt.srdf" />
 
+
+    <!-- startup simulated world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find ur5_single_arm_tufts)/worlds/base.world"/>
+    <arg name="paused" value="false"/>
+    <arg name="gui" value="true"/>
+  </include>
+  
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot" respawn="false" output="screen"/>
+
+
   <!-- Launch visualization -->
   <node pkg="rviz" type="rviz" name="test" args="-d $(find ur5_single_arm_manipulation)/config/ur5.rviz" />
-
-  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
-    <rosparam param="source_list">["joint_states"]</rosparam>
-  </node>
 
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" /> 
 
   <node pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" name="joint_state_publisher_gui" output="screen"/>
+
+ <rosparam file="$(find ur_gazebo)/controller/arm_controller_ur5.yaml" command="load"/>
+ <node name="arm_controller_spawner" pkg="controller_manager" type="controller_manager" respawn="false"  output="screen" args="spawn arm_controller" />
+
 
 </launch>
