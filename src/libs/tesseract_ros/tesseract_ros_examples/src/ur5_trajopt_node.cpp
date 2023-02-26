@@ -293,9 +293,12 @@ int main(int argc, char** argv) {
     std::vector<double> accelerations_default{0.1, 0.2, 0.3, 0.4, 0.5, 0,6};
     std::vector<double> position_vector;
 
-    loop_rate.sleep();
+    
     ROS_INFO("Added intermediate joints: ");
     for (int i = 0; i < points.size(); i++) {
+      if (i == 0) {
+        loop_rate.sleep();
+      }
 
       ROS_INFO("%d point of traectory: ", i+1);
 
@@ -394,6 +397,8 @@ int main(int argc, char** argv) {
     } else {
       std::cout << "Action failed \n";
     }
+  } else {
+    std::cout << "You have selected \"Do not execute trajectory\" \n";
   }
 
 
