@@ -1,0 +1,3 @@
+<launch>
+  <node name="set_joints" pkg="ur5_single_arm_manipulation" type="set_joints" respawn="false" output="screen" />
+</launch>
