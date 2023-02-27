@@ -48,6 +48,8 @@ float joint_test_pos_3 = 0.0;
 float joint_test_pos_4 = 0.0;
 float joint_test_pos_5 = 0.0;
 
+float delay_loop_rate = 1.0;
+
 class SettingsCustomLibClass {
     public:
         void update();
@@ -167,6 +169,10 @@ inline void SettingsCustomLibClass::update() {
             } else if (strcmp("joint_test_pos_5", token.c_str()) == 0) {
                 joint_test_pos_5 = stof(line);
                 ROS_INFO("Setting updated. New value joint_test_pos_5 = %f", joint_test_pos_5);
+
+            } else if (strcmp("delay_loop_rate", token.c_str()) == 0) {
+                delay_loop_rate = stof(line);
+                ROS_INFO("Setting updated. New value delay_loop_rate = %f", delay_loop_rate);
 
             }
         }

@@ -32,8 +32,11 @@ robot_ip = 127.0.0.1
 
 # Данные для тестовой отправки на UR5
 joint_test_pos_0 = 0.0
-joint_test_pos_1 = -0.68
-joint_test_pos_2 = -1.75
-joint_test_pos_3 = -0.68
+joint_test_pos_1 = -0.06
+joint_test_pos_2 = -2.72
+joint_test_pos_3 = -0.34
 joint_test_pos_4 = 0.0
 joint_test_pos_5 = 0.0
+
+# Разные настройки
+delay_loop_rate = 0.0
