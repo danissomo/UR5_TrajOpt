@@ -134,8 +134,6 @@ int main(int argc, char** argv) {
   joint_start_pos(4) = joint_start_pos_4;
   joint_start_pos(5) = joint_start_pos_5;
 
-  env->setState(joint_names, joint_start_pos);
-
   Eigen::VectorXd joint_end_pos(6);
   joint_end_pos(0) = joint_end_pos_0;
   joint_end_pos(1) = joint_end_pos_1;
@@ -161,13 +159,17 @@ int main(int argc, char** argv) {
         throw "There should be 6 joints.";
       }
 
+      env->setState(joint_names, joint_start_pos);
+
       ROS_INFO("Connect success!");
 
     } catch (const char* exception) {
       std::cerr << "Error: " << exception << '\n';
+      env->setState(joint_names, joint_start_pos);
 
     } catch (...) {
         ROS_ERROR("I can't connect");
+        env->setState(joint_names, joint_start_pos);
     }
   }
 
@@ -258,7 +260,7 @@ int main(int argc, char** argv) {
     auto scene_state = env->getState();
 
     plotter->plotMarker(ToolpathMarker(toolpath));
-    plotter->plotEnvironmentState(scene_state);
+    plotter->plotTrajectory(trajectory, *state_solver);
   }
 
 
@@ -401,13 +403,12 @@ int main(int argc, char** argv) {
     std::cout << "You have selected \"Do not execute trajectory\" \n";
   }
 
+  CONSOLE_BRIDGE_logInform("Final trajectory is collision free");
 
   while(ros::ok()) {
     ros::spinOnce();
     loop_rate.sleep();
   }
-
-  CONSOLE_BRIDGE_logInform("Final trajectory is collision free");
 
   return 0;
 
