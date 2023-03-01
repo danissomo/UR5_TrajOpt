@@ -127,7 +127,7 @@ int main(int argc, char**argv) {
     execute(true, start_pos);
 
     while(ros::ok()) {
-        ROS_INFO("Hit ENTER to update settings. Or SPACE for return UR5 on start position. Or 1 for update settings from .txt file.");
+        ROS_INFO("Hit ENTER execute traectory. Or SPACE for return UR5 on start position. Or 1 for update settings from .txt file.");
         int c = getch();
         ROS_INFO("Code key = %d. Code key Enter = 10.", c);
         if (c == 10) {
