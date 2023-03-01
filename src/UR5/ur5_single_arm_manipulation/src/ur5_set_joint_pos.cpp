@@ -127,14 +127,15 @@ int main(int argc, char**argv) {
     execute(true, start_pos);
 
     while(ros::ok()) {
-        ROS_INFO("Hit ENTER to update settings. Or SPACE for return UR5 on start position.");
+        ROS_INFO("Hit ENTER to update settings. Or SPACE for return UR5 on start position. Or 1 for update settings from .txt file.");
         int c = getch();
         ROS_INFO("Code key = %d. Code key Enter = 10.", c);
         if (c == 10) {
-            settingsConfig.update();
             execute(false, start_pos);
         } else if (c == 32) {
             set_start_pos(start_pos);
+        } else if (c == 49) {
+            settingsConfig.update();
         }
 
         ros::spinOnce();
