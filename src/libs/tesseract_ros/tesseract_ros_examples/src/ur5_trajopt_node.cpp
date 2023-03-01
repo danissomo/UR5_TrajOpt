@@ -78,12 +78,19 @@ int main(int argc, char** argv) {
   ros::NodeHandle pnh("~");
   ros::NodeHandle nh;
 
-  ros::Rate loop_rate(1);
+  ros::Rate loop_rate(delay_loop_rate);
 
   bool plotting = true;
   bool rviz = true;
   bool debug = false;
   bool sim_robot = true;
+
+  // конфиги для робота
+  double velocity = 0.5;
+  double acceleration = 0.5;
+  double dt = 1.0/500; // 2ms
+  double lookahead_time = 0.1;
+  double gain = 300;
 
   // Get ROS Parameters
   pnh.param("plotting", plotting, plotting);
@@ -134,8 +141,6 @@ int main(int argc, char** argv) {
   joint_start_pos(4) = joint_start_pos_4;
   joint_start_pos(5) = joint_start_pos_5;
 
-  env->setState(joint_names, joint_start_pos);
-
   Eigen::VectorXd joint_end_pos(6);
   joint_end_pos(0) = joint_end_pos_0;
   joint_end_pos(1) = joint_end_pos_1;
@@ -149,9 +154,10 @@ int main(int argc, char** argv) {
   if (!sim_robot) {
     try {
       RTDEReceiveInterface rtde_receive(robot_ip);
+      ROS_INFO("Connect success!");
       std::vector<double> joint_positions = rtde_receive.getActualQ();
 
-      if (joint_positions.size() != 6) {
+      if (joint_positions.size() == 6) {
 
         for (auto i = 0; i < joint_positions.size(); i++ ) {
           joint_start_pos(i) = joint_positions[i];
@@ -161,13 +167,15 @@ int main(int argc, char** argv) {
         throw "There should be 6 joints.";
       }
 
-      ROS_INFO("Connect success!");
+      env->setState(joint_names, joint_start_pos);
 
     } catch (const char* exception) {
       std::cerr << "Error: " << exception << '\n';
+      env->setState(joint_names, joint_start_pos);
 
     } catch (...) {
-        ROS_ERROR("I can't connect");
+        ROS_ERROR("I can't connect with UR5.");
+        env->setState(joint_names, joint_start_pos);
     }
   }
 
@@ -258,7 +266,7 @@ int main(int argc, char** argv) {
     auto scene_state = env->getState();
 
     plotter->plotMarker(ToolpathMarker(toolpath));
-    plotter->plotEnvironmentState(scene_state);
+    plotter->plotTrajectory(trajectory, *state_solver);
   }
 
 
@@ -295,9 +303,23 @@ int main(int argc, char** argv) {
 
     
     ROS_INFO("Added intermediate joints: ");
+
+    // Проверка связи с роботом или с ursim
+    bool ur5_connect = false;
+    RTDEControlInterface rtde_control(robot_ip);
+    // try {
+        
+    //     ur5_connect = true;
+    //     ROS_INFO("Connect success with UR5.");
+    //   } catch(...) {
+    //     ROS_ERROR("I can't connect with UR5.");
+    //   }
+
+
     for (int i = 0; i < points.size(); i++) {
+
       if (i == 0) {
-        loop_rate.sleep();
+        // loop_rate.sleep();
       }
 
       ROS_INFO("%d point of traectory: ", i+1);
@@ -327,9 +349,15 @@ int main(int argc, char** argv) {
       joint_state_msg.velocity = velocity_default; // скорость
       joint_state_msg.effort = effort_default; // усилие
 
+      // if (ur5_connect) {
+        rtde_control.moveJ(position_vector);
+        // rtde_control.stopScript();
+        ROS_INFO("UR5 changed joints value");
+      // }
+
       env->setState(joint_names, j_state.position);
       joint_pub_state.publish(joint_state_msg);
-      loop_rate.sleep();
+      // loop_rate.sleep();
 
       /////// Сообщения для отправки траектории
       // trajectory_msgs::JointTrajectoryPoint joint_points_msg;
@@ -359,8 +387,11 @@ int main(int argc, char** argv) {
     joint_state_msg.velocity = velocity_default; // скорость
     joint_state_msg.effort = effort_default; // усилие
 
+    rtde_control.moveJ(position_vector);
+
     env->setState(joint_names, joint_end_pos);
     joint_pub_state.publish(joint_state_msg);
+    rtde_control.stopScript();
 
   } else {
     std::cout << "The trajectory in the simulator will not be executed. \n";
@@ -401,13 +432,12 @@ int main(int argc, char** argv) {
     std::cout << "You have selected \"Do not execute trajectory\" \n";
   }
 
+  CONSOLE_BRIDGE_logInform("Final trajectory is collision free");
 
   while(ros::ok()) {
     ros::spinOnce();
     loop_rate.sleep();
   }
-
-  CONSOLE_BRIDGE_logInform("Final trajectory is collision free");
 
   return 0;
 
