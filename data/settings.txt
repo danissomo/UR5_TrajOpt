@@ -12,20 +12,20 @@ gripperPickHandle = 0.5
 eigenVector3d = 1.0
 
 # Начальное положение робота по умолчанию
-joint_start_pos_0 = 0.0
-joint_start_pos_1 = -0.06
-joint_start_pos_2 = -2.72
-joint_start_pos_3 = -0.34
-joint_start_pos_4 = 0.0
-joint_start_pos_5 = 0.0
+joint_start_pos_0 = 1.583660
+joint_start_pos_1 = -3.106403
+joint_start_pos_2 = 2.684593
+joint_start_pos_3 = -1.621857
+joint_start_pos_4 = -1.559460
+joint_start_pos_5 = 0.083117
 
 # Конечное положение робота по умолчанию
-joint_end_pos_0 = 0.0
-joint_end_pos_1 = -0.68
-joint_end_pos_2 = -1.75
-joint_end_pos_3 = -0.68
-joint_end_pos_4 = 0.0
-joint_end_pos_5 = 0.0
+joint_end_pos_0 = 1.578475
+joint_end_pos_1 = -2.311579
+joint_end_pos_2 = 1.266597
+joint_end_pos_3 = -1.640372
+joint_end_pos_4 = -1.557170
+joint_end_pos_5 = 0.078778
 
 # IP робота
 robot_ip = 127.0.0.1
