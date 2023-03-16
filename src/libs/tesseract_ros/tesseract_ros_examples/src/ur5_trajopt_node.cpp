@@ -288,6 +288,11 @@ int main(int argc, char** argv) {
   // Create Task Composer Problem
   TaskComposerProblem problem(env, input_data);
 
+  // Задержка, чтобы показать сцену, потом строить траекторию
+  if (plotter != nullptr && plotter->isConnected()) {
+    plotter->waitForInput("Hit Enter to solve for trajectory.");
+  }
+
   // Solve process plan
   tesseract_common::Timer stopwatch;
   stopwatch.start();
@@ -321,7 +326,7 @@ int main(int argc, char** argv) {
   //
   /////////////////////////////////////////////////
 
-  std::cout << "Execute Trajectory on rViz? y/n \n";
+  std::cout << "Execute Trajectory on UR5? y/n \n";
   char input_simbol = 'n';
   std::cin >> input_simbol;
   if (input_simbol == 'y') {
@@ -350,15 +355,7 @@ int main(int argc, char** argv) {
     ROS_INFO("Added intermediate joints: ");
 
     // Проверка связи с роботом или с ursim
-    bool ur5_connect = false;
     RTDEControlInterface rtde_control(robot_ip);
-    // try {
-        
-    //     ur5_connect = true;
-    //     ROS_INFO("Connect success with UR5.");
-    //   } catch(...) {
-    //     ROS_ERROR("I can't connect with UR5.");
-    //   }
 
 
     for (int i = 0; i < points.size(); i++) {
@@ -394,11 +391,9 @@ int main(int argc, char** argv) {
       joint_state_msg.velocity = velocity_default; // скорость
       joint_state_msg.effort = effort_default; // усилие
 
-      // if (ur5_connect) {
-        rtde_control.moveJ(position_vector);
-        // rtde_control.stopScript();
-        ROS_INFO("UR5 changed joints value");
-      // }
+      rtde_control.moveJ(position_vector);
+      // rtde_control.stopScript();
+      ROS_INFO("UR5 changed joints value");
 
       env->setState(joint_names, j_state.position);
       joint_pub_state.publish(joint_state_msg);
@@ -450,34 +445,34 @@ int main(int argc, char** argv) {
   //
   /////////////////////////////////////////////////
 
-  input_simbol = 'n';
-  std::cout << "Execute Trajectory on hardware? y/n \n";
-  std::cin >> input_simbol;
-  if (input_simbol == 'y') {
-    std::cout << "Executing... \n";
+  // input_simbol = 'n';
+  // std::cout << "Execute Trajectory on hardware? y/n \n";
+  // std::cin >> input_simbol;
+  // if (input_simbol == 'y') {
+  //   std::cout << "Executing... \n";
 
-    actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> execution_client("follow_joint_trajectory",
-                                                                                              true);
+  //   actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> execution_client("follow_joint_trajectory",
+  //                                                                                             true);
 
-    control_msgs::FollowJointTrajectoryGoal trajectory_action;
-    trajectory_msgs::JointTrajectory traj_msg;
-    ros::Duration t(0.25);
-    traj_msg = toMsg(trajectory, env->getState());
-    trajectory_action.trajectory = traj_msg;
+  //   control_msgs::FollowJointTrajectoryGoal trajectory_action;
+  //   trajectory_msgs::JointTrajectory traj_msg;
+  //   ros::Duration t(0.25);
+  //   traj_msg = toMsg(trajectory, env->getState());
+  //   trajectory_action.trajectory = traj_msg;
 
-    execution_client.sendGoal(trajectory_action);
-    execution_client.waitForResult(ros::Duration(20.0));
+  //   execution_client.sendGoal(trajectory_action);
+  //   execution_client.waitForResult(ros::Duration(20.0));
 
-    if (execution_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
-      std::cout << "Action succeeded! \n";
-    } else {
-      std::cout << "Action failed \n";
-    }
-  } else {
-    std::cout << "You have selected \"Do not execute trajectory\" \n";
-  }
+  //   if (execution_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
+  //     std::cout << "Action succeeded! \n";
+  //   } else {
+  //     std::cout << "Action failed \n";
+  //   }
+  // } else {
+  //   std::cout << "You have selected \"Do not execute trajectory\" \n";
+  // }
 
-  CONSOLE_BRIDGE_logInform("Final trajectory is collision free");
+  // CONSOLE_BRIDGE_logInform("Final trajectory is collision free");
 
   while(ros::ok()) {
     ros::spinOnce();
