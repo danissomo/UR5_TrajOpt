@@ -82,8 +82,8 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
 
   Visual::Ptr visual = std::make_shared<Visual>();
   visual->origin = Eigen::Isometry3d::Identity();
-  visual->origin.translation() = Eigen::Vector3d(table_pos_x, table_pos_y, table_pos_z);
-  visual->geometry = std::make_shared<tesseract_geometry::Box>(table_length, table_width, table_height);
+  visual->origin.translation() = Eigen::Vector3d(pos_x, pos_y, pos_z);
+  visual->geometry = std::make_shared<tesseract_geometry::Box>(length, width, height);
   link_sphere.visual.push_back(visual);
 
   Collision::Ptr collision = std::make_shared<Collision>();
@@ -270,12 +270,16 @@ int main(int argc, char** argv) {
   composite_profile->smooth_accelerations = false;
   composite_profile->smooth_jerks = false;
   composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
-  profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5-1", composite_profile);
+  profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", composite_profile);
 
   auto plan_profile = std::make_shared<TrajOptDefaultPlanProfile>();
+  plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
+  plan_profile->cartesian_coeff(0) = 0;
+  plan_profile->cartesian_coeff(1) = 0;
+  plan_profile->cartesian_coeff(2) = 0;
 
   // Add profile to Dictionary
-  profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5-2", plan_profile);
+  profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", plan_profile);
 
   // Create Task Input Data
   TaskComposerDataStorage input_data;
