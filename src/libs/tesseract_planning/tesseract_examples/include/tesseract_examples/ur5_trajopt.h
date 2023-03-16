@@ -33,6 +33,8 @@ private:
   bool sim_robot_;
   Eigen::VectorXd joint_start_pos_;
   Eigen::VectorXd joint_end_pos_;
+
+  static tesseract_environment::Command::Ptr addBox(std::string link_name, std::string joint_name, float length, float width, float height, float pos_x, float pos_y, float pos_z);
 };
 
 }

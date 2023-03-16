@@ -40,3 +40,21 @@ joint_test_pos_5 = 0.0
 
 # Разные настройки
 delay_loop_rate = 0.0
+
+# Настройки для стола
+table_length = 0.35
+table_width = 0.55
+table_height = 0.05
+table_pos_x = -0.50
+table_pos_y = 0
+table_pos_z = 0.35
+
+
+# Настройки для коробки
+box_length = 0.35
+box_width = 0.35
+box_height = 0.15
+box_pos_x = 0.50
+box_pos_y = 0.0
+box_pos_z = 0.20
+

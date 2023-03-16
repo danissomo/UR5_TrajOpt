@@ -73,6 +73,34 @@ const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
 
 
+
+tesseract_environment::Command::Ptr addBox(std::string link_name, std::string joint_name,
+                                           float length, float width, float height,
+                                           float pos_x, float pos_y, float pos_z) {
+  // Add sphere to environment
+  Link link_sphere(link_name.c_str());
+
+  Visual::Ptr visual = std::make_shared<Visual>();
+  visual->origin = Eigen::Isometry3d::Identity();
+  visual->origin.translation() = Eigen::Vector3d(table_pos_x, table_pos_y, table_pos_z);
+  visual->geometry = std::make_shared<tesseract_geometry::Box>(table_length, table_width, table_height);
+  link_sphere.visual.push_back(visual);
+
+  Collision::Ptr collision = std::make_shared<Collision>();
+  collision->origin = visual->origin;
+  collision->geometry = visual->geometry;
+  link_sphere.collision.push_back(collision);
+
+  Joint joint_sphere(joint_name.c_str());
+  joint_sphere.parent_link_name = "base_link";
+  joint_sphere.child_link_name = link_sphere.getName();
+  joint_sphere.type = JointType::FIXED;
+
+  return std::make_shared<tesseract_environment::AddLinkCommand>(link_sphere, joint_sphere);
+}
+
+
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
   ros::NodeHandle pnh("~");
@@ -113,6 +141,19 @@ int main(int argc, char** argv) {
   if (!env->init(urdf_xml_string, srdf_xml_string, locator)) {
     exit(1);
   }
+
+  // Создать стол
+  Command::Ptr table = addBox("table_attached", "joint_table_attached", table_length, table_width, table_height, table_pos_x, table_pos_y, table_pos_z);
+  if (!env->applyCommand(table)) {
+    return false;
+  }
+
+  // Создать коробку
+  Command::Ptr box = addBox("box_attached", "joint_box_attached", box_length, box_width, box_height, box_pos_x, box_pos_y, box_pos_z);
+  if (!env->applyCommand(box)) {
+    return false;
+  }
+
 
   // Create monitor
   auto monitor = std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(env, EXAMPLE_MONITOR_NAMESPACE);
