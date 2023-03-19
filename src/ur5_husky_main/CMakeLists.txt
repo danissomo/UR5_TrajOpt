@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(ur5_husky_main)
 
+find_package(ros_industrial_cmake_boilerplate REQUIRED)
+extract_package_metadata(pkg)
+project(${pkg_extracted_name} VERSION ${pkg_extracted_version} LANGUAGES CXX)
+
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
@@ -10,12 +14,27 @@ project(ur5_husky_main)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
-  std_msgs
+  roslib
   std_srvs
+  tesseract_monitoring
+  tesseract_rosutils
+  settings_custom_lib
+  urdf
+  std_msgs
+  message_generation
+  visualization_msgs
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+
+find_package(tesseract_environment REQUIRED)
+find_package(tesseract_examples REQUIRED)
+find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde/build/ur_rtde")
+
+
+# Load variable for clang tidy args, compiler options and cxx version
+tesseract_variables()
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -136,6 +155,8 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/ur5_husky_main_node.cpp)
 
+add_executable(ur5_trajopt src/ur5_trajopt_node.cpp)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -146,10 +167,20 @@ include_directories(
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_dependencies(ur5_trajopt ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+
+
+target_link_libraries(ur5_trajopt
+   PRIVATE ur_rtde::rtde
+   PRIVATE tesseract::tesseract_examples
+   PRIVATE tesseract::tesseract_environment
+   ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
@@ -185,6 +216,11 @@ include_directories(
 #   FILES_MATCHING PATTERN "*.h"
 #   PATTERN ".svn" EXCLUDE
 # )
+
+install(
+  DIRECTORY config launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
