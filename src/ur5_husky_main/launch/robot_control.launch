@@ -4,7 +4,7 @@
   <arg name="simulation" default="$(optenv ROBOT_SIMULATION false)"/>
   <arg name="robot_namespace" default="$(optenv ROBOT_NAMESPACE robot)"/>
   <arg name="enable_ekf" default="$(optenv ENABLE_EKF true)"/>
-  <arg name="rvizconfig" default="$(find ur5_husky_main)/config/xsarm_description.rviz" />
+  <arg name="rvizconfig" default="$(find ur5_husky_main)/config/rviz/xsarm_description.rviz" />
   <arg name="lidar" default="false"/>
   <arg name="ur5" default="false"/>
   <arg name="stick" default="false"/>

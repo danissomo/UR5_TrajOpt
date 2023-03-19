@@ -22,8 +22,8 @@
   <!-- If needed, broadcast static tf for robot root -->
   <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_joint_broadcaster_0" args="0 0 0 0 0 0 world base_link 100" /> -->
 
-  <node pkg="tesseract_ros_examples" type="tesseract_ros_examples_ur5_trajopt_node"
-    name="tesseract_ros_examples_ur5_trajopt_node" output="screen" launch-prefix="bash -c 'sleep $(arg delay); $0 $@' ">
+  <node pkg="ur5_husky_main" type="ur5_trajopt_node"
+    name="ur5_trajopt_node" output="screen" launch-prefix="bash -c 'sleep $(arg delay); $0 $@' ">
     <param name="plotting" type="bool" value="$(arg plotting)"/>
     <param name="rviz" type="bool" value="$(arg rviz)"/>
     <param name="debug" type="bool" value="$(arg debug)"/>
