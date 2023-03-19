@@ -79,7 +79,6 @@
   <!-- <depend>std_srvs</depend> -->
   <depend>tesseract_common</depend>
   <depend>tesseract_environment</depend>
-  <depend>tesseract_examples</depend>
   <depend>tesseract_monitoring</depend>
   <depend>tesseract_rosutils</depend>
   <depend>settings_custom_lib</depend>

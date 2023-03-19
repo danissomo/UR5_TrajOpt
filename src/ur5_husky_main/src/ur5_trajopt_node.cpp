@@ -5,7 +5,7 @@
 #include <ros/topic.h>
 
 
-#include <tesseract_examples/ur5_trajopt.h>
+#include <ur5_husky_main/ur5_trajopt.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -50,7 +50,7 @@
 
 using namespace ur_rtde;
 
-using namespace tesseract_examples;
+using namespace ur5_husky_main;
 using namespace tesseract_rosutils;
 
 using namespace trajopt;

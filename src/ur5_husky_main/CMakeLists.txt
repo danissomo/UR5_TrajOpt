@@ -28,7 +28,6 @@ find_package(catkin REQUIRED COMPONENTS
 # find_package(Boost REQUIRED COMPONENTS system)
 
 find_package(tesseract_environment REQUIRED)
-find_package(tesseract_examples REQUIRED)
 find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde/build/ur_rtde")
 
 
@@ -122,7 +121,7 @@ tesseract_variables()
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES ur5_husky_main
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
@@ -135,8 +134,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
- ${catkin_INCLUDE_DIRS}
+  include ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -176,7 +174,6 @@ add_dependencies(ur5_trajopt ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORT
 
 target_link_libraries(ur5_trajopt
    PRIVATE ur_rtde::rtde
-   PRIVATE tesseract::tesseract_examples
    PRIVATE tesseract::tesseract_environment
    ${catkin_LIBRARIES}
 )
