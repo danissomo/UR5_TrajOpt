@@ -1,4 +1,21 @@
 <?xml version="1.0"?>
+
 <launch>
+
+  <arg name="robot_namespace" default="robot"/>
+  <arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface" />
+  <arg name="kinematics_config" default="$(find ur5_husky_main)/config/robot_calibration.yaml"/>
+
+
+<!--   <param name="robot_description" command="$(find xacro)/xacro '$(find ur5_husky_main)/urdf/husky_ur5.urdf.xacro'
+        robot_namespace:=$(arg robot_namespace)
+        transmission_hw_interface:=$(arg transmission_hw_interface)
+        kinematics_config:=$(arg kinematics_config)" /> -->
+
+  <!-- Load universal robot description format (URDF) -->
+  <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find ur5_husky_main)/urdf/test_ur5.xacro'" />
+
+  <!-- The semantic description that corresponds to the URDF -->
+  <param name="robot_description_semantic" textfile="$(find ur5_single_arm_manipulation)/urdf/ur5_trajopt.srdf" />
 
 </launch>
