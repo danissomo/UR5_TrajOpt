@@ -30,6 +30,11 @@
 
 <p>Основной файл запуска: tesseract_planning/tesseract_examples/src/ur5_trajopt.cpp</p>
 
+
+
+roslaunch husky_ur5 robot_control.launch
+
+
 <p><br /></p>
 
 <hr />
