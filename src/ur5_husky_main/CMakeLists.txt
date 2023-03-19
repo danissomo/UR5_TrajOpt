@@ -3,9 +3,10 @@ project(ur5_husky_main)
 
 find_package(ros_industrial_cmake_boilerplate REQUIRED)
 extract_package_metadata(pkg)
+project(${pkg_extracted_name} VERSION ${pkg_extracted_version} LANGUAGES CXX)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++17)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -28,6 +29,12 @@ find_package(catkin REQUIRED COMPONENTS
 # find_package(Boost REQUIRED COMPONENTS system)
 
 find_package(tesseract_environment REQUIRED)
+find_package(tesseract_command_language REQUIRED)
+find_package(tesseract_task_composer REQUIRED)
+find_package(tesseract_common REQUIRED)
+find_package(tesseract_support REQUIRED)
+find_package(tesseract_visualization REQUIRED)
+
 find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde/build/ur_rtde")
 
 
@@ -175,8 +182,14 @@ add_dependencies(ur5_trajopt ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORT
 target_link_libraries(ur5_trajopt
    PRIVATE ur_rtde::rtde
    PRIVATE tesseract::tesseract_environment
+   PRIVATE tesseract::tesseract_command_language
+   PRIVATE tesseract::tesseract_task_composer
+   PRIVATE tesseract::tesseract_common
+   PRIVATE tesseract::tesseract_support
+   PRIVATE tesseract::tesseract_visualization
    ${catkin_LIBRARIES}
 )
+
 
 #############
 ## Install ##

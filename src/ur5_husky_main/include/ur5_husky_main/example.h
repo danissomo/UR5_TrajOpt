@@ -33,7 +33,7 @@ public:
   Example(Example&&) = default;
   Example& operator=(Example&&) = default;
 
-  virtual tesseract_common::JointTrajectory run() = 0;
+  virtual bool run() = 0;
 
 protected:
   /** @brief Tesseract Manager Class (Required) */
@@ -42,5 +42,5 @@ protected:
   tesseract_visualization::Visualization::Ptr plotter_;
 };
 
-}
+}  // namespace tesseract_examples
 #endif  // UR5_HUSKY_MAIN_EXAMPLE_H

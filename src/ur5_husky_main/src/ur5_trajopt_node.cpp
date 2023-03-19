@@ -228,8 +228,7 @@ int main(int argc, char** argv) {
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
 
   // Create Program
-  CompositeInstruction program(
-      "UR5-1", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "tool0"));
+  CompositeInstruction program("UR5", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "tool0"));
 
   // Start and End Joint Position for the program
   StateWaypointPoly wp0{ StateWaypoint(joint_names, joint_start_pos) };
