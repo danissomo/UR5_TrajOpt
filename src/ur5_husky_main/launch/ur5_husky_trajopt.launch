@@ -31,8 +31,8 @@
   </node>
 
   <!-- Launch visualization -->
-  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="tesseract_ros_examples_ur5_trajopt_example_rviz"
-      args="-d $(find tesseract_ros_examples)/config/examples.rviz"  launch-prefix="bash -c 'sleep $(arg delay); $0 $@' " />
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="ur5_trajopt_node_rviz"
+      args="-d $(find ur5_husky_main)/config/rviz/standard.rviz"  launch-prefix="bash -c 'sleep $(arg delay); $0 $@' " />
 
     <rosparam file="$(find ur_gazebo)/controller/arm_controller_ur5.yaml" command="load"/>
 
