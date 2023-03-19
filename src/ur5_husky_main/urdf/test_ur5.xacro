@@ -1,99 +1,190 @@
 <?xml version="1.0"?>
 
-<robot xmlns:xacro="http://ros.org/wiki/xacro" name="ur5" >
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="robot" >
+
+  <xacro:arg name="transmission_hw_interface" default="hardware_interface/PositionJointInterface"/>
+
+  <xacro:arg name="realsense_enabled" default="$(optenv HUSKY_REALSENSE_ENABLED 0)" />
+  <xacro:arg name="realsense_xyz" default="$(optenv HUSKY_REALSENSE_XYZ 0 0 0)" />
+  <xacro:arg name="realsense_rpy" default="$(optenv HUSKY_REALSENSE_RPY 0 0 0)" />
+  <xacro:arg name="realsense_mount" default="$(optenv HUSKY_REALSENSE_MOUNT_FRAME sensor_arch_mount_link)" />
+
+  <xacro:property name="husky_front_bumper_extend" value="$(optenv HUSKY_FRONT_BUMPER_EXTEND 0)" />
+  <xacro:property name="husky_rear_bumper_extend" value="$(optenv HUSKY_REAR_BUMPER_EXTEND 0)" />
+
+  <!-- Height of the sensor arch in mm.  Must be either 510 or 300 -->
+  <xacro:arg name="sensor_arch_height"  default="$(optenv HUSKY_SENSOR_ARCH_HEIGHT 510)" />
+  <xacro:arg name="sensor_arch"         default="$(optenv HUSKY_SENSOR_ARCH 0)" />
+
+  <xacro:arg name="prefix" default="" />
+  <xacro:arg name="urdf_extras" default="$(optenv HUSKY_URDF_EXTRAS empty.urdf)" />
+  <xacro:arg name="cpr_urdf_extras" default="$(optenv CPR_URDF_EXTRAS empty.urdf)" />
+
+  <!-- Included URDF/XACRO Files -->
+  <xacro:include filename="$(find husky_description)/urdf/decorations.urdf.xacro" />
+  <xacro:include filename="$(find husky_description)/urdf/wheel.urdf.xacro" />
+  <xacro:include filename="$(find husky_description)/urdf/accessories/intel_realsense.urdf.xacro"/>
+
+  <xacro:property name="M_PI" value="3.14159"/>
+
+  <!-- Base Size -->
+  <xacro:property name="base_x_size" value="0.98740000" />
+  <xacro:property name="base_y_size" value="0.57090000" />
+  <xacro:property name="base_z_size" value="0.24750000" />
+
+  <!-- Wheel Mounting Positions -->
+  <xacro:property name="wheelbase" value="0.5120" />
+  <xacro:property name="track" value="0.5708" />
+  <xacro:property name="wheel_vertical_offset" value="0.03282" />
+
+  <!-- Wheel Properties -->
+  <xacro:property name="wheel_length" value="0.1143" />
+  <xacro:property name="wheel_radius" value="0.1651" />
+
+
+
+  <!-- Base link is the center of the robot's bottom plate -->
+<!--   <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://husky_description/meshes/base_link.dae" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="${( husky_front_bumper_extend - husky_rear_bumper_extend ) / 2.0} 0 ${base_z_size/4}" rpy="0 0 0" />
+      <geometry>
+        <box size="${ base_x_size + husky_front_bumper_extend + husky_rear_bumper_extend } ${base_y_size} ${base_z_size/2}"/>
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0 ${base_z_size*3/4-0.01}" rpy="0 0 0" />
+      <geometry>
+        <box size="${base_x_size*4/5} ${base_y_size} ${base_z_size/2-0.02}"/>
+      </geometry>
+    </collision>
+  </link>
+ -->
+  <link name="world"/>
+
+
+ <!--  <joint name="husky_to_world" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+ -->
+
+  <!-- Base footprint is on the ground under the robot -->
+<!--   <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <origin xyz="0 0 ${wheel_vertical_offset - wheel_radius}" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="base_footprint" />
+  </joint>
+ -->
+  <!-- Inertial link stores the robot's inertial information -->
+<!--   <link name="inertial_link">
+    <inertial>
+      <mass value="46.034" />
+      <origin xyz="-0.00065 -0.085 0.062" />
+      <inertia ixx="0.6022" ixy="-0.02364" ixz="-0.1197" iyy="1.7386" iyz="-0.001544" izz="2.0296" />
+    </inertial>
+  </link>
+
+  <joint name="inertial_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="inertial_link" />
+  </joint> -->
+
+
+
+  <!-- Husky wheel macros -->
+<!--   <xacro:husky_wheel wheel_prefix="front_left">
+    <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+  </xacro:husky_wheel>
+  <xacro:husky_wheel wheel_prefix="front_right">
+    <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+  </xacro:husky_wheel>
+  <xacro:husky_wheel wheel_prefix="rear_left">
+    <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+  </xacro:husky_wheel>
+  <xacro:husky_wheel wheel_prefix="rear_right">
+    <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+  </xacro:husky_wheel>
+
+
+  <xacro:husky_decorate />
+
+
+  <link name="bumper_link">
+    <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="0.0000000000001"/>
+        <inertia ixx="0.00000001" ixy="0.00000001" ixz="0.00000001" iyy="0.00000001" iyz="0.00000001" izz="0.00000001"/>
+    </inertial>
+    <collision name="base_link_fixed_joint_lump__robot/bumper_link">
+        <origin rpy="0 0 0" xyz="0 0 0.1"/>
+        <geometry>
+            <box size="1.0 0.7 0.31"/>
+        </geometry>
+    </collision>
+  </link>
+  <joint name="bumper_joint" type="fixed">
+      <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>
+      <parent link="base_link" />
+      <child link="bumper_link" />
+  </joint>
+ -->
+
+  <!-- add the intel realsense to the sensor arch if needed -->
+<!--   <xacro:if value="$(arg realsense_enabled)">
+    <link name="realsense_mountpoint"/>
+    <joint name="realsense_mountpoint_joint" type="fixed">
+      <origin xyz="$(arg realsense_xyz)" rpy="$(arg realsense_rpy)" />
+      <parent link="$(arg realsense_mount)"/>
+      <child link="realsense_mountpoint" />
+    </joint>
+    <xacro:intel_realsense_mount prefix="camera" topic="realsense" parent_link="realsense_mountpoint"/>
+  </xacro:if>
+ -->
+
+
+
+
+
 
   <!-- common stuff -->
   <xacro:include filename="$(find ur_description)/urdf/common.gazebo.xacro" />
+
+  <!-- Optional custom includes. -->
+  <xacro:include filename="$(arg urdf_extras)" />
+
+  <!-- Optional for Clearpath internal softwares -->
+  <xacro:include filename="$(arg cpr_urdf_extras)" />
 
   <!-- ur5 -->
   <xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro" />
 
   <!-- arm -->
-  <xacro:ur5_robot prefix="" joint_limited="false"/>
+  <xacro:ur5_robot prefix="$(arg prefix)" joint_limited="false" />
+
+  <joint name="ur5_joint" type="fixed">
+    <parent link="world" />
+    <child link = "base_link" />
+    <origin xyz="0.25 0.0 0.0" rpy="0.0 0.0 0.0" />
+  </joint>
 
   <!-- robotiq 85 -->
-  <xacro:include filename="$(find robotiq_85_description)/urdf/robotiq_85_gripper.urdf.xacro" />
+  <!-- <xacro:include filename="$(find robotiq_85_description)/urdf/robotiq_85_gripper.urdf.xacro" /> -->
 
   <!-- gripper -->
-  <xacro:robotiq_85_gripper prefix="" parent="ee_link" >
+<!--   <xacro:robotiq_85_gripper prefix="" parent="ee_link" >
     <origin xyz="0 0 0" rpy="0 0 0"/>
-  </xacro:robotiq_85_gripper>
-
-  <!-- Pilar property -->
-  <xacro:property name="pilar_height" value="0.2"/>
-  <xacro:property name="pilar_radius" value="0.07"/>
-
-
-  <!-- <xacro:include filename="$(find husky_description)/urdf/husky.urdf.xacro" /> -->
-  <!-- <xacro:ur5_robot prefix="" joint_limited="false"/> -->
-
-
-  <link name="world"/> 
-
-<!--   <link name="table">
-    <inertial>
-      <origin xyz="0.23 0 0.755" rpy="0 0 0" />
-      <mass value="1"/>
-      <inertia
-        ixx="0.07" ixy="0.0" ixz="0.0"
-        iyy="0.40" iyz="0.0"
-        izz="0.33"/>
-    </inertial>
-    <visual>
-      <geometry>
-        <box size="0.5 0.5 0.05"/>
-      </geometry>
-      <material name="orange">
-        <color rgba="0 0 .8 1"/>
-      </material>
-    </visual>
-    <collision>
-      <geometry>
-        <box size="0.5 0.5 0.05"/>
-      </geometry>
-    </collision>
-  </link>
-
-  <joint name="world_to_table" type="fixed">
-      <parent link="world"/>
-      <child link="table"/>
-      <origin xyz="0.85 0 0.70" rpy="0 0 0"/>
-  </joint> -->
+  </xacro:robotiq_85_gripper> -->
     
-  <link name="robot_pilar">
-    <visual>
-      <geometry>
-        <cylinder length="${pilar_height}" radius="${pilar_radius}"/>
-      </geometry>
-      <material name="blue">
-        <color rgba="0 0 .8 1"/>
-      </material>
-    </visual>
-    <collision>
-      <geometry>
-        <cylinder length="${pilar_height}" radius="${pilar_radius}"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <mass value="1"/>
-      <inertia
-        ixx="0.145833" ixy="0.0" ixz="0.0"
-        iyy="0.145833" iyz="0.0"
-        izz="0.125"/>
-    </inertial> 
-  </link>
-
-  <joint name="pilar_to_world" type="fixed">
-    <parent link="world"/>
-    <child link="robot_pilar"/>
-    <origin xyz="0 0 ${pilar_height/2}" rpy="0 0 0"/>
-  </joint>
-  
-  <joint name="robot_to_pilar" type="fixed">
-    <parent link="robot_pilar"/>
-    <child link="base_link"/>
-    <origin xyz="0 0 ${pilar_height/2}" rpy="0 0 0"/>
-  </joint>
 
   <xacro:include filename="$(find ur5_single_arm_tufts)/urdf/gzplugin_grasp_fix.urdf.xacro"/>
   <xacro:gzplugin_grasp_fix/>

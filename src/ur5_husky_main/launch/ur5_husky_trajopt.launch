@@ -8,7 +8,7 @@
   <arg name="debug" default="true"/> <!-- Включить для вывода результатов расчетов -->
   <arg name="sim_robot" default="false"/> <!-- Если это симуляция -->
   <arg name="delay" default="2.0" />  <!-- Задержка для запуска ноды -->
-  <arg name="robot_namespace" default="$(optenv ROBOT_NAMESPACE robot)"/>
+  <arg name="prefix" default=""/>
   <arg name="rvizconfig" default="$(find ur5_husky_main)/config/rviz/trajopt.rviz" />
   <arg name="vx300s" default="true"/>
 
@@ -18,7 +18,7 @@
 
   <!-- Load robot description -->
   <include file="$(find ur5_husky_main)/launch/robot_load_ur5.launch" >
-    <arg name="robot_namespace" value="$(arg robot_namespace)" />
+    <arg name="prefix" value="$(arg prefix)" />
   </include>
 
   <node pkg="ur5_husky_main" type="ur5_trajopt_node"
