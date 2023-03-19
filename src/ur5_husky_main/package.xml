@@ -75,7 +75,7 @@
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>message_runtime</exec_depend>
 
-  <!-- <depend>roslib</depend> -->
+  <depend>roslib</depend>
   <!-- <depend>std_srvs</depend> -->
   <depend>tesseract_common</depend>
   <depend>tesseract_environment</depend>
