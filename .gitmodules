@@ -22,3 +22,6 @@
 [submodule "src/ur_rtde"]
 	path = src/ur_rtde
 	url = https://gitlab.com/sdurobotics/ur_rtde.git
+[submodule "src/pkgs_husky/husky"]
+	path = src/pkgs_husky/husky
+	url = ../../husky/husky
