@@ -49,7 +49,7 @@
 
   <group ns="$(arg robot_namespace)">
 
-    <include file="$(find husky_ur5)/launch/robot_control.launch">
+    <include file="$(find ur5_husky_main)/launch/robot_control.launch">
         <arg name="robot_namespace" value="$(arg robot_namespace)" />
         <arg name="lidar" value="$(arg lidar)" />
         <arg name="ur5" value="$(arg ur5)" />
