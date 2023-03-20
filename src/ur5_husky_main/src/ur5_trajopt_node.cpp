@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
 
   // Create Program
-  CompositeInstruction program("UR5", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "ur5_tool0"));
+  CompositeInstruction program("DEFAULT", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "ur5_tool0"));
 
   // Start and End Joint Position for the program
   StateWaypointPoly wp0{ StateWaypoint(joint_names, joint_start_pos) };
@@ -242,7 +242,7 @@ int main(int argc, char** argv) {
 
   // Plan freespace from start
   // Assign a linear motion so cartesian is defined as the target
-  MoveInstruction plan_f0(wp1, MoveInstructionType::LINEAR, "UR5");
+  MoveInstruction plan_f0(wp1, MoveInstructionType::LINEAR, "DEFAULT");
   plan_f0.setDescription("freespace_plan");
 
   // Add Instructions to program
@@ -272,7 +272,7 @@ int main(int argc, char** argv) {
   composite_profile->smooth_accelerations = false;
   composite_profile->smooth_jerks = false;
   composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
-  profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", composite_profile);
+  profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "DEFAULT", composite_profile);
 
   auto plan_profile = std::make_shared<TrajOptDefaultPlanProfile>();
   plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
@@ -281,7 +281,7 @@ int main(int argc, char** argv) {
   plan_profile->cartesian_coeff(2) = 0;
 
   // Add profile to Dictionary
-  profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", plan_profile);
+  profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "DEFAULT", plan_profile);
 
   // Create Task Input Data
   TaskComposerDataStorage input_data;
