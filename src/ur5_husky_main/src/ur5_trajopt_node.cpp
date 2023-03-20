@@ -77,13 +77,27 @@ const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
 tesseract_environment::Command::Ptr addBox(std::string link_name, std::string joint_name,
                                            float length, float width, float height,
                                            float pos_x, float pos_y, float pos_z) {
+
+  auto table = std::make_shared<tesseract_scene_graph::Material>("orange");
+  table->color = Eigen::Vector4d(0.83, 0.37, 0.2, 1.0);
+
+  auto box = std::make_shared<tesseract_scene_graph::Material>("white");
+  box->color = Eigen::Vector4d(1.0, 1.0, 1.0, 1.0);
+
   // Add sphere to environment
   Link link_sphere(link_name.c_str());
 
   Visual::Ptr visual = std::make_shared<Visual>();
   visual->origin = Eigen::Isometry3d::Identity();
   visual->origin.translation() = Eigen::Vector3d(pos_x, pos_y, pos_z);
-  visual->geometry = std::make_shared<tesseract_geometry::Box>(length, width, height);
+  visual->geometry = std::make_shared<tesseract_geometry::Box>(width, length, height);
+
+  if (link_name == "table") {
+    visual->material = table;
+  } else if (link_name == "box") {
+    visual->material = box;
+  }
+
   link_sphere.visual.push_back(visual);
 
   Collision::Ptr collision = std::make_shared<Collision>();
@@ -92,7 +106,7 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
   link_sphere.collision.push_back(collision);
 
   Joint joint_sphere(joint_name.c_str());
-  joint_sphere.parent_link_name = "base_link";
+  joint_sphere.parent_link_name = "world";
   joint_sphere.child_link_name = link_sphere.getName();
   joint_sphere.type = JointType::FIXED;
 
@@ -143,13 +157,13 @@ int main(int argc, char** argv) {
   }
 
   // Создать стол
-  Command::Ptr table = addBox("table_attached", "joint_table_attached", table_length, table_width, table_height, table_pos_x, table_pos_y, table_pos_z);
+  Command::Ptr table = addBox("table", "joint_table_attached", table_length, table_width, table_height, table_pos_x, table_pos_y, table_pos_z);
   if (!env->applyCommand(table)) {
     return false;
   }
 
   // Создать коробку
-  Command::Ptr box = addBox("box_attached", "joint_box_attached", box_length, box_width, box_height, box_pos_x, box_pos_y, box_pos_z);
+  Command::Ptr box = addBox("box", "joint_box_attached", box_length, box_width, box_height, box_pos_x, box_pos_y, box_pos_z);
   if (!env->applyCommand(box)) {
     return false;
   }
