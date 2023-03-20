@@ -33,6 +33,7 @@
 
 
 roslaunch ur5_husky_main robot_control.launch
+roslaunch ur5_husky_main run_ur5_husky_trajopt.launch
 
 
 <p><br /></p>
