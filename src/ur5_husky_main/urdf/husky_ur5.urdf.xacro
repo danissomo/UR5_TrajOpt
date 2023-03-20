@@ -102,11 +102,6 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
     <origin xyz="0 0 0" rpy="0 0 0"/>
   </joint>
 
-
-
-  ////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////
-
   <!-- Base footprint is on the ground under the robot -->
   <link name="base_footprint"/>
 
@@ -255,7 +250,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   <!-- Optional for Clearpath internal softwares -->
   <xacro:include filename="$(arg cpr_urdf_extras)" />
 
-  <xacro:ur5_robot prefix="" joint_limited="false" />
+  <xacro:ur5_robot prefix="ur5/" joint_limited="false" />
 
   <joint name="ur5_joint" type="fixed">
     <parent link="top_plate_link" />

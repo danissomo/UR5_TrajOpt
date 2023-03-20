@@ -6,9 +6,9 @@
   <arg name="paused" default="true" />
   <arg name="use_sim_time" default="true"/>
   <arg name="debug" default="true"/> <!-- Включить для вывода результатов расчетов -->
-  <arg name="sim_robot" default="false"/> <!-- Если это симуляция -->
+  <arg name="connect_robot" default="false"/> <!-- Подключение к роботу (в симулции или к реальному роботу) -->
   <arg name="delay" default="2.0" />  <!-- Задержка для запуска ноды -->
-  <arg name="prefix" default=""/>
+  <arg name="prefix" default="ur5_"/>
   <arg name="rvizconfig" default="$(find ur5_husky_main)/config/rviz/trajopt.rviz" />
   <arg name="vx300s" default="true"/>
 
@@ -26,7 +26,7 @@
     <param name="plotting" type="bool" value="$(arg plotting)"/>
     <param name="rviz" type="bool" value="$(arg rviz)"/>
     <param name="debug" type="bool" value="$(arg debug)"/>
-    <param name="sim_robot" type="bool" value="$(arg sim_robot)"/>
+    <param name="connect_robot" type="bool" value="$(arg connect_robot)"/>
   </node>
 
   <!-- Spawn controllers -->

@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
   bool plotting = true;
   bool rviz = true;
   bool debug = false;
-  bool sim_robot = true;
+  bool connect_robot = false;
 
   // конфиги для робота
   double velocity = 0.5;
@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
   pnh.param("plotting", plotting, plotting);
   pnh.param("rviz", rviz, rviz);
   pnh.param("debug", debug, debug);
-  pnh.param("sim_robot", sim_robot, sim_robot);
+  pnh.param("connect_robot", connect_robot, connect_robot);
 
   // Initial setup
   std::string urdf_xml_string, srdf_xml_string;
@@ -190,9 +190,8 @@ int main(int argc, char** argv) {
   joint_end_pos(4) = joint_end_pos_4;
   joint_end_pos(5) = joint_end_pos_5;
 
-  ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
-
-  if (!sim_robot) {
+  if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
+    ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
     try {
       RTDEReceiveInterface rtde_receive(robot_ip);
       ROS_INFO("Connect success!");
@@ -218,6 +217,10 @@ int main(int argc, char** argv) {
         ROS_ERROR("I can't connect with UR5.");
         env->setState(joint_names, joint_start_pos);
     }
+
+  } else {
+      ROS_INFO("I work without connecting to the robot.");
+      env->setState(joint_names, joint_start_pos);
   }
 
   if (debug) {
@@ -324,6 +327,8 @@ int main(int argc, char** argv) {
   //   Выполнение траектории в симуляторе rViz
   //
   /////////////////////////////////////////////////
+
+  // TODO Проверка флага на подключение connect_robot
 
   std::cout << "Execute Trajectory on UR5? y/n \n";
   char input_simbol = 'n';
