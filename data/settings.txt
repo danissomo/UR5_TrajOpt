@@ -12,20 +12,48 @@ gripperPickHandle = 0.5
 eigenVector3d = 1.0
 
 # Начальное положение робота по умолчанию
-joint_start_pos_0 = 0.0
-joint_start_pos_1 = -0.06
-joint_start_pos_2 = -2.72
-joint_start_pos_3 = -0.34
-joint_start_pos_4 = 0.0
-joint_start_pos_5 = 0.0
+# joint_start_pos_0 = 1.583660
+# joint_start_pos_1 = -3.106403
+# joint_start_pos_2 = 2.684593
+# joint_start_pos_3 = -1.621857
+# joint_start_pos_4 = -1.559460
+# joint_start_pos_5 = 0.083117
+
+# joint_start_pos_0 = -0.030000
+# joint_start_pos_1 = -0.923000
+# joint_start_pos_2 = 2.307000
+# joint_start_pos_3 = -2.964372
+# joint_start_pos_4 = -1.483593
+# joint_start_pos_5 = -1.578000
+
+joint_start_pos_0 = -0.125000
+joint_start_pos_1 = -0.374000
+joint_start_pos_2 = 1.685000
+joint_start_pos_3 = -2.889578
+joint_start_pos_4 = -1.623000
+joint_start_pos_5 = -1.789000
 
 # Конечное положение робота по умолчанию
-joint_end_pos_0 = 0.0
-joint_end_pos_1 = -0.68
-joint_end_pos_2 = -1.75
-joint_end_pos_3 = -0.68
-joint_end_pos_4 = 0.0
-joint_end_pos_5 = 0.0
+# joint_end_pos_0 = 1.578475
+# joint_end_pos_1 = -2.311579
+# joint_end_pos_2 = 1.266597
+# joint_end_pos_3 = -1.640372
+# joint_end_pos_4 = -1.557170
+# joint_end_pos_5 = 0.078778
+
+# joint_end_pos_0 = 0.149000
+# joint_end_pos_1 = -1.519000
+# joint_end_pos_2 = -1.384000
+# joint_end_pos_3 = -1.646312
+# joint_end_pos_4 = 1.519000
+# joint_end_pos_5 = 0.149000
+
+joint_end_pos_0 = 1.456000
+joint_end_pos_1 = -1.123000
+joint_end_pos_2 = 0.603000
+joint_end_pos_3 = -1.040000
+joint_end_pos_4 = -1.540000
+joint_end_pos_5 = 1.394745
 
 # IP робота
 robot_ip = 127.0.0.1
@@ -40,3 +68,21 @@ joint_test_pos_5 = 0.0
 
 # Разные настройки
 delay_loop_rate = 0.0
+
+# Настройки для стола
+table_length = 0.550
+table_width = 2.000
+table_height = 0.02
+table_pos_x = 0
+table_pos_y = 0.75
+table_pos_z = 0.6
+
+
+# Настройки для коробки
+box_length = 0.07
+box_width = 0.03
+box_height = 0.01
+box_pos_x = 0.85
+box_pos_y = 0.0
+box_pos_z = -0.14869
+

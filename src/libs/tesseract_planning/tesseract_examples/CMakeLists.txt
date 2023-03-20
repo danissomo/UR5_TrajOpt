@@ -50,8 +50,7 @@ add_library(
   src/pick_and_place_example.cpp
   src/puzzle_piece_auxillary_axes_example.cpp
   src/puzzle_piece_example.cpp
-  src/scene_graph_example.cpp
-  src/ur5_trajopt.cpp)
+  src/scene_graph_example.cpp)
 target_link_libraries(
   ${PROJECT_NAME}
   tesseract::tesseract_environment
@@ -115,7 +114,6 @@ add_example(${PROJECT_NAME}_pick_and_place_example src/pick_and_place_example_no
 add_example(${PROJECT_NAME}_puzzle_piece_auxillary_axes_example src/puzzle_piece_auxillary_axes_example_node.cpp)
 add_example(${PROJECT_NAME}_puzzle_piece_example src/puzzle_piece_example_node.cpp)
 add_example(${PROJECT_NAME}_scene_graph_example src/scene_graph_example_node.cpp)
-add_example(${PROJECT_NAME}_ur5_trajopt src/ur5_trajopt_node.cpp)
 
 # OMPL Constraint planning is not available in version less than 1.4 if(NOT OMPL_VERSION VERSION_LESS "1.4.0")
 # add_example(${PROJECT_NAME}_glass_upright_ompl_example src/glass_upright_ompl_example_node.cpp) endif()
@@ -141,7 +139,6 @@ configure_package(
           ${PROJECT_NAME}_puzzle_piece_auxillary_axes_example
           ${PROJECT_NAME}_puzzle_piece_example
           ${PROJECT_NAME}_scene_graph_example
-          ${PROJECT_NAME}_ur5_trajopt
           DEPENDENCIES
           tesseract_environment
           tesseract_command_language

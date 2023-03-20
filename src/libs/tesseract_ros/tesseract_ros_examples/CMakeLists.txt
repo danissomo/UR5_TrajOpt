@@ -54,7 +54,6 @@ add_example(${PROJECT_NAME}_pick_and_place_example_node src/pick_and_place_examp
 add_example(${PROJECT_NAME}_puzzle_piece_auxillary_axes_example_node src/puzzle_piece_auxillary_axes_example_node.cpp)
 add_example(${PROJECT_NAME}_puzzle_piece_example_node src/puzzle_piece_example_node.cpp)
 add_example(${PROJECT_NAME}_scene_graph_example_node src/scene_graph_example_node.cpp)
-add_example(${PROJECT_NAME}_ur5_trajopt_node src/ur5_trajopt_node.cpp)
 
 ## OMPL Constraint planning is not available in version less than 1.4
 #if(NOT OMPL_VERSION VERSION_LESS "1.4.0")
@@ -75,7 +74,6 @@ install(
     ${PROJECT_NAME}_puzzle_piece_example_node
     ${PROJECT_NAME}_puzzle_piece_auxillary_axes_example_node
     ${PROJECT_NAME}_scene_graph_example_node
-    ${PROJECT_NAME}_ur5_trajopt_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

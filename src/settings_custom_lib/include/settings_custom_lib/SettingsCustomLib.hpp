@@ -50,6 +50,21 @@ float joint_test_pos_5 = 0.0;
 
 float delay_loop_rate = 1.0;
 
+float table_length = 0.15;
+float table_width = 0.15;
+float table_height = 0.15;
+float table_pos_x = 0.15;
+float table_pos_y = 0.0;
+float table_pos_z = 0.15;
+
+float box_length = 0.01;
+float box_width = 0.005;
+float box_height = 0.005;
+float box_pos_x = 0.30;
+float box_pos_y = 0.0;
+float box_pos_z = 0.0;
+
+
 class SettingsCustomLibClass {
     public:
         void update();
@@ -173,6 +188,54 @@ inline void SettingsCustomLibClass::update() {
             } else if (strcmp("delay_loop_rate", token.c_str()) == 0) {
                 delay_loop_rate = stof(line);
                 ROS_INFO("Setting updated. New value delay_loop_rate = %f", delay_loop_rate);
+
+            } else if (strcmp("table_length", token.c_str()) == 0) {
+                table_length = stof(line);
+                ROS_INFO("Setting updated. New value table_length = %f", table_length);
+
+            } else if (strcmp("table_width", token.c_str()) == 0) {
+                table_width = stof(line);
+                ROS_INFO("Setting updated. New value table_width = %f", table_width);
+
+            } else if (strcmp("table_height", token.c_str()) == 0) {
+                table_height = stof(line);
+                ROS_INFO("Setting updated. New value table_height = %f", table_height);
+
+            } else if (strcmp("table_pos_x", token.c_str()) == 0) {
+                table_pos_x = stof(line);
+                ROS_INFO("Setting updated. New value table_pos_x = %f", table_pos_x);
+
+            } else if (strcmp("table_pos_y", token.c_str()) == 0) {
+                table_pos_y = stof(line);
+                ROS_INFO("Setting updated. New value table_pos_y = %f", table_pos_y);
+
+            } else if (strcmp("table_pos_z", token.c_str()) == 0) {
+                table_pos_z = stof(line);
+                ROS_INFO("Setting updated. New value table_pos_z = %f", table_pos_z);
+
+            } else if (strcmp("box_length", token.c_str()) == 0) {
+                box_length = stof(line);
+                ROS_INFO("Setting updated. New value box_length = %f", box_length);
+
+            } else if (strcmp("box_width", token.c_str()) == 0) {
+                box_width = stof(line);
+                ROS_INFO("Setting updated. New value box_width = %f", box_width);
+
+            } else if (strcmp("box_height", token.c_str()) == 0) {
+                box_height = stof(line);
+                ROS_INFO("Setting updated. New value box_height = %f", box_height);
+
+            } else if (strcmp("box_pos_x", token.c_str()) == 0) {
+                box_pos_x = stof(line);
+                ROS_INFO("Setting updated. New value box_pos_x = %f", box_pos_x);
+
+            } else if (strcmp("box_pos_y", token.c_str()) == 0) {
+                box_pos_y = stof(line);
+                ROS_INFO("Setting updated. New value box_pos_y = %f", box_pos_y);
+
+            } else if (strcmp("box_pos_z", token.c_str()) == 0) {
+                box_pos_z = stof(line);
+                ROS_INFO("Setting updated. New value box_pos_z = %f", box_pos_z);
 
             }
         }

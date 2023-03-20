@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="plotting" default="true"/>
+  <arg name="rviz" default="true"/>
+  <arg name="paused" default="true" />
+  <arg name="use_sim_time" default="true"/>
+  <arg name="debug" default="true"/> <!-- Включить для вывода результатов расчетов -->
+  <arg name="connect_robot" default="false"/> <!-- Подключение к роботу (в симулции или к реальному роботу) -->
+  <arg name="delay" default="2.0" />  <!-- Задержка для запуска ноды -->
+  <arg name="prefix" default="ur5_"/>
+  <arg name="rvizconfig" default="$(find ur5_husky_main)/config/rviz/trajopt.rviz" />
+  <arg name="vx300s" default="true"/>
+
+  <!-- Load controller configuration -->
+  <rosparam command="load" file="$(find husky_control)/config/control.yaml" />
+  <rosparam command="load" file="$(find ur5_husky_main)/config/vx300s_trajectory_controllers.yaml"/>
+
+  <!-- Load robot description -->
+  <include file="$(find ur5_husky_main)/launch/robot_load_ur5.launch" >
+    <arg name="prefix" value="$(arg prefix)" />
+  </include>
+
+  <node pkg="ur5_husky_main" type="ur5_trajopt_node"
+    name="ur5_trajopt_node" output="screen" launch-prefix="bash -c 'sleep $(arg delay); $0 $@' ">
+    <param name="plotting" type="bool" value="$(arg plotting)"/>
+    <param name="rviz" type="bool" value="$(arg rviz)"/>
+    <param name="debug" type="bool" value="$(arg debug)"/>
+    <param name="connect_robot" type="bool" value="$(arg connect_robot)"/>
+  </node>
+
+  <!-- Spawn controllers -->
+  <node name="controller_spawner" pkg="controller_manager" type="controller_manager" respawn="false" output="screen"
+        args="spawn arm_controller gripper_controller joint_state_controller"/>
+
+  <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" ns="vx300s" />
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+  <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" output="screen"/>
+
+</launch>

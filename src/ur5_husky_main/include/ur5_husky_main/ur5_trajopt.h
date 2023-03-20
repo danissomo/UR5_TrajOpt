@@ -1,14 +1,14 @@
-#ifndef TESSERACT_EXAMPLES_UR5_TRAJOPT_H
-#define TESSERACT_EXAMPLES_UR5_TRAJOPT_H
+#ifndef UR5_HUSKY_MAIN_TRAJOPT_H
+#define UR5_HUSKY_MAIN_TRAJOPT_H
 
 #include <tesseract_common/macros.h>
 TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
 #include <string>
 TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
-#include <tesseract_examples/example.h>
+#include <ur5_husky_main/example.h>
 
-namespace tesseract_examples
+namespace ur5_husky_main
 {
 
 class UR5Trajopt : public Example
@@ -33,6 +33,9 @@ private:
   bool sim_robot_;
   Eigen::VectorXd joint_start_pos_;
   Eigen::VectorXd joint_end_pos_;
+
+  static tesseract_environment::Command::Ptr addBox(std::string link_name, std::string joint_name, float length, float width, float height, float pos_x, float pos_y, float pos_z);
+  static tesseract_environment::Command::Ptr addTable(std::string link_name, std::string joint_name, float length, float width, float height, float pos_x, float pos_y, float pos_z);
 };
 
 }

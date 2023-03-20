@@ -5,7 +5,7 @@
 #include <ros/topic.h>
 
 
-#include <tesseract_examples/ur5_trajopt.h>
+#include <ur5_husky_main/ur5_trajopt.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -50,7 +50,7 @@
 
 using namespace ur_rtde;
 
-using namespace tesseract_examples;
+using namespace ur5_husky_main;
 using namespace tesseract_rosutils;
 
 using namespace trajopt;
@@ -73,6 +73,48 @@ const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
 
 
+
+tesseract_environment::Command::Ptr addBox(std::string link_name, std::string joint_name,
+                                           float length, float width, float height,
+                                           float pos_x, float pos_y, float pos_z) {
+
+  auto table = std::make_shared<tesseract_scene_graph::Material>("orange");
+  table->color = Eigen::Vector4d(0.83, 0.37, 0.2, 1.0);
+
+  auto box = std::make_shared<tesseract_scene_graph::Material>("white");
+  box->color = Eigen::Vector4d(1.0, 1.0, 1.0, 1.0);
+
+  // Add sphere to environment
+  Link link_sphere(link_name.c_str());
+
+  Visual::Ptr visual = std::make_shared<Visual>();
+  visual->origin = Eigen::Isometry3d::Identity();
+  visual->origin.translation() = Eigen::Vector3d(pos_x, pos_y, pos_z);
+  visual->geometry = std::make_shared<tesseract_geometry::Box>(width, length, height);
+
+  if (link_name == "table") {
+    visual->material = table;
+  } else if (link_name == "box") {
+    visual->material = box;
+  }
+
+  link_sphere.visual.push_back(visual);
+
+  Collision::Ptr collision = std::make_shared<Collision>();
+  collision->origin = visual->origin;
+  collision->geometry = visual->geometry;
+  link_sphere.collision.push_back(collision);
+
+  Joint joint_sphere(joint_name.c_str());
+  joint_sphere.parent_link_name = "world";
+  joint_sphere.child_link_name = link_sphere.getName();
+  joint_sphere.type = JointType::FIXED;
+
+  return std::make_shared<tesseract_environment::AddLinkCommand>(link_sphere, joint_sphere);
+}
+
+
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
   ros::NodeHandle pnh("~");
@@ -83,7 +125,7 @@ int main(int argc, char** argv) {
   bool plotting = true;
   bool rviz = true;
   bool debug = false;
-  bool sim_robot = true;
+  bool connect_robot = false;
 
   // конфиги для робота
   double velocity = 0.5;
@@ -96,7 +138,7 @@ int main(int argc, char** argv) {
   pnh.param("plotting", plotting, plotting);
   pnh.param("rviz", rviz, rviz);
   pnh.param("debug", debug, debug);
-  pnh.param("sim_robot", sim_robot, sim_robot);
+  pnh.param("connect_robot", connect_robot, connect_robot);
 
   // Initial setup
   std::string urdf_xml_string, srdf_xml_string;
@@ -114,6 +156,19 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
+  // Создать стол
+  Command::Ptr table = addBox("table", "joint_table_attached", table_length, table_width, table_height, table_pos_x, table_pos_y, table_pos_z);
+  if (!env->applyCommand(table)) {
+    return false;
+  }
+
+  // Создать коробку
+  Command::Ptr box = addBox("box", "joint_box_attached", box_length, box_width, box_height, box_pos_x, box_pos_y, box_pos_z);
+  if (!env->applyCommand(box)) {
+    return false;
+  }
+
+
   // Create monitor
   auto monitor = std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(env, EXAMPLE_MONITOR_NAMESPACE);
   if (rviz) {
@@ -126,12 +181,12 @@ int main(int argc, char** argv) {
   }
 
   std::vector<std::string> joint_names;
-  joint_names.emplace_back("shoulder_pan_joint");
-  joint_names.emplace_back("shoulder_lift_joint");
-  joint_names.emplace_back("elbow_joint");
-  joint_names.emplace_back("wrist_1_joint");
-  joint_names.emplace_back("wrist_2_joint");
-  joint_names.emplace_back("wrist_3_joint");
+  joint_names.emplace_back("ur5_shoulder_pan_joint");
+  joint_names.emplace_back("ur5_shoulder_lift_joint");
+  joint_names.emplace_back("ur5_elbow_joint");
+  joint_names.emplace_back("ur5_wrist_1_joint");
+  joint_names.emplace_back("ur5_wrist_2_joint");
+  joint_names.emplace_back("ur5_wrist_3_joint");
 
   Eigen::VectorXd joint_start_pos(6);
   joint_start_pos(0) = joint_start_pos_0;
@@ -149,9 +204,8 @@ int main(int argc, char** argv) {
   joint_end_pos(4) = joint_end_pos_4;
   joint_end_pos(5) = joint_end_pos_5;
 
-  ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
-
-  if (!sim_robot) {
+  if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
+    ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
     try {
       RTDEReceiveInterface rtde_receive(robot_ip);
       ROS_INFO("Connect success!");
@@ -177,6 +231,10 @@ int main(int argc, char** argv) {
         ROS_ERROR("I can't connect with UR5.");
         env->setState(joint_names, joint_start_pos);
     }
+
+  } else {
+      ROS_INFO("I work without connecting to the robot.");
+      env->setState(joint_names, joint_start_pos);
   }
 
   if (debug) {
@@ -187,8 +245,7 @@ int main(int argc, char** argv) {
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
 
   // Create Program
-  CompositeInstruction program(
-      "UR5-1", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "tool0"));
+  CompositeInstruction program("DEFAULT", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "ur5_tool0"));
 
   // Start and End Joint Position for the program
   StateWaypointPoly wp0{ StateWaypoint(joint_names, joint_start_pos) };
@@ -199,7 +256,7 @@ int main(int argc, char** argv) {
 
   // Plan freespace from start
   // Assign a linear motion so cartesian is defined as the target
-  MoveInstruction plan_f0(wp1, MoveInstructionType::LINEAR, "UR5");
+  MoveInstruction plan_f0(wp1, MoveInstructionType::LINEAR, "DEFAULT");
   plan_f0.setDescription("freespace_plan");
 
   // Add Instructions to program
@@ -229,12 +286,16 @@ int main(int argc, char** argv) {
   composite_profile->smooth_accelerations = false;
   composite_profile->smooth_jerks = false;
   composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
-  profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5-1", composite_profile);
+  profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "DEFAULT", composite_profile);
 
   auto plan_profile = std::make_shared<TrajOptDefaultPlanProfile>();
+  plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
+  plan_profile->cartesian_coeff(0) = 0;
+  plan_profile->cartesian_coeff(1) = 0;
+  plan_profile->cartesian_coeff(2) = 0;
 
   // Add profile to Dictionary
-  profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5-2", plan_profile);
+  profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "DEFAULT", plan_profile);
 
   // Create Task Input Data
   TaskComposerDataStorage input_data;
@@ -242,6 +303,11 @@ int main(int argc, char** argv) {
 
   // Create Task Composer Problem
   TaskComposerProblem problem(env, input_data);
+
+  // Задержка, чтобы показать сцену, потом строить траекторию
+  if (plotter != nullptr && plotter->isConnected()) {
+    plotter->waitForInput("Hit Enter to solve for trajectory.");
+  }
 
   // Solve process plan
   tesseract_common::Timer stopwatch;
@@ -276,7 +342,9 @@ int main(int argc, char** argv) {
   //
   /////////////////////////////////////////////////
 
-  std::cout << "Execute Trajectory on rViz? y/n \n";
+  // TODO Проверка флага на подключение connect_robot
+
+  std::cout << "Execute Trajectory on UR5? y/n \n";
   char input_simbol = 'n';
   std::cin >> input_simbol;
   if (input_simbol == 'y') {
@@ -305,15 +373,7 @@ int main(int argc, char** argv) {
     ROS_INFO("Added intermediate joints: ");
 
     // Проверка связи с роботом или с ursim
-    bool ur5_connect = false;
     RTDEControlInterface rtde_control(robot_ip);
-    // try {
-        
-    //     ur5_connect = true;
-    //     ROS_INFO("Connect success with UR5.");
-    //   } catch(...) {
-    //     ROS_ERROR("I can't connect with UR5.");
-    //   }
 
 
     for (int i = 0; i < points.size(); i++) {
@@ -349,11 +409,9 @@ int main(int argc, char** argv) {
       joint_state_msg.velocity = velocity_default; // скорость
       joint_state_msg.effort = effort_default; // усилие
 
-      // if (ur5_connect) {
-        rtde_control.moveJ(position_vector);
-        // rtde_control.stopScript();
-        ROS_INFO("UR5 changed joints value");
-      // }
+      rtde_control.moveJ(position_vector);
+      // rtde_control.stopScript();
+      ROS_INFO("UR5 changed joints value");
 
       env->setState(joint_names, j_state.position);
       joint_pub_state.publish(joint_state_msg);
@@ -405,34 +463,34 @@ int main(int argc, char** argv) {
   //
   /////////////////////////////////////////////////
 
-  input_simbol = 'n';
-  std::cout << "Execute Trajectory on hardware? y/n \n";
-  std::cin >> input_simbol;
-  if (input_simbol == 'y') {
-    std::cout << "Executing... \n";
+  // input_simbol = 'n';
+  // std::cout << "Execute Trajectory on hardware? y/n \n";
+  // std::cin >> input_simbol;
+  // if (input_simbol == 'y') {
+  //   std::cout << "Executing... \n";
 
-    actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> execution_client("follow_joint_trajectory",
-                                                                                              true);
+  //   actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> execution_client("follow_joint_trajectory",
+  //                                                                                             true);
 
-    control_msgs::FollowJointTrajectoryGoal trajectory_action;
-    trajectory_msgs::JointTrajectory traj_msg;
-    ros::Duration t(0.25);
-    traj_msg = toMsg(trajectory, env->getState());
-    trajectory_action.trajectory = traj_msg;
+  //   control_msgs::FollowJointTrajectoryGoal trajectory_action;
+  //   trajectory_msgs::JointTrajectory traj_msg;
+  //   ros::Duration t(0.25);
+  //   traj_msg = toMsg(trajectory, env->getState());
+  //   trajectory_action.trajectory = traj_msg;
 
-    execution_client.sendGoal(trajectory_action);
-    execution_client.waitForResult(ros::Duration(20.0));
+  //   execution_client.sendGoal(trajectory_action);
+  //   execution_client.waitForResult(ros::Duration(20.0));
 
-    if (execution_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
-      std::cout << "Action succeeded! \n";
-    } else {
-      std::cout << "Action failed \n";
-    }
-  } else {
-    std::cout << "You have selected \"Do not execute trajectory\" \n";
-  }
+  //   if (execution_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED) {
+  //     std::cout << "Action succeeded! \n";
+  //   } else {
+  //     std::cout << "Action failed \n";
+  //   }
+  // } else {
+  //   std::cout << "You have selected \"Do not execute trajectory\" \n";
+  // }
 
-  CONSOLE_BRIDGE_logInform("Final trajectory is collision free");
+  // CONSOLE_BRIDGE_logInform("Final trajectory is collision free");
 
   while(ros::ok()) {
     ros::spinOnce();
