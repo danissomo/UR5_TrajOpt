@@ -167,12 +167,12 @@ int main(int argc, char** argv) {
   }
 
   std::vector<std::string> joint_names;
-  joint_names.emplace_back("shoulder_pan_joint");
-  joint_names.emplace_back("shoulder_lift_joint");
-  joint_names.emplace_back("elbow_joint");
-  joint_names.emplace_back("wrist_1_joint");
-  joint_names.emplace_back("wrist_2_joint");
-  joint_names.emplace_back("wrist_3_joint");
+  joint_names.emplace_back("ur5_shoulder_pan_joint");
+  joint_names.emplace_back("ur5_shoulder_lift_joint");
+  joint_names.emplace_back("ur5_elbow_joint");
+  joint_names.emplace_back("ur5_wrist_1_joint");
+  joint_names.emplace_back("ur5_wrist_2_joint");
+  joint_names.emplace_back("ur5_wrist_3_joint");
 
   Eigen::VectorXd joint_start_pos(6);
   joint_start_pos(0) = joint_start_pos_0;
@@ -231,7 +231,7 @@ int main(int argc, char** argv) {
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
 
   // Create Program
-  CompositeInstruction program("UR5", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "tool0"));
+  CompositeInstruction program("UR5", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "ur5_tool0"));
 
   // Start and End Joint Position for the program
   StateWaypointPoly wp0{ StateWaypoint(joint_names, joint_start_pos) };

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot name="robot">
+    <group name="manipulator">
+        <chain base_link="base_link" tip_link="ur5_tool0" />
+    </group>
+
+    <!-- GROUP STATES -->
+    <group_state name="AllZero" group="manipulator">
+        <joint name="ur5_wrist_1_joint" value="0" />
+        <joint name="ur5_wrist_2_joint" value="0" />
+        <joint name="ur5_wrist_3_joint" value="0" />
+        <joint name="ur5_elbow_joint" value="0" />
+        <joint name="ur5_shoulder_lift_joint" value="0" />
+        <joint name="ur5_shoulder_pan_joint" value="0" />
+    </group_state>
+</robot>
