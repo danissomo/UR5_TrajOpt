@@ -32,7 +32,8 @@
   <joint name="base_link_to_world" type="fixed">
     <parent link="world"/>
     <child link="base_link"/>
-    <origin xyz="0 0 ${wheel_radius - wheel_vertical_offset/2}" rpy="0 0 ${M_PI/2}"/>
+    <!-- не трогать xyz и rpy, иначе не считает траекторию! -->
+    <origin xyz="0 0 0" rpy="0 0 0"/>
   </joint>
 
   <joint name="ur5_to_base_link" type="fixed">
