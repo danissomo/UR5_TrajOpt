@@ -134,6 +134,11 @@ int main(int argc, char** argv) {
   double lookahead_time = 0.1;
   double gain = 300;
 
+  std::vector<double> velocity_default{0.001, 0.001, 0.001, 0.001, 0.001, 0.001};
+  std::vector<double> effort_default{0.0, 0.0, 0.0, 0.0, 0.0, 0,0};
+  std::vector<double> accelerations_default{0.1, 0.2, 0.3, 0.4, 0.5, 0,6};
+  std::vector<double> position_vector;
+
   // Get ROS Parameters
   pnh.param("plotting", plotting, plotting);
   pnh.param("rviz", rviz, rviz);
@@ -236,6 +241,16 @@ int main(int argc, char** argv) {
       ROS_INFO("I work without connecting to the robot.");
       env->setState(joint_names, joint_start_pos);
   }
+
+  // Установить JointState
+  position_vector.resize(joint_start_pos.size());
+  Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
+  sensor_msgs::JointState joint_state_msg;
+  joint_state_msg.name = joint_names;
+  joint_state_msg.position = position_vector;
+  joint_state_msg.velocity = velocity_default;
+  joint_state_msg.effort = effort_default;
+  joint_pub_state.publish(joint_state_msg);
 
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
@@ -363,11 +378,6 @@ int main(int argc, char** argv) {
     // double time_from_start = 0.0;
     // double time_step = 0.2;
     ////////////////////////////////////
-
-    std::vector<double> velocity_default{0.001, 0.001, 0.001, 0.001, 0.001, 0.001};
-    std::vector<double> effort_default{0.0, 0.0, 0.0, 0.0, 0.0, 0,0};
-    std::vector<double> accelerations_default{0.1, 0.2, 0.3, 0.4, 0.5, 0,6};
-    std::vector<double> position_vector;
 
     
     ROS_INFO("Added intermediate joints: ");
