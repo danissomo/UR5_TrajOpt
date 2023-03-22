@@ -6,6 +6,7 @@
 
 
 #include <ur5_husky_main/ur5_trajopt.h>
+#include <ur5_husky_main/SetJointState.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -116,17 +117,18 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
 }
 
 
-void updateJointValue(const sensor_msgs::JointState::ConstPtr &msg,
+int updateJointValue(ur5_husky_main::SetJointState::Request &req,
+                      ur5_husky_main::SetJointState::Response &res,
                       const std::shared_ptr<tesseract_environment::Environment> &env,
                       const std::vector<std::string> &joint_names,
                       const bool connect_robot) {
 
     int index = 0;
     for (int j = 0; j < joint_names.size(); j++) {
-        for (int i = 0; i < msg->name.size(); i++) {
+        for (int i = 0; i < req.name.size(); i++) {
             // нужны только избранные joints
-            if (msg->name[i] == joint_names[j]) {
-                joint_start_pos(index) = msg->position[i];
+            if (req.name[i] == joint_names[j]) {
+                joint_start_pos(index) = req.position[i];
                 index++;
             }
         }
@@ -147,6 +149,10 @@ void updateJointValue(const sensor_msgs::JointState::ConstPtr &msg,
             ROS_ERROR("I can't connect with UR5.");
         }
     }
+
+    res.result = "End publish";
+    ros::spinOnce();
+    return 0;
 }
 
 
@@ -285,10 +291,9 @@ int main(int argc, char** argv) {
   joint_state_msg.effort = effort_default;
   joint_pub_state.publish(joint_state_msg);
 
-  // Подписчик на изменения joint state
-  boost::function<void (const sensor_msgs::JointState::ConstPtr &msg)> func = 
-                        boost::bind(updateJointValue, _1, env, joint_names, connect_robot);
-  ros::Subscriber sub = pnh.subscribe("/joint_states", 10, func);
+  // Сервис для отслеживания на изменения joint state
+  ros::ServiceServer setPJointsService = pnh.advertiseService<ur5_husky_main::SetJointState::Request, ur5_husky_main::SetJointState::Response>
+                                ("set_joint_value", boost::bind(updateJointValue, _1, _2, env, joint_names, connect_robot));
 
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
