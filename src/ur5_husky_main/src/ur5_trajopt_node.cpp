@@ -227,12 +227,6 @@ int main(int argc, char** argv) {
   joint_end_pos(4) = joint_end_pos_4;
   joint_end_pos(5) = joint_end_pos_5;
 
-
-  // Подписчик на изменения joint state
-  boost::function<void (const sensor_msgs::JointState::ConstPtr &msg)> func = 
-                        boost::bind(updateJointValue, _1, env, joint_names);
-  ros::Subscriber sub = pnh.subscribe("/joint_states", 10, func);
-
   if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
     ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
     try {
@@ -276,9 +270,16 @@ int main(int argc, char** argv) {
   joint_state_msg.effort = effort_default;
   joint_pub_state.publish(joint_state_msg);
 
+  // Подписчик на изменения joint state
+  boost::function<void (const sensor_msgs::JointState::ConstPtr &msg)> func = 
+                        boost::bind(updateJointValue, _1, env, joint_names);
+  ros::Subscriber sub = pnh.subscribe("/joint_states", 10, func);
+
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
   }
+
+  plotter->waitForInput("Hit Enter after move robot to start position.");
 
   // Solve Trajectory
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
