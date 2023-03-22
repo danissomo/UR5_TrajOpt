@@ -72,6 +72,8 @@ const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 /** @brief RViz Example Namespace */
 const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
 
+Eigen::VectorXd joint_start_pos(6);
+
 
 
 tesseract_environment::Command::Ptr addBox(std::string link_name, std::string joint_name,
@@ -113,6 +115,24 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
   return std::make_shared<tesseract_environment::AddLinkCommand>(link_sphere, joint_sphere);
 }
 
+
+void updateJointValue(const sensor_msgs::JointState::ConstPtr &msg,
+                      const std::shared_ptr<tesseract_environment::Environment> &env,
+                      const std::vector<std::string> &joint_names) {
+
+    int index = 0;
+    for (int j = 0; j < joint_names.size(); j++) {
+        for (int i = 0; i < msg->name.size(); i++) {
+            // нужны только избранные joints
+            if (msg->name[i] == joint_names[j]) {
+                joint_start_pos(index) = msg->position[i];
+                index++;
+            }
+        }
+    } 
+
+    env->setState(joint_names, joint_start_pos);
+}
 
 
 int main(int argc, char** argv) {
@@ -173,7 +193,6 @@ int main(int argc, char** argv) {
     return false;
   }
 
-
   // Create monitor
   auto monitor = std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(env, EXAMPLE_MONITOR_NAMESPACE);
   if (rviz) {
@@ -193,7 +212,6 @@ int main(int argc, char** argv) {
   joint_names.emplace_back("ur5_wrist_2_joint");
   joint_names.emplace_back("ur5_wrist_3_joint");
 
-  Eigen::VectorXd joint_start_pos(6);
   joint_start_pos(0) = joint_start_pos_0;
   joint_start_pos(1) = joint_start_pos_1;
   joint_start_pos(2) = joint_start_pos_2;
@@ -208,6 +226,12 @@ int main(int argc, char** argv) {
   joint_end_pos(3) = joint_end_pos_3;
   joint_end_pos(4) = joint_end_pos_4;
   joint_end_pos(5) = joint_end_pos_5;
+
+
+  // Подписчик на изменения joint state
+  boost::function<void (const sensor_msgs::JointState::ConstPtr &msg)> func = 
+                        boost::bind(updateJointValue, _1, env, joint_names);
+  ros::Subscriber sub = pnh.subscribe("/joint_states", 10, func);
 
   if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
     ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
@@ -242,7 +266,7 @@ int main(int argc, char** argv) {
       env->setState(joint_names, joint_start_pos);
   }
 
-  // Установить JointState
+  // Установить начальное положение JointState
   position_vector.resize(joint_start_pos.size());
   Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
   sensor_msgs::JointState joint_state_msg;
