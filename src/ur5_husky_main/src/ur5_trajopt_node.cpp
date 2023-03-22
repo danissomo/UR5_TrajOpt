@@ -118,7 +118,8 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
 
 void updateJointValue(const sensor_msgs::JointState::ConstPtr &msg,
                       const std::shared_ptr<tesseract_environment::Environment> &env,
-                      const std::vector<std::string> &joint_names) {
+                      const std::vector<std::string> &joint_names,
+                      const bool connect_robot) {
 
     int index = 0;
     for (int j = 0; j < joint_names.size(); j++) {
@@ -132,6 +133,20 @@ void updateJointValue(const sensor_msgs::JointState::ConstPtr &msg,
     } 
 
     env->setState(joint_names, joint_start_pos);
+
+    if (connect_robot) {
+        std::vector<double> position_vector;
+        position_vector.resize(joint_start_pos.size());
+        Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
+
+        try {
+            RTDEControlInterface rtde_control(robot_ip);
+            rtde_control.moveJ(position_vector);
+            rtde_control.stopScript();
+        } catch (...) {
+            ROS_ERROR("I can't connect with UR5.");
+        }
+    }
 }
 
 
@@ -272,7 +287,7 @@ int main(int argc, char** argv) {
 
   // Подписчик на изменения joint state
   boost::function<void (const sensor_msgs::JointState::ConstPtr &msg)> func = 
-                        boost::bind(updateJointValue, _1, env, joint_names);
+                        boost::bind(updateJointValue, _1, env, joint_names, connect_robot);
   ros::Subscriber sub = pnh.subscribe("/joint_states", 10, func);
 
   if (debug) {
