@@ -11,7 +11,7 @@
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <sensor_msgs/JointState.h>
-
+#include <std_msgs/String.h>
 #include <tesseract_environment/utils.h>
 #include <tesseract_common/timer.h>
 #include <tesseract_command_language/composite_instruction.h>
@@ -43,6 +43,7 @@
 #include <thread>
 #include <chrono>
 #include <vector>
+#include <string>
 
 #include <settings_custom_lib/SettingsCustomLib.hpp>
 
@@ -150,8 +151,9 @@ int updateJointValue(ur5_husky_main::SetJointState::Request &req,
         }
     }
 
+    ROS_ERROR("TEST *************************** ");
+
     res.result = "End publish";
-    ros::spinOnce();
     return 0;
 }
 
@@ -292,8 +294,10 @@ int main(int argc, char** argv) {
   joint_pub_state.publish(joint_state_msg);
 
   // Сервис для отслеживания на изменения joint state
-  ros::ServiceServer setPJointsService = pnh.advertiseService<ur5_husky_main::SetJointState::Request, ur5_husky_main::SetJointState::Response>
-                                ("set_joint_value", boost::bind(updateJointValue, _1, _2, env, joint_names, connect_robot));
+
+  ros::Publisher setJointStatePub = nh.advertise<std_msgs::String>("set_joint_value_pub", 1000);
+  ros::ServiceServer setPJointsService = nh.advertiseService<ur5_husky_main::SetJointState::Request, ur5_husky_main::SetJointState::Response>
+                                    ("set_joint_value", boost::bind(updateJointValue, _1, _2, env, joint_names, connect_robot));
 
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
