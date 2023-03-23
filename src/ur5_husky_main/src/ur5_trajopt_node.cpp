@@ -7,6 +7,7 @@
 
 #include <ur5_husky_main/ur5_trajopt.h>
 #include <ur5_husky_main/SetJointState.h>
+#include <ur5_husky_main/GetJointState.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -178,6 +179,21 @@ bool updateJointValue(ur5_husky_main::SetJointState::Request &req,
 }
 
 
+bool getJointValue(ur5_husky_main::GetJointState::Request &req,
+                   ur5_husky_main::GetJointState::Response &res,
+                   const std::vector<std::string> &joint_names) {
+
+  std::vector<double> position_vector;
+  position_vector.resize(joint_start_pos.size());
+  Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
+
+  res.name = joint_names;
+  res.position = position_vector;
+
+  return true;
+}
+
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
   ros::NodeHandle pnh("~");
@@ -315,9 +331,11 @@ int main(int argc, char** argv) {
 
   // Сервис для отслеживания на изменения joint state
 
-  ros::Publisher setJointStatePub = nh.advertise<std_msgs::String>("set_joint_value_pub", 1000);
   ros::ServiceServer setPJointsService = nh.advertiseService<ur5_husky_main::SetJointState::Request, ur5_husky_main::SetJointState::Response>
                       ("set_joint_value", boost::bind(updateJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
+
+  ros::ServiceServer getPJointsService = nh.advertiseService<ur5_husky_main::GetJointState::Request, ur5_husky_main::GetJointState::Response>
+                      ("get_joint_value", boost::bind(getJointValue, _1, _2, joint_names));
 
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);

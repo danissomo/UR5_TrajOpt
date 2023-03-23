@@ -83,6 +83,7 @@ tesseract_variables()
 add_service_files(
   FILES
   SetJointState.srv
+  GetJointState.srv
 )
 
 ## Generate actions in the 'action' folder
