@@ -76,6 +76,8 @@ const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
 
 Eigen::VectorXd joint_start_pos(6);
 
+bool setRobotNotConnectErrorMes = false;
+
 
 
 tesseract_environment::Command::Ptr addBox(std::string link_name, std::string joint_name,
@@ -118,11 +120,16 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
 }
 
 
-int updateJointValue(ur5_husky_main::SetJointState::Request &req,
+bool updateJointValue(ur5_husky_main::SetJointState::Request &req,
                       ur5_husky_main::SetJointState::Response &res,
                       const std::shared_ptr<tesseract_environment::Environment> &env,
+                      const ros::Publisher &joint_pub_state,
                       const std::vector<std::string> &joint_names,
                       const bool connect_robot) {
+
+    std::vector<double> position;
+    std::vector<double> velocity;
+    std::vector<double> effort;
 
     int index = 0;
     for (int j = 0; j < joint_names.size(); j++) {
@@ -130,12 +137,14 @@ int updateJointValue(ur5_husky_main::SetJointState::Request &req,
             // нужны только избранные joints
             if (req.name[i] == joint_names[j]) {
                 joint_start_pos(index) = req.position[i];
+                position.push_back(req.position[i]);
+                velocity.push_back(req.velocity[i]);
+                effort.push_back(req.effort[i]);
+
                 index++;
             }
         }
-    } 
-
-    env->setState(joint_names, joint_start_pos);
+    }
 
     if (connect_robot) {
         std::vector<double> position_vector;
@@ -147,14 +156,25 @@ int updateJointValue(ur5_husky_main::SetJointState::Request &req,
             rtde_control.moveJ(position_vector);
             rtde_control.stopScript();
         } catch (...) {
+          if (!setRobotNotConnectErrorMes) {
+            // 1 сообщения хватит
+            setRobotNotConnectErrorMes = true;
             ROS_ERROR("I can't connect with UR5.");
+          }
         }
     }
 
-    ROS_ERROR("TEST *************************** ");
+    sensor_msgs::JointState joint_state_msg;
+    joint_state_msg.name = joint_names;
+    joint_state_msg.position = position;
+    joint_state_msg.velocity = velocity;
+    joint_state_msg.effort = effort;
+    joint_pub_state.publish(joint_state_msg);
+
+    env->setState(joint_names, joint_start_pos);
 
     res.result = "End publish";
-    return 0;
+    return true;
 }
 
 
@@ -297,7 +317,7 @@ int main(int argc, char** argv) {
 
   ros::Publisher setJointStatePub = nh.advertise<std_msgs::String>("set_joint_value_pub", 1000);
   ros::ServiceServer setPJointsService = nh.advertiseService<ur5_husky_main::SetJointState::Request, ur5_husky_main::SetJointState::Response>
-                                    ("set_joint_value", boost::bind(updateJointValue, _1, _2, env, joint_names, connect_robot));
+                      ("set_joint_value", boost::bind(updateJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
 
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
