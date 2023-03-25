@@ -11,13 +11,10 @@
 
 <u>Новое окно терминала:</u>
 
-Запустить docker-контейнер с окружением для робота: <code>sudo ./scripts/docker/run_armbot_docker.sh</code>
-
-Перейти в рабочую директорию <code>cd workspace</code>
-
-Собрать проект <code>catkin build</code>
-
-Прописать пути <code>source devel/setup.bash</code>
+- Запустить docker-контейнер с окружением для робота: <code>sudo ./scripts/docker/run_armbot_docker.sh</code>
+- Перейти в рабочую директорию <code>cd workspace</code>
+- Собрать проект <code>catkin build</code>
+- Прописать пути <code>source devel/setup.bash</code>
 
 5. Запуск сцены
 
