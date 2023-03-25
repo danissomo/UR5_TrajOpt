@@ -20,6 +20,8 @@
 
 Запуск trajopt <code>roslaunch ur5_husky_main run_ur5_husky_trajopt.launch</code>
 
+<img src="media/image.png" />
+
 
 #### Другие команды:
 
