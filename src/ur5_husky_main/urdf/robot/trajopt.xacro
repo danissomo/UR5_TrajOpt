@@ -8,6 +8,30 @@
 
   <link name="world"/>
 
+  <link name="floor">
+    <visual>
+        <origin xyz="0 0 -${wheel_radius - wheel_vertical_offset/2}" rpy="0 0 0" />
+        <geometry>
+          <box size="2 2 0.00005"/>
+        </geometry>
+        <material name="Floor">
+          <color rgba="0.72 0.80 0.97 0.7"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 -${wheel_radius - wheel_vertical_offset/2}" rpy="0 0 0" />
+        <geometry>
+          <box size="1 1 0.05"/>
+        </geometry>
+      </collision>
+      <collision>
+        <origin xyz="0 0 -${wheel_radius - wheel_vertical_offset/2}" rpy="0 0 0" />
+        <geometry>
+          <box size="1 1 0.05"/>
+        </geometry>
+      </collision>
+  </link>
+
   <!-- common stuff -->
   <xacro:include filename="$(find ur_description)/urdf/common.gazebo.xacro" />
 
@@ -29,8 +53,15 @@
   <xacro:include filename="$(find ur5_husky_main)/urdf/robot/husky.xacro" />
   <xacro:robot_husky />
 
-  <joint name="base_link_to_world" type="fixed">
+  <joint name="floor_to_world" type="fixed">
     <parent link="world"/>
+    <child link="floor"/>
+    <!-- не трогать xyz и rpy, иначе не считает траекторию! -->
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="base_link_to_floor" type="fixed">
+    <parent link="floor"/>
     <child link="base_link"/>
     <!-- не трогать xyz и rpy, иначе не считает траекторию! -->
     <origin xyz="0 0 0" rpy="0 0 0"/>

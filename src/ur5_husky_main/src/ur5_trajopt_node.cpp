@@ -6,11 +6,13 @@
 
 
 #include <ur5_husky_main/ur5_trajopt.h>
+#include <ur5_husky_main/SetJointState.h>
+#include <ur5_husky_main/GetJointState.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <sensor_msgs/JointState.h>
-
+#include <std_msgs/String.h>
 #include <tesseract_environment/utils.h>
 #include <tesseract_common/timer.h>
 #include <tesseract_command_language/composite_instruction.h>
@@ -42,6 +44,7 @@
 #include <thread>
 #include <chrono>
 #include <vector>
+#include <string>
 
 #include <settings_custom_lib/SettingsCustomLib.hpp>
 
@@ -71,6 +74,10 @@ const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 
 /** @brief RViz Example Namespace */
 const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
+
+Eigen::VectorXd joint_start_pos(6);
+
+bool setRobotNotConnectErrorMes = false;
 
 
 
@@ -114,6 +121,78 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
 }
 
 
+bool updateJointValue(ur5_husky_main::SetJointState::Request &req,
+                      ur5_husky_main::SetJointState::Response &res,
+                      const std::shared_ptr<tesseract_environment::Environment> &env,
+                      const ros::Publisher &joint_pub_state,
+                      const std::vector<std::string> &joint_names,
+                      const bool connect_robot) {
+
+    std::vector<double> position;
+    std::vector<double> velocity;
+    std::vector<double> effort;
+
+    int index = 0;
+    for (int j = 0; j < joint_names.size(); j++) {
+        for (int i = 0; i < req.name.size(); i++) {
+            // нужны только избранные joints
+            if (req.name[i] == joint_names[j]) {
+                joint_start_pos(index) = req.position[i];
+                position.push_back(req.position[i]);
+                velocity.push_back(req.velocity[i]);
+                effort.push_back(req.effort[i]);
+
+                index++;
+            }
+        }
+    }
+
+    if (connect_robot) {
+        std::vector<double> position_vector;
+        position_vector.resize(joint_start_pos.size());
+        Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
+
+        try {
+            RTDEControlInterface rtde_control(robot_ip);
+            rtde_control.moveJ(position_vector);
+            rtde_control.stopScript();
+        } catch (...) {
+          if (!setRobotNotConnectErrorMes) {
+            // 1 сообщения хватит
+            setRobotNotConnectErrorMes = true;
+            ROS_ERROR("I can't connect with UR5.");
+          }
+        }
+    }
+
+    sensor_msgs::JointState joint_state_msg;
+    joint_state_msg.name = joint_names;
+    joint_state_msg.position = position;
+    joint_state_msg.velocity = velocity;
+    joint_state_msg.effort = effort;
+    joint_pub_state.publish(joint_state_msg);
+
+    env->setState(joint_names, joint_start_pos);
+
+    res.result = "End publish";
+    return true;
+}
+
+
+bool getJointValue(ur5_husky_main::GetJointState::Request &req,
+                   ur5_husky_main::GetJointState::Response &res,
+                   const std::vector<std::string> &joint_names) {
+
+  std::vector<double> position_vector;
+  position_vector.resize(joint_start_pos.size());
+  Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
+
+  res.name = joint_names;
+  res.position = position_vector;
+
+  return true;
+}
+
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
@@ -133,6 +212,11 @@ int main(int argc, char** argv) {
   double dt = 1.0/500; // 2ms
   double lookahead_time = 0.1;
   double gain = 300;
+
+  std::vector<double> velocity_default{0.001, 0.001, 0.001, 0.001, 0.001, 0.001};
+  std::vector<double> effort_default{0.0, 0.0, 0.0, 0.0, 0.0, 0,0};
+  std::vector<double> accelerations_default{0.1, 0.2, 0.3, 0.4, 0.5, 0,6};
+  std::vector<double> position_vector;
 
   // Get ROS Parameters
   pnh.param("plotting", plotting, plotting);
@@ -168,7 +252,6 @@ int main(int argc, char** argv) {
     return false;
   }
 
-
   // Create monitor
   auto monitor = std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(env, EXAMPLE_MONITOR_NAMESPACE);
   if (rviz) {
@@ -188,7 +271,6 @@ int main(int argc, char** argv) {
   joint_names.emplace_back("ur5_wrist_2_joint");
   joint_names.emplace_back("ur5_wrist_3_joint");
 
-  Eigen::VectorXd joint_start_pos(6);
   joint_start_pos(0) = joint_start_pos_0;
   joint_start_pos(1) = joint_start_pos_1;
   joint_start_pos(2) = joint_start_pos_2;
@@ -237,9 +319,29 @@ int main(int argc, char** argv) {
       env->setState(joint_names, joint_start_pos);
   }
 
+  // Установить начальное положение JointState
+  position_vector.resize(joint_start_pos.size());
+  Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
+  sensor_msgs::JointState joint_state_msg;
+  joint_state_msg.name = joint_names;
+  joint_state_msg.position = position_vector;
+  joint_state_msg.velocity = velocity_default;
+  joint_state_msg.effort = effort_default;
+  joint_pub_state.publish(joint_state_msg);
+
+  // Сервис для отслеживания на изменения joint state
+
+  ros::ServiceServer setPJointsService = nh.advertiseService<ur5_husky_main::SetJointState::Request, ur5_husky_main::SetJointState::Response>
+                      ("set_joint_value", boost::bind(updateJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
+
+  ros::ServiceServer getPJointsService = nh.advertiseService<ur5_husky_main::GetJointState::Request, ur5_husky_main::GetJointState::Response>
+                      ("get_joint_value", boost::bind(getJointValue, _1, _2, joint_names));
+
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
   }
+
+  plotter->waitForInput("Hit Enter after move robot to start position.");
 
   // Solve Trajectory
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
@@ -363,11 +465,6 @@ int main(int argc, char** argv) {
     // double time_from_start = 0.0;
     // double time_step = 0.2;
     ////////////////////////////////////
-
-    std::vector<double> velocity_default{0.001, 0.001, 0.001, 0.001, 0.001, 0.001};
-    std::vector<double> effort_default{0.0, 0.0, 0.0, 0.0, 0.0, 0,0};
-    std::vector<double> accelerations_default{0.1, 0.2, 0.3, 0.4, 0.5, 0,6};
-    std::vector<double> position_vector;
 
     
     ROS_INFO("Added intermediate joints: ");

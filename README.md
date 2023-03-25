@@ -1,103 +1,34 @@
-# Задача открывания двери роботом-манипулятором UR5 при помощи алгоритма TrajOpt
+# Перемещение робота-манипулятора UR5 при помощи алгоритма TrajOpt
 
-<p>1. Склонировать репозиторий <code>git clone https://github.com/allicen/trajopt_ur5</code>.</p>
+1. Склонировать репозиторий <code>git clone https://github.com/allicen/trajopt_ur5</code>.
 
-<p>2. Перейти в папку проекта <code>cd trajopt_ur5</code>.</p>
+2. Перейти в папку проекта <code>cd trajopt_ur5</code>.
 
-<p>3. Собрать окружение для робота в docker-контейнер: <code>sudo docker build -t trajopt-img . --network=host --build-arg from=ubuntu:20.04</code></p>
-
-<p><br /></p>
-
-<p>4. Запустить робота</p>
-
-<p><u>Новое окно терминала:</u></p>
-
-<p>Запустить docker-контейнер с окружением для робота: <code>sudo ./scripts/docker/run_armbot_docker.sh</code></p>
-
-<p>Перейти в рабочую директорию <code>cd workspace</code></p>
-
-<p>Собрать проект <code>catkin build</code></p>
-
-<p>Прописать пути <code>source devel/setup.bash</code></p>
-
-<p>5. Запуск сцены</p>
-
-<p>Запуск trajopt <code>roslaunch ur5_single_arm_manipulation move_robot_trajopt_ex.launch</code></p>
-
-<p>Запуск rViz для подбора поз робота  <code>roslaunch ur5_single_arm_manipulation ur5.rviz.launch</code></p>
-
-<p>Запись значений джоинтов на UR5 <code>roslaunch ur5_single_arm_manipulation ur5_set_joint_pos.launch</code></p>
-
-<p>Основной файл запуска: tesseract_planning/tesseract_examples/src/ur5_trajopt.cpp</p>
+3. Собрать окружение для робота в docker-контейнер: <code>sudo docker build -t trajopt-img . --network=host --build-arg from=ubuntu:20.04</code>
 
 
+4. Запустить робота
 
-roslaunch ur5_husky_main robot_control.launch
-roslaunch ur5_husky_main run_ur5_husky_trajopt.launch
+<u>Новое окно терминала:</u>
+
+- Запустить docker-контейнер с окружением для робота: <code>sudo ./scripts/docker/run_armbot_docker.sh</code>
+- Перейти в рабочую директорию <code>cd workspace</code>
+- Собрать проект <code>catkin build</code>
+- Прописать пути <code>source devel/setup.bash</code>
+
+5. Запуск сцены
+
+Запуск trajopt <code>roslaunch ur5_husky_main run_ur5_husky_trajopt.launch</code>
 
 
-<p><br /></p>
+#### Другие команды:
 
-<hr />
+Зайти в docker-контейнер <code>sudo docker exec -ti trajopt bash</code>
 
-## Для Gazebo (не TrajOpt)
+Запись значений джоинтов на UR5 <code>roslaunch ur5_single_arm_manipulation ur5_set_joint_pos.launch</code>
 
-<p>Запустить окружение робота <code>roslaunch ur5_single_arm_manipulation load_scene.launch</code> (загрузка с параметрами: <code>roslaunch ur5_single_arm_manipulation load_scene.launch x:=2 y:=2 z:=0</code>).</p>
+Запустить тележку: <code>roslaunch ur5_husky_main robot_control.launch</code>
 
-<p>
-    <img src="media/pic1.png" alt="Demo" style="max-width: 100%;" />
-</p>
+Запуск trajopt <code>roslaunch ur5_single_arm_manipulation move_robot_trajopt_ex.launch</code> (раннее)
 
-<p><br /></p>
-
-<p>5. Запустить управление роботом</p>
-
-<p><u>Новое окно терминала:</u></p>
-
-<p>Зайти в docker-контейнер <code>sudo docker exec -ti trajopt bash</code></p>
-
-<p>Перейти в рабочую директорию <code>cd workspace</code></p>
-
-<p>Прописать пути <code>source devel/setup.bash</code></p>
-
-<p>Управление движениями: <code>roslaunch ur5_single_arm_manipulation move.launch pipeline:=trajopt</code></p>
-
-<p><br /></p>
-
-<p>6. Запустить команду открытия двери</p>
-
-<p><u>Новое окно терминала:</u></p>
-
-<p>Зайти в docker-контейнер <code>sudo docker exec -ti trajopt bash</code></p>
-
-<p>Перейти в рабочую директорию <code>cd workspace</code></p>
-
-<p>Прописать пути <code>source devel/setup.bash</code></p>
-
-<p>Управление движениями: <code>rosrun ur5_single_arm_manipulation open</code></p>
-
-<p><br /></p>
-
-<hr />
-
-<p><b>Другие команды:</b></p>
-
-<p>Отправить команду с координатой для схвата робота: <code>rosrun ur5_single_arm_manipulation position _param:="1 2 3"</code></p>
-
-<p>Вернуть робота в позу по умолчанию <code>rosrun ur5_single_arm_manipulation pose _param:="up"</code> (варианты поз: home, up, pickup)</p>
-
-<p>Разомкнуть схват на определенный угол: <code>rosrun ur5_single_arm_manipulation gripper _param:="0.564"</code> (0 - открыт полностью)</p>
-
-<p><br /></p>
-
-<hr />
-
-<p><b>Видео</b></p>
-
-<p>
-    <img src="media/video1.gif" alt="Start demo" style="max-width: 100%;">
-</p>
-
-<p>
-    <img src="media/video2.gif" alt="Move" style="max-width: 100%;">
-</p>
+Запуск rViz для подбора поз робота  <code>roslaunch ur5_single_arm_manipulation ur5.rviz.launch</code>

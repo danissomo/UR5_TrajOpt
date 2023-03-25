@@ -6,7 +6,7 @@
   <arg name="paused" default="true" />
   <arg name="use_sim_time" default="true"/>
   <arg name="debug" default="true"/> <!-- Включить для вывода результатов расчетов -->
-  <arg name="connect_robot" default="false"/> <!-- Подключение к роботу (в симулции или к реальному роботу) -->
+  <arg name="connect_robot" default="true"/> <!-- Подключение к роботу (в симулции или к реальному роботу) -->
   <arg name="delay" default="2.0" />  <!-- Задержка для запуска ноды -->
   <arg name="prefix" default="ur5_"/>
   <arg name="rvizconfig" default="$(find ur5_husky_main)/config/rviz/trajopt.rviz" />
@@ -36,6 +36,11 @@
   <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" ns="vx300s" />
 
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
-  <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" output="screen"/>
+  <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" output="screen">
+    <rosparam param="source_list">[/joint_states]</rosparam>
+  </node>
+
+  <!-- Подключение Webserver rosbridge -->
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
 
 </launch>

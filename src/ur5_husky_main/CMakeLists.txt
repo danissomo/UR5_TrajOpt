@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   roslib
   std_srvs
+  sensor_msgs
   tesseract_monitoring
   tesseract_rosutils
   settings_custom_lib
@@ -79,11 +80,11 @@ tesseract_variables()
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  SetJointState.srv
+  GetJointState.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -93,10 +94,11 @@ tesseract_variables()
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+   DEPENDENCIES
+   std_msgs  # Or other packages containing msgs
+   sensor_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
