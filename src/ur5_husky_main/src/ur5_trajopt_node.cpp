@@ -11,6 +11,7 @@
 #include <ur5_husky_main/GetJointState.h>
 #include <ur5_husky_main/RobotPlanTrajectory.h>
 #include <ur5_husky_main/RobotExecuteTrajectory.h>
+#include <ur5_husky_main/CreateBox.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -133,7 +134,7 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
                       const std::vector<std::string> &joint_names,
                       const bool connect_robot) {
 
-    std::vector<double> position;
+    std::vector<double> position_vector;
     std::vector<double> velocity;
     std::vector<double> effort;
 
@@ -152,11 +153,10 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
         }
     }
 
-    if (connect_robot) {
-        std::vector<double> position_vector;
-        position_vector.resize(joint_start_pos.size());
-        Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
+    position_vector.resize(joint_start_pos.size());
+    Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
 
+    if (connect_robot) {
         try {
             RTDEControlInterface rtde_control(robot_ip);
             rtde_control.moveJ(position_vector);
@@ -172,7 +172,7 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
 
     sensor_msgs::JointState joint_state_msg;
     joint_state_msg.name = joint_names;
-    joint_state_msg.position = position;
+    joint_state_msg.position = position_vector;
     joint_state_msg.velocity = velocity;
     joint_state_msg.effort = effort;
     joint_pub_state.publish(joint_state_msg);
@@ -242,6 +242,19 @@ bool robotExecuteTrajectoryMethod(ur5_husky_main::RobotExecuteTrajectory::Reques
   robotExecuteTrajectory = true;
   res.result = "Execute Trajectory";
   res.success = true;
+  return true;
+}
+
+bool createBox(ur5_husky_main::CreateBox::Request &req,
+              ur5_husky_main::CreateBox::Response &res,
+              const std::shared_ptr<tesseract_environment::Environment> &env) {
+  Command::Ptr box = addBox(req.name, req.joint_name, req.length, req.width, req.height, req.pos_x, req.pos_y, req.pos_z);
+  if (!env->applyCommand(box)) {
+    res.result = "ERROR - create box";
+    return false;
+  }
+
+  res.result = "Create box success";
   return true;
 }
 
@@ -398,6 +411,9 @@ int main(int argc, char** argv) {
 
   ros::ServiceServer robotExecuteService = nh.advertiseService<ur5_husky_main::RobotExecuteTrajectory::Request, ur5_husky_main::RobotExecuteTrajectory::Response>
                       ("robot_execute_trajectory", boost::bind(robotExecuteTrajectoryMethod, _1, _2));
+
+    ros::ServiceServer createBoxService = nh.advertiseService<ur5_husky_main::CreateBox::Request, ur5_husky_main::CreateBox::Response>
+                      ("create_box", boost::bind(createBox, _1, _2, env));
 
 
   if (debug) {
