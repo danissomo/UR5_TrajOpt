@@ -82,8 +82,11 @@ tesseract_variables()
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  SetJointState.srv
+  SetStartJointState.srv
+  SetFinishJointState.srv
   GetJointState.srv
+  RobotPlanTrajectory.srv
+  RobotExecuteTrajectory.srv
 )
 
 ## Generate actions in the 'action' folder

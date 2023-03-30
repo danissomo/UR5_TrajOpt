@@ -26,12 +26,13 @@ eigenVector3d = 1.0
 # joint_start_pos_4 = -1.483593
 # joint_start_pos_5 = -1.578000
 
-joint_start_pos_0 = -0.125000
-joint_start_pos_1 = -0.374000
-joint_start_pos_2 = 1.685000
-joint_start_pos_3 = -2.889578
-joint_start_pos_4 = -1.623000
-joint_start_pos_5 = -1.789000
+joint_start_pos_0 = 1.51731
+joint_start_pos_1 = -0.796949
+joint_start_pos_2 = 2.25895
+joint_start_pos_3 = -2.89963
+joint_start_pos_4 = -1.56047
+joint_start_pos_5 = 0.020617
+
 
 # Конечное положение робота по умолчанию
 # joint_end_pos_0 = 1.578475
@@ -48,15 +49,27 @@ joint_start_pos_5 = -1.789000
 # joint_end_pos_4 = 1.519000
 # joint_end_pos_5 = 0.149000
 
-joint_end_pos_0 = 1.456000
-joint_end_pos_1 = -1.123000
-joint_end_pos_2 = 0.603000
-joint_end_pos_3 = -1.040000
-joint_end_pos_4 = -1.540000
-joint_end_pos_5 = 1.394745
+# Тест немного ближе к столу
+# joint_end_pos_0 = 2.008491
+# joint_end_pos_1 = -1.824498
+# joint_end_pos_2 = 1.258161
+# joint_end_pos_3 = -1.109452
+# joint_end_pos_4 = -1.434897
+# joint_end_pos_5 = 0.019922
+
+
+# Тест близко к полу
+joint_end_pos_0 = 1.51731
+joint_end_pos_1 = -0.796949
+joint_end_pos_2 = 2.25895
+joint_end_pos_3 = -2.89963
+joint_end_pos_4 = -1.56047
+joint_end_pos_5 = 0.020617
+
 
 # IP робота
 robot_ip = 127.0.0.1
+# robot_ip = 192.168.131.40
 
 # Данные для тестовой отправки на UR5
 joint_test_pos_0 = 0.0

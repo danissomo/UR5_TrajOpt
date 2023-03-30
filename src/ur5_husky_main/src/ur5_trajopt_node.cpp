@@ -6,8 +6,11 @@
 
 
 #include <ur5_husky_main/ur5_trajopt.h>
-#include <ur5_husky_main/SetJointState.h>
+#include <ur5_husky_main/SetStartJointState.h>
+#include <ur5_husky_main/SetFinishJointState.h>
 #include <ur5_husky_main/GetJointState.h>
+#include <ur5_husky_main/RobotPlanTrajectory.h>
+#include <ur5_husky_main/RobotExecuteTrajectory.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -76,7 +79,9 @@ const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
 
 Eigen::VectorXd joint_start_pos(6);
-
+Eigen::VectorXd joint_end_pos(6);
+bool robotPlanTrajectory = false;
+bool robotExecuteTrajectory = false;
 bool setRobotNotConnectErrorMes = false;
 
 
@@ -121,8 +126,8 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
 }
 
 
-bool updateJointValue(ur5_husky_main::SetJointState::Request &req,
-                      ur5_husky_main::SetJointState::Response &res,
+bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
+                      ur5_husky_main::SetStartJointState::Response &res,
                       const std::shared_ptr<tesseract_environment::Environment> &env,
                       const ros::Publisher &joint_pub_state,
                       const std::vector<std::string> &joint_names,
@@ -179,6 +184,39 @@ bool updateJointValue(ur5_husky_main::SetJointState::Request &req,
 }
 
 
+bool updateFinishJointValue(ur5_husky_main::SetFinishJointState::Request &req,
+                      ur5_husky_main::SetFinishJointState::Response &res,
+                      const std::shared_ptr<tesseract_environment::Environment> &env,
+                      const ros::Publisher &joint_pub_state,
+                      const std::vector<std::string> &joint_names,
+                      const bool connect_robot) {
+
+    std::vector<double> position;
+    std::vector<double> velocity;
+    std::vector<double> effort;
+
+    int index = 0;
+    for (int j = 0; j < joint_names.size(); j++) {
+        for (int i = 0; i < req.name.size(); i++) {
+            // нужны только избранные joints
+            if (req.name[i] == joint_names[j]) {
+                joint_end_pos(index) = req.position[i];
+                position.push_back(req.position[i]);
+                velocity.push_back(req.velocity[i]);
+                effort.push_back(req.effort[i]);
+
+                index++;
+            }
+        }
+    }
+
+    env->setState(joint_names, joint_end_pos);
+
+    res.result = "Update Finish Position!";
+    return true;
+}
+
+
 bool getJointValue(ur5_husky_main::GetJointState::Request &req,
                    ur5_husky_main::GetJointState::Response &res,
                    const std::vector<std::string> &joint_names) {
@@ -190,6 +228,20 @@ bool getJointValue(ur5_husky_main::GetJointState::Request &req,
   res.name = joint_names;
   res.position = position_vector;
 
+  return true;
+}
+
+bool robotPlanTrajectoryMethod(ur5_husky_main::RobotPlanTrajectory::Request &req, ur5_husky_main::RobotPlanTrajectory::Response &res) {
+   robotPlanTrajectory = true;
+   res.result = "Plan Trajectory";
+   res.success = true;
+   return true;
+}
+
+bool robotExecuteTrajectoryMethod(ur5_husky_main::RobotExecuteTrajectory::Request &req, ur5_husky_main::RobotExecuteTrajectory::Response &res) {
+  robotExecuteTrajectory = true;
+  res.result = "Execute Trajectory";
+  res.success = true;
   return true;
 }
 
@@ -205,6 +257,7 @@ int main(int argc, char** argv) {
   bool rviz = true;
   bool debug = false;
   bool connect_robot = false;
+  bool ui_control = false;
 
   // конфиги для робота
   double velocity = 0.5;
@@ -223,6 +276,7 @@ int main(int argc, char** argv) {
   pnh.param("rviz", rviz, rviz);
   pnh.param("debug", debug, debug);
   pnh.param("connect_robot", connect_robot, connect_robot);
+  pnh.param("ui_control", ui_control, ui_control);
 
   // Initial setup
   std::string urdf_xml_string, srdf_xml_string;
@@ -278,7 +332,6 @@ int main(int argc, char** argv) {
   joint_start_pos(4) = joint_start_pos_4;
   joint_start_pos(5) = joint_start_pos_5;
 
-  Eigen::VectorXd joint_end_pos(6);
   joint_end_pos(0) = joint_end_pos_0;
   joint_end_pos(1) = joint_end_pos_1;
   joint_end_pos(2) = joint_end_pos_2;
@@ -331,17 +384,39 @@ int main(int argc, char** argv) {
 
   // Сервис для отслеживания на изменения joint state
 
-  ros::ServiceServer setPJointsService = nh.advertiseService<ur5_husky_main::SetJointState::Request, ur5_husky_main::SetJointState::Response>
-                      ("set_joint_value", boost::bind(updateJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
+  ros::ServiceServer setStartJointsService = nh.advertiseService<ur5_husky_main::SetStartJointState::Request, ur5_husky_main::SetStartJointState::Response>
+                      ("set_joint_start_value", boost::bind(updateStartJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
 
-  ros::ServiceServer getPJointsService = nh.advertiseService<ur5_husky_main::GetJointState::Request, ur5_husky_main::GetJointState::Response>
+  ros::ServiceServer setFinishJointsService = nh.advertiseService<ur5_husky_main::SetFinishJointState::Request, ur5_husky_main::SetFinishJointState::Response>
+                      ("set_joint_finish_value", boost::bind(updateFinishJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
+
+  ros::ServiceServer getJointsService = nh.advertiseService<ur5_husky_main::GetJointState::Request, ur5_husky_main::GetJointState::Response>
                       ("get_joint_value", boost::bind(getJointValue, _1, _2, joint_names));
+
+  ros::ServiceServer robotPlanService = nh.advertiseService<ur5_husky_main::RobotPlanTrajectory::Request, ur5_husky_main::RobotPlanTrajectory::Response>
+                      ("robot_plan_trajectory", boost::bind(robotPlanTrajectoryMethod, _1, _2));
+
+  ros::ServiceServer robotExecuteService = nh.advertiseService<ur5_husky_main::RobotExecuteTrajectory::Request, ur5_husky_main::RobotExecuteTrajectory::Response>
+                      ("robot_execute_trajectory", boost::bind(robotExecuteTrajectoryMethod, _1, _2));
+
 
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
   }
 
-  plotter->waitForInput("Hit Enter after move robot to start position.");
+  // Ждем команды на планирование траектории
+  if (ui_control && !robotPlanTrajectory) {
+    std::cout << "Waiting for the command to plan the trajectory... \n";
+    while(ros::ok()) {
+      ros::spinOnce();
+      loop_rate.sleep();
+      if (robotPlanTrajectory) {
+        break;
+      }
+    }
+  } else {
+    plotter->waitForInput("Hit Enter after move robot to start position.");
+  }  
 
   // Solve Trajectory
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
@@ -407,7 +482,7 @@ int main(int argc, char** argv) {
   TaskComposerProblem problem(env, input_data);
 
   // Задержка, чтобы показать сцену, потом строить траекторию
-  if (plotter != nullptr && plotter->isConnected()) {
+  if (!ui_control && plotter != nullptr && plotter->isConnected()) {
     plotter->waitForInput("Hit Enter to solve for trajectory.");
   }
 
@@ -428,7 +503,9 @@ int main(int argc, char** argv) {
 
   // Plot Process Trajectory
   if (plotter != nullptr && plotter->isConnected()) {
-    plotter->waitForInput();
+    if (!ui_control) {
+      plotter->waitForInput();
+    }
     tesseract_common::Toolpath toolpath = toToolpath(ci, *env);
     auto state_solver = env->getStateSolver();
     auto scene_state = env->getState();
@@ -446,10 +523,26 @@ int main(int argc, char** argv) {
 
   // TODO Проверка флага на подключение connect_robot
 
-  std::cout << "Execute Trajectory on UR5? y/n \n";
   char input_simbol = 'n';
-  std::cin >> input_simbol;
-  if (input_simbol == 'y') {
+
+  if (!ui_control) {
+    std::cout << "Execute Trajectory on UR5? y/n \n";
+    std::cin >> input_simbol;
+  }
+
+  // Ждем команды на выполнение траектории
+  if (ui_control && !robotExecuteTrajectory) {
+    std::cout << "Waiting for the command to execute the trajectory... \n";
+    while(ros::ok()) {
+      ros::spinOnce();
+      loop_rate.sleep();
+      if (robotExecuteTrajectory) {
+        break;
+      }
+    }
+  }
+  
+  if (robotExecuteTrajectory || input_simbol == 'y') {
     std::cout << "Executing... \n";
 
     TrajectoryPlayer player;
