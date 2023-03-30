@@ -144,7 +144,6 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
             // нужны только избранные joints
             if (req.name[i] == joint_names[j]) {
                 joint_start_pos(index) = req.position[i];
-                position.push_back(req.position[i]);
                 velocity.push_back(req.velocity[i]);
                 effort.push_back(req.effort[i]);
 
