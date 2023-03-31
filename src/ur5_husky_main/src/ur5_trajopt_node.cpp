@@ -127,6 +127,26 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
 }
 
 
+tesseract_environment::Command::Ptr moveBox(std::string link_name, std::string joint_name,
+                                           float pos_x, float pos_y, float pos_z) {
+
+  auto joint_limits =  std::make_shared<tesseract_scene_graph::JointLimits>();
+  joint_limits->lower = 1.0;
+  joint_limits->upper = 2.0;
+
+  Joint joint_sphere(joint_name.c_str());
+  joint_sphere.axis = Eigen::Vector3d(pos_x, pos_y, pos_z);
+  joint_sphere.limits = joint_limits;
+  joint_sphere.parent_link_name = "world";
+  joint_sphere.child_link_name = link_name;
+  joint_sphere.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(0.5, 0, 0);
+  joint_sphere.type = JointType::FIXED;
+
+
+  return std::make_shared<tesseract_environment::MoveLinkCommand>(joint_sphere);
+}
+
+
 bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
                       ur5_husky_main::SetStartJointState::Response &res,
                       const std::shared_ptr<tesseract_environment::Environment> &env,
@@ -431,7 +451,15 @@ int main(int argc, char** argv) {
     }
   } else {
     plotter->waitForInput("Hit Enter after move robot to start position.");
-  }  
+  }
+
+  // test
+  ROS_ERROR("-----------------------1");
+  Command::Ptr table2 = moveBox("table", "joint_table_attached", table_pos_x + 0.5, table_pos_y+1.0, table_pos_z);
+  if (!env->applyCommand(table2)) {
+    return false;
+  }
+  ROS_ERROR("-----------------------");
 
   // Solve Trajectory
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
