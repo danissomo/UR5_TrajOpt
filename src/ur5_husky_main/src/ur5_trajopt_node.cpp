@@ -267,7 +267,10 @@ bool robotExecuteTrajectoryMethod(ur5_husky_main::RobotExecuteTrajectory::Reques
 bool createBox(ur5_husky_main::CreateBox::Request &req,
               ur5_husky_main::CreateBox::Response &res,
               const std::shared_ptr<tesseract_environment::Environment> &env) {
-  Command::Ptr box = addBox(req.name, req.joint_name, req.length, req.width, req.height, req.pos_x, req.pos_y, req.pos_z);
+
+  std::string joint_name = std::string(req.name) + "_joints";
+
+  Command::Ptr box = addBox(req.name, joint_name.c_str(), req.length, req.width, req.height, req.x, req.y, req.z);
   if (!env->applyCommand(box)) {
     res.result = "ERROR - create box";
     return false;
@@ -326,17 +329,17 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
-  // Создать стол
-  Command::Ptr table = addBox("table", "joint_table_attached", table_length, table_width, table_height, table_pos_x, table_pos_y, table_pos_z);
-  if (!env->applyCommand(table)) {
-    return false;
-  }
+  // // Создать стол
+  // Command::Ptr table = addBox("table", "joint_table_attached", table_length, table_width, table_height, table_pos_x, table_pos_y, table_pos_z);
+  // if (!env->applyCommand(table)) {
+  //   return false;
+  // }
 
-  // Создать коробку
-  Command::Ptr box = addBox("box", "joint_box_attached", box_length, box_width, box_height, box_pos_x, box_pos_y, box_pos_z);
-  if (!env->applyCommand(box)) {
-    return false;
-  }
+  // // Создать коробку
+  // Command::Ptr box = addBox("box", "joint_box_attached", box_length, box_width, box_height, box_pos_x, box_pos_y, box_pos_z);
+  // if (!env->applyCommand(box)) {
+  //   return false;
+  // }
 
   // Create monitor
   auto monitor = std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(env, EXAMPLE_MONITOR_NAMESPACE);
@@ -431,7 +434,7 @@ int main(int argc, char** argv) {
   ros::ServiceServer robotExecuteService = nh.advertiseService<ur5_husky_main::RobotExecuteTrajectory::Request, ur5_husky_main::RobotExecuteTrajectory::Response>
                       ("robot_execute_trajectory", boost::bind(robotExecuteTrajectoryMethod, _1, _2));
 
-    ros::ServiceServer createBoxService = nh.advertiseService<ur5_husky_main::CreateBox::Request, ur5_husky_main::CreateBox::Response>
+  ros::ServiceServer createBoxService = nh.advertiseService<ur5_husky_main::CreateBox::Request, ur5_husky_main::CreateBox::Response>
                       ("create_box", boost::bind(createBox, _1, _2, env));
 
 
