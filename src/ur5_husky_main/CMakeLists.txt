@@ -89,6 +89,7 @@ add_service_files(
   RobotPlanTrajectory.srv
   RobotExecuteTrajectory.srv
   CreateBox.srv
+  MoveBox.srv
   #Color.srv
 )
 

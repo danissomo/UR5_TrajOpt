@@ -12,6 +12,7 @@
 #include <ur5_husky_main/RobotPlanTrajectory.h>
 #include <ur5_husky_main/RobotExecuteTrajectory.h>
 #include <ur5_husky_main/CreateBox.h>
+#include <ur5_husky_main/MoveBox.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -131,7 +132,7 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
 }
 
 
-tesseract_environment::Command::Ptr moveBox(std::string link_name, std::string joint_name,
+tesseract_environment::Command::Ptr renderMoveBox(std::string link_name, std::string joint_name,
                                            float pos_x, float pos_y, float pos_z) {
 
   auto joint_limits =  std::make_shared<tesseract_scene_graph::JointLimits>();
@@ -139,15 +140,32 @@ tesseract_environment::Command::Ptr moveBox(std::string link_name, std::string j
   joint_limits->upper = 2.0;
 
   Joint joint_sphere(joint_name.c_str());
-  joint_sphere.axis = Eigen::Vector3d(pos_x, pos_y, pos_z);
   joint_sphere.limits = joint_limits;
   joint_sphere.parent_link_name = "world";
   joint_sphere.child_link_name = link_name;
-  joint_sphere.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(0.5, 0, 0);
+  joint_sphere.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(pos_x, pos_y, pos_z);
   joint_sphere.type = JointType::FIXED;
 
 
   return std::make_shared<tesseract_environment::MoveLinkCommand>(joint_sphere);
+}
+
+
+bool moveBox(ur5_husky_main::MoveBox::Request &req,
+             ur5_husky_main::MoveBox::Response &res,
+             const std::shared_ptr<tesseract_environment::Environment> &env) {
+
+  std::string joint_name = std::string(req.name) + "_joints";
+
+  Command::Ptr box = renderMoveBox(req.name, joint_name.c_str(), req.x, req.y, req.z);
+  if (!env->applyCommand(box)) {
+    res.result = "ERROR - create box";
+    return false;
+  }
+
+  res.result = "Move Box end...";
+
+  return true;
 }
 
 
@@ -445,6 +463,9 @@ int main(int argc, char** argv) {
   ros::ServiceServer createBoxService = nh.advertiseService<ur5_husky_main::CreateBox::Request, ur5_husky_main::CreateBox::Response>
                       ("create_box", boost::bind(createBox, _1, _2, env));
 
+  ros::ServiceServer moveBoxService = nh.advertiseService<ur5_husky_main::MoveBox::Request, ur5_husky_main::MoveBox::Response>
+                      ("move_box", boost::bind(moveBox, _1, _2, env));
+
 
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
@@ -463,14 +484,6 @@ int main(int argc, char** argv) {
   } else {
     plotter->waitForInput("Hit Enter after move robot to start position.");
   }
-
-  // test
-  ROS_ERROR("-----------------------1");
-  Command::Ptr table2 = moveBox("table", "joint_table_attached", table_pos_x + 0.5, table_pos_y+1.0, table_pos_z);
-  if (!env->applyCommand(table2)) {
-    return false;
-  }
-  ROS_ERROR("-----------------------");
 
   // Solve Trajectory
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
