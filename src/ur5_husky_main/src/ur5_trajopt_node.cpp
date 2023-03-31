@@ -55,6 +55,8 @@
 #include <urdf_parser/urdf_parser.h>
 #include <srdfdom/model.h>
 
+#include "ColorInfo.hpp"
+
 using namespace ur_rtde;
 
 using namespace ur5_husky_main;
@@ -86,16 +88,23 @@ bool robotExecuteTrajectory = false;
 bool setRobotNotConnectErrorMes = false;
 
 
+ColorInfo getDefaultColor(std::string colorName) {
+  if (colorName == "brown") {
+    ColorInfo colorBrown{colorName, 0.83, 0.37, 0.2, 1.0};
+    return colorBrown;
+  } 
+  ColorInfo colorDefault{colorName, 1.0, 1.0, 1.0, 1.0};
+  return colorDefault;
+}
+
 
 tesseract_environment::Command::Ptr addBox(std::string link_name, std::string joint_name,
                                            float length, float width, float height,
-                                           float pos_x, float pos_y, float pos_z) {
+                                           float pos_x, float pos_y, float pos_z,
+                                           ColorInfo color) {
 
-  auto table = std::make_shared<tesseract_scene_graph::Material>("orange");
-  table->color = Eigen::Vector4d(0.83, 0.37, 0.2, 1.0);
-
-  auto box = std::make_shared<tesseract_scene_graph::Material>("white");
-  box->color = Eigen::Vector4d(1.0, 1.0, 1.0, 1.0);
+  auto colorBox = std::make_shared<tesseract_scene_graph::Material>(color.getName().c_str());
+  colorBox->color = Eigen::Vector4d(color.getR(), color.getG(), color.getB(), color.getA());
 
   // Add sphere to environment
   Link link_sphere(link_name.c_str());
@@ -104,12 +113,7 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
   visual->origin = Eigen::Isometry3d::Identity();
   visual->origin.translation() = Eigen::Vector3d(pos_x, pos_y, pos_z);
   visual->geometry = std::make_shared<tesseract_geometry::Box>(width, length, height);
-
-  if (link_name == "table") {
-    visual->material = table;
-  } else if (link_name == "box") {
-    visual->material = box;
-  }
+  visual->material = colorBox;
 
   link_sphere.visual.push_back(visual);
 
@@ -270,7 +274,9 @@ bool createBox(ur5_husky_main::CreateBox::Request &req,
 
   std::string joint_name = std::string(req.name) + "_joints";
 
-  Command::Ptr box = addBox(req.name, joint_name.c_str(), req.length, req.width, req.height, req.x, req.y, req.z);
+  ColorInfo color{req.color.name, req.color.r, req.color.g, req.color.b, req.color.a};
+
+  Command::Ptr box = addBox(req.name, joint_name.c_str(), req.length, req.width, req.height, req.x, req.y, req.z, color);
   if (!env->applyCommand(box)) {
     res.result = "ERROR - create box";
     return false;
@@ -329,17 +335,19 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
-  // // Создать стол
-  // Command::Ptr table = addBox("table", "joint_table_attached", table_length, table_width, table_height, table_pos_x, table_pos_y, table_pos_z);
-  // if (!env->applyCommand(table)) {
-  //   return false;
-  // }
+  if (!ui_control) {
+    // Создать стол
+    Command::Ptr table = addBox("table", "joint_table_attached", table_length, table_width, table_height, table_pos_x, table_pos_y, table_pos_z, getDefaultColor("brown"));
+    if (!env->applyCommand(table)) {
+      return false;
+    }
 
-  // // Создать коробку
-  // Command::Ptr box = addBox("box", "joint_box_attached", box_length, box_width, box_height, box_pos_x, box_pos_y, box_pos_z);
-  // if (!env->applyCommand(box)) {
-  //   return false;
-  // }
+    // Создать коробку
+    Command::Ptr box = addBox("box", "joint_box_attached", box_length, box_width, box_height, box_pos_x, box_pos_y, box_pos_z, getDefaultColor(""));
+    if (!env->applyCommand(box)) {
+      return false;
+    }
+  }
 
   // Create monitor
   auto monitor = std::make_shared<tesseract_monitoring::ROSEnvironmentMonitor>(env, EXAMPLE_MONITOR_NAMESPACE);
