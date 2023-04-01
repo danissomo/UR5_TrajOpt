@@ -9,6 +9,7 @@ float64 z
 float64 offsetX
 float64 offsetY
 float64 offsetZ
+string colorByName
 ur5_husky_main/Color color
 ---
 string result

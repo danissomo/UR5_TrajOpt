@@ -11,8 +11,7 @@
 #include <ur5_husky_main/GetJointState.h>
 #include <ur5_husky_main/RobotPlanTrajectory.h>
 #include <ur5_husky_main/RobotExecuteTrajectory.h>
-#include <ur5_husky_main/CreateBox.h>
-#include <ur5_husky_main/MoveBox.h>
+#include <ur5_husky_main/Box.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -151,13 +150,13 @@ tesseract_environment::Command::Ptr renderMoveBox(std::string link_name, std::st
 }
 
 
-bool moveBox(ur5_husky_main::MoveBox::Request &req,
-             ur5_husky_main::MoveBox::Response &res,
+bool moveBox(ur5_husky_main::Box::Request &req,
+             ur5_husky_main::Box::Response &res,
              const std::shared_ptr<tesseract_environment::Environment> &env) {
 
   std::string joint_name = std::string(req.name) + "_joints";
 
-  Command::Ptr box = renderMoveBox(req.name, joint_name.c_str(), req.x, req.y, req.z);
+  Command::Ptr box = renderMoveBox(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
   if (!env->applyCommand(box)) {
     res.result = "ERROR - create box";
     return false;
@@ -286,8 +285,8 @@ bool robotExecuteTrajectoryMethod(ur5_husky_main::RobotExecuteTrajectory::Reques
   return true;
 }
 
-bool createBox(ur5_husky_main::CreateBox::Request &req,
-              ur5_husky_main::CreateBox::Response &res,
+bool createBox(ur5_husky_main::Box::Request &req,
+              ur5_husky_main::Box::Response &res,
               const std::shared_ptr<tesseract_environment::Environment> &env) {
 
   std::string joint_name = std::string(req.name) + "_joints";
@@ -460,10 +459,10 @@ int main(int argc, char** argv) {
   ros::ServiceServer robotExecuteService = nh.advertiseService<ur5_husky_main::RobotExecuteTrajectory::Request, ur5_husky_main::RobotExecuteTrajectory::Response>
                       ("robot_execute_trajectory", boost::bind(robotExecuteTrajectoryMethod, _1, _2));
 
-  ros::ServiceServer createBoxService = nh.advertiseService<ur5_husky_main::CreateBox::Request, ur5_husky_main::CreateBox::Response>
+  ros::ServiceServer createBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
                       ("create_box", boost::bind(createBox, _1, _2, env));
 
-  ros::ServiceServer moveBoxService = nh.advertiseService<ur5_husky_main::MoveBox::Request, ur5_husky_main::MoveBox::Response>
+  ros::ServiceServer moveBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
                       ("move_box", boost::bind(moveBox, _1, _2, env));
 
 

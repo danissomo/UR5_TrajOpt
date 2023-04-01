@@ -88,9 +88,7 @@ add_service_files(
   GetJointState.srv
   RobotPlanTrajectory.srv
   RobotExecuteTrajectory.srv
-  CreateBox.srv
-  MoveBox.srv
-  #Color.srv
+  Box.srv
 )
 
 ## Generate actions in the 'action' folder
