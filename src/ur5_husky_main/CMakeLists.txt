@@ -73,17 +73,22 @@ tesseract_variables()
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
+add_message_files(
+    FILES
+    Color.msg
 #   Message1.msg
 #   Message2.msg
-# )
+)
 
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  SetJointState.srv
+  SetStartJointState.srv
+  SetFinishJointState.srv
   GetJointState.srv
+  RobotPlanTrajectory.srv
+  RobotExecuteTrajectory.srv
+  Box.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -96,6 +101,7 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
    DEPENDENCIES
+   ${MESSAGE_DEPENDENCIES}
    std_msgs  # Or other packages containing msgs
    sensor_msgs
 )

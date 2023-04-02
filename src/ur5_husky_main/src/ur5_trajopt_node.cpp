@@ -6,8 +6,12 @@
 
 
 #include <ur5_husky_main/ur5_trajopt.h>
-#include <ur5_husky_main/SetJointState.h>
+#include <ur5_husky_main/SetStartJointState.h>
+#include <ur5_husky_main/SetFinishJointState.h>
 #include <ur5_husky_main/GetJointState.h>
+#include <ur5_husky_main/RobotPlanTrajectory.h>
+#include <ur5_husky_main/RobotExecuteTrajectory.h>
+#include <ur5_husky_main/Box.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -51,6 +55,8 @@
 #include <urdf_parser/urdf_parser.h>
 #include <srdfdom/model.h>
 
+#include "ColorInfo.hpp"
+
 using namespace ur_rtde;
 
 using namespace ur5_husky_main;
@@ -76,20 +82,29 @@ const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
 
 Eigen::VectorXd joint_start_pos(6);
-
+Eigen::VectorXd joint_end_pos(6);
+bool robotPlanTrajectory = false;
+bool robotExecuteTrajectory = false;
 bool setRobotNotConnectErrorMes = false;
 
+
+ColorInfo getDefaultColor(std::string colorName) {
+  if (colorName == "brown") {
+    ColorInfo colorBrown{colorName, 0.83, 0.37, 0.2, 1.0};
+    return colorBrown;
+  } 
+  ColorInfo colorDefault{colorName, 1.0, 1.0, 1.0, 1.0};
+  return colorDefault;
+}
 
 
 tesseract_environment::Command::Ptr addBox(std::string link_name, std::string joint_name,
                                            float length, float width, float height,
-                                           float pos_x, float pos_y, float pos_z) {
+                                           float pos_x, float pos_y, float pos_z,
+                                           ColorInfo color) {
 
-  auto table = std::make_shared<tesseract_scene_graph::Material>("orange");
-  table->color = Eigen::Vector4d(0.83, 0.37, 0.2, 1.0);
-
-  auto box = std::make_shared<tesseract_scene_graph::Material>("white");
-  box->color = Eigen::Vector4d(1.0, 1.0, 1.0, 1.0);
+  auto colorBox = std::make_shared<tesseract_scene_graph::Material>(color.getName().c_str());
+  colorBox->color = Eigen::Vector4d(color.getR(), color.getG(), color.getB(), color.getA());
 
   // Add sphere to environment
   Link link_sphere(link_name.c_str());
@@ -98,12 +113,7 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
   visual->origin = Eigen::Isometry3d::Identity();
   visual->origin.translation() = Eigen::Vector3d(pos_x, pos_y, pos_z);
   visual->geometry = std::make_shared<tesseract_geometry::Box>(width, length, height);
-
-  if (link_name == "table") {
-    visual->material = table;
-  } else if (link_name == "box") {
-    visual->material = box;
-  }
+  visual->material = colorBox;
 
   link_sphere.visual.push_back(visual);
 
@@ -121,14 +131,51 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
 }
 
 
-bool updateJointValue(ur5_husky_main::SetJointState::Request &req,
-                      ur5_husky_main::SetJointState::Response &res,
+tesseract_environment::Command::Ptr renderMoveBox(std::string link_name, std::string joint_name,
+                                           float pos_x, float pos_y, float pos_z) {
+
+  auto joint_limits =  std::make_shared<tesseract_scene_graph::JointLimits>();
+  joint_limits->lower = 1.0;
+  joint_limits->upper = 2.0;
+
+  Joint joint_sphere(joint_name.c_str());
+  joint_sphere.limits = joint_limits;
+  joint_sphere.parent_link_name = "world";
+  joint_sphere.child_link_name = link_name;
+  joint_sphere.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(pos_x, pos_y, pos_z);
+  joint_sphere.type = JointType::FIXED;
+
+
+  return std::make_shared<tesseract_environment::MoveLinkCommand>(joint_sphere);
+}
+
+
+bool moveBox(ur5_husky_main::Box::Request &req,
+             ur5_husky_main::Box::Response &res,
+             const std::shared_ptr<tesseract_environment::Environment> &env) {
+
+  std::string joint_name = std::string(req.name) + "_joints";
+
+  Command::Ptr box = renderMoveBox(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
+  if (!env->applyCommand(box)) {
+    res.result = "ERROR - create box";
+    return false;
+  }
+
+  res.result = "Move Box end...";
+
+  return true;
+}
+
+
+bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
+                      ur5_husky_main::SetStartJointState::Response &res,
                       const std::shared_ptr<tesseract_environment::Environment> &env,
                       const ros::Publisher &joint_pub_state,
                       const std::vector<std::string> &joint_names,
                       const bool connect_robot) {
 
-    std::vector<double> position;
+    std::vector<double> position_vector;
     std::vector<double> velocity;
     std::vector<double> effort;
 
@@ -138,7 +185,6 @@ bool updateJointValue(ur5_husky_main::SetJointState::Request &req,
             // нужны только избранные joints
             if (req.name[i] == joint_names[j]) {
                 joint_start_pos(index) = req.position[i];
-                position.push_back(req.position[i]);
                 velocity.push_back(req.velocity[i]);
                 effort.push_back(req.effort[i]);
 
@@ -147,11 +193,10 @@ bool updateJointValue(ur5_husky_main::SetJointState::Request &req,
         }
     }
 
-    if (connect_robot) {
-        std::vector<double> position_vector;
-        position_vector.resize(joint_start_pos.size());
-        Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
+    position_vector.resize(joint_start_pos.size());
+    Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
 
+    if (connect_robot) {
         try {
             RTDEControlInterface rtde_control(robot_ip);
             rtde_control.moveJ(position_vector);
@@ -167,7 +212,7 @@ bool updateJointValue(ur5_husky_main::SetJointState::Request &req,
 
     sensor_msgs::JointState joint_state_msg;
     joint_state_msg.name = joint_names;
-    joint_state_msg.position = position;
+    joint_state_msg.position = position_vector;
     joint_state_msg.velocity = velocity;
     joint_state_msg.effort = effort;
     joint_pub_state.publish(joint_state_msg);
@@ -175,6 +220,39 @@ bool updateJointValue(ur5_husky_main::SetJointState::Request &req,
     env->setState(joint_names, joint_start_pos);
 
     res.result = "End publish";
+    return true;
+}
+
+
+bool updateFinishJointValue(ur5_husky_main::SetFinishJointState::Request &req,
+                      ur5_husky_main::SetFinishJointState::Response &res,
+                      const std::shared_ptr<tesseract_environment::Environment> &env,
+                      const ros::Publisher &joint_pub_state,
+                      const std::vector<std::string> &joint_names,
+                      const bool connect_robot) {
+
+    std::vector<double> position;
+    std::vector<double> velocity;
+    std::vector<double> effort;
+
+    int index = 0;
+    for (int j = 0; j < joint_names.size(); j++) {
+        for (int i = 0; i < req.name.size(); i++) {
+            // нужны только избранные joints
+            if (req.name[i] == joint_names[j]) {
+                joint_end_pos(index) = req.position[i];
+                position.push_back(req.position[i]);
+                velocity.push_back(req.velocity[i]);
+                effort.push_back(req.effort[i]);
+
+                index++;
+            }
+        }
+    }
+
+    env->setState(joint_names, joint_end_pos);
+
+    res.result = "Update Finish Position!";
     return true;
 }
 
@@ -193,6 +271,38 @@ bool getJointValue(ur5_husky_main::GetJointState::Request &req,
   return true;
 }
 
+bool robotPlanTrajectoryMethod(ur5_husky_main::RobotPlanTrajectory::Request &req, ur5_husky_main::RobotPlanTrajectory::Response &res) {
+   robotPlanTrajectory = true;
+   res.result = "Plan Trajectory";
+   res.success = true;
+   return true;
+}
+
+bool robotExecuteTrajectoryMethod(ur5_husky_main::RobotExecuteTrajectory::Request &req, ur5_husky_main::RobotExecuteTrajectory::Response &res) {
+  robotExecuteTrajectory = true;
+  res.result = "Execute Trajectory";
+  res.success = true;
+  return true;
+}
+
+bool createBox(ur5_husky_main::Box::Request &req,
+              ur5_husky_main::Box::Response &res,
+              const std::shared_ptr<tesseract_environment::Environment> &env) {
+
+  std::string joint_name = std::string(req.name) + "_joints";
+
+  ColorInfo color{req.color.name, req.color.r, req.color.g, req.color.b, req.color.a};
+
+  Command::Ptr box = addBox(req.name, joint_name.c_str(), req.length, req.width, req.height, req.x, req.y, req.z, color);
+  if (!env->applyCommand(box)) {
+    res.result = "ERROR - create box";
+    return false;
+  }
+
+  res.result = "Create box success";
+  return true;
+}
+
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
@@ -205,6 +315,7 @@ int main(int argc, char** argv) {
   bool rviz = true;
   bool debug = false;
   bool connect_robot = false;
+  bool ui_control = false;
 
   // конфиги для робота
   double velocity = 0.5;
@@ -223,6 +334,7 @@ int main(int argc, char** argv) {
   pnh.param("rviz", rviz, rviz);
   pnh.param("debug", debug, debug);
   pnh.param("connect_robot", connect_robot, connect_robot);
+  pnh.param("ui_control", ui_control, ui_control);
 
   // Initial setup
   std::string urdf_xml_string, srdf_xml_string;
@@ -240,16 +352,18 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
-  // Создать стол
-  Command::Ptr table = addBox("table", "joint_table_attached", table_length, table_width, table_height, table_pos_x, table_pos_y, table_pos_z);
-  if (!env->applyCommand(table)) {
-    return false;
-  }
+  if (!ui_control) {
+    // Создать стол
+    Command::Ptr table = addBox("table", "joint_table_attached", table_length, table_width, table_height, table_pos_x, table_pos_y, table_pos_z, getDefaultColor("brown"));
+    if (!env->applyCommand(table)) {
+      return false;
+    }
 
-  // Создать коробку
-  Command::Ptr box = addBox("box", "joint_box_attached", box_length, box_width, box_height, box_pos_x, box_pos_y, box_pos_z);
-  if (!env->applyCommand(box)) {
-    return false;
+    // Создать коробку
+    Command::Ptr box = addBox("box", "joint_box_attached", box_length, box_width, box_height, box_pos_x, box_pos_y, box_pos_z, getDefaultColor(""));
+    if (!env->applyCommand(box)) {
+      return false;
+    }
   }
 
   // Create monitor
@@ -278,7 +392,6 @@ int main(int argc, char** argv) {
   joint_start_pos(4) = joint_start_pos_4;
   joint_start_pos(5) = joint_start_pos_5;
 
-  Eigen::VectorXd joint_end_pos(6);
   joint_end_pos(0) = joint_end_pos_0;
   joint_end_pos(1) = joint_end_pos_1;
   joint_end_pos(2) = joint_end_pos_2;
@@ -331,17 +444,45 @@ int main(int argc, char** argv) {
 
   // Сервис для отслеживания на изменения joint state
 
-  ros::ServiceServer setPJointsService = nh.advertiseService<ur5_husky_main::SetJointState::Request, ur5_husky_main::SetJointState::Response>
-                      ("set_joint_value", boost::bind(updateJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
+  ros::ServiceServer setStartJointsService = nh.advertiseService<ur5_husky_main::SetStartJointState::Request, ur5_husky_main::SetStartJointState::Response>
+                      ("set_joint_start_value", boost::bind(updateStartJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
 
-  ros::ServiceServer getPJointsService = nh.advertiseService<ur5_husky_main::GetJointState::Request, ur5_husky_main::GetJointState::Response>
+  ros::ServiceServer setFinishJointsService = nh.advertiseService<ur5_husky_main::SetFinishJointState::Request, ur5_husky_main::SetFinishJointState::Response>
+                      ("set_joint_finish_value", boost::bind(updateFinishJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
+
+  ros::ServiceServer getJointsService = nh.advertiseService<ur5_husky_main::GetJointState::Request, ur5_husky_main::GetJointState::Response>
                       ("get_joint_value", boost::bind(getJointValue, _1, _2, joint_names));
+
+  ros::ServiceServer robotPlanService = nh.advertiseService<ur5_husky_main::RobotPlanTrajectory::Request, ur5_husky_main::RobotPlanTrajectory::Response>
+                      ("robot_plan_trajectory", boost::bind(robotPlanTrajectoryMethod, _1, _2));
+
+  ros::ServiceServer robotExecuteService = nh.advertiseService<ur5_husky_main::RobotExecuteTrajectory::Request, ur5_husky_main::RobotExecuteTrajectory::Response>
+                      ("robot_execute_trajectory", boost::bind(robotExecuteTrajectoryMethod, _1, _2));
+
+  ros::ServiceServer createBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
+                      ("create_box", boost::bind(createBox, _1, _2, env));
+
+  ros::ServiceServer moveBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
+                      ("move_box", boost::bind(moveBox, _1, _2, env));
+
 
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
   }
 
-  plotter->waitForInput("Hit Enter after move robot to start position.");
+  // Ждем команды на планирование траектории
+  if (ui_control && !robotPlanTrajectory) {
+    std::cout << "Waiting for the command to plan the trajectory... \n";
+    while(ros::ok()) {
+      ros::spinOnce();
+      loop_rate.sleep();
+      if (robotPlanTrajectory) {
+        break;
+      }
+    }
+  } else {
+    plotter->waitForInput("Hit Enter after move robot to start position.");
+  }
 
   // Solve Trajectory
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
@@ -407,7 +548,7 @@ int main(int argc, char** argv) {
   TaskComposerProblem problem(env, input_data);
 
   // Задержка, чтобы показать сцену, потом строить траекторию
-  if (plotter != nullptr && plotter->isConnected()) {
+  if (!ui_control && plotter != nullptr && plotter->isConnected()) {
     plotter->waitForInput("Hit Enter to solve for trajectory.");
   }
 
@@ -428,7 +569,9 @@ int main(int argc, char** argv) {
 
   // Plot Process Trajectory
   if (plotter != nullptr && plotter->isConnected()) {
-    plotter->waitForInput();
+    if (!ui_control) {
+      plotter->waitForInput();
+    }
     tesseract_common::Toolpath toolpath = toToolpath(ci, *env);
     auto state_solver = env->getStateSolver();
     auto scene_state = env->getState();
@@ -446,10 +589,26 @@ int main(int argc, char** argv) {
 
   // TODO Проверка флага на подключение connect_robot
 
-  std::cout << "Execute Trajectory on UR5? y/n \n";
   char input_simbol = 'n';
-  std::cin >> input_simbol;
-  if (input_simbol == 'y') {
+
+  if (!ui_control) {
+    std::cout << "Execute Trajectory on UR5? y/n \n";
+    std::cin >> input_simbol;
+  }
+
+  // Ждем команды на выполнение траектории
+  if (ui_control && !robotExecuteTrajectory) {
+    std::cout << "Waiting for the command to execute the trajectory... \n";
+    while(ros::ok()) {
+      ros::spinOnce();
+      loop_rate.sleep();
+      if (robotExecuteTrajectory) {
+        break;
+      }
+    }
+  }
+  
+  if (robotExecuteTrajectory || input_simbol == 'y') {
     std::cout << "Executing... \n";
 
     TrajectoryPlayer player;
