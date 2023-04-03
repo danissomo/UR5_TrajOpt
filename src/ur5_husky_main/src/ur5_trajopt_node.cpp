@@ -210,14 +210,14 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
         }
     }
 
+    env->setState(joint_names, joint_start_pos);
+
     sensor_msgs::JointState joint_state_msg;
     joint_state_msg.name = joint_names;
     joint_state_msg.position = position_vector;
     joint_state_msg.velocity = velocity;
     joint_state_msg.effort = effort;
     joint_pub_state.publish(joint_state_msg);
-
-    env->setState(joint_names, joint_start_pos);
 
     res.result = "End publish";
     return true;
@@ -259,14 +259,40 @@ bool updateFinishJointValue(ur5_husky_main::SetFinishJointState::Request &req,
 
 bool getJointValue(ur5_husky_main::GetJointState::Request &req,
                    ur5_husky_main::GetJointState::Response &res,
-                   const std::vector<std::string> &joint_names) {
+                   const std::vector<std::string> &joint_names,
+                   const ros::Publisher &joint_pub_state,
+                   const std::shared_ptr<tesseract_environment::Environment> &env) {
 
-  std::vector<double> position_vector;
-  position_vector.resize(joint_start_pos.size());
-  Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
+  std::vector<double> joint_positions;
+
+  if (req.from_robot) {
+    try {
+      RTDEReceiveInterface rtde_receive(robot_ip);
+      ROS_INFO("Connect success!");
+      std::vector<double> joint_positions = rtde_receive.getActualQ();
+
+      for (auto i = 0; i < joint_positions.size(); i++) {
+        joint_start_pos(i) = joint_positions[i];
+      }
+
+      env->setState(joint_names, joint_start_pos);
+
+    } catch (...) {
+      ROS_ERROR("Can`t connect with UR5!");
+      env->setState(joint_names, joint_start_pos);
+    }
+  }
+
+  joint_positions.resize(joint_start_pos.size());
+  Eigen::VectorXd::Map(&joint_positions[0], joint_start_pos.size()) = joint_start_pos;
+
+  sensor_msgs::JointState joint_state_msg;
+  joint_state_msg.name = joint_names;
+  joint_state_msg.position = joint_positions;
+  joint_pub_state.publish(joint_state_msg);
 
   res.name = joint_names;
-  res.position = position_vector;
+  res.position = joint_positions;
 
   return true;
 }
@@ -341,8 +367,8 @@ int main(int argc, char** argv) {
   nh.getParam(ROBOT_DESCRIPTION_PARAM, urdf_xml_string);
   nh.getParam(ROBOT_SEMANTIC_PARAM, srdf_xml_string);
 
-  ros::Publisher joint_pub_traj = nh.advertise<trajectory_msgs::JointTrajectory>("/joint_trajectory", 10);
-  ros::Publisher joint_pub_state = pnh.advertise<sensor_msgs::JointState>("/joint_states", 10);
+  ros::Publisher joint_pub_traj = nh.advertise<trajectory_msgs::JointTrajectory>("/joint_trajectory", 1000);
+  ros::Publisher joint_pub_state = pnh.advertise<sensor_msgs::JointState>("/joint_states", 1000);
 
   settingsConfig.update();
 
@@ -451,7 +477,7 @@ int main(int argc, char** argv) {
                       ("set_joint_finish_value", boost::bind(updateFinishJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
 
   ros::ServiceServer getJointsService = nh.advertiseService<ur5_husky_main::GetJointState::Request, ur5_husky_main::GetJointState::Response>
-                      ("get_joint_value", boost::bind(getJointValue, _1, _2, joint_names));
+                      ("get_joint_value", boost::bind(getJointValue, _1, _2, joint_names, joint_pub_state, env));
 
   ros::ServiceServer robotPlanService = nh.advertiseService<ur5_husky_main::RobotPlanTrajectory::Request, ur5_husky_main::RobotPlanTrajectory::Response>
                       ("robot_plan_trajectory", boost::bind(robotPlanTrajectoryMethod, _1, _2));
