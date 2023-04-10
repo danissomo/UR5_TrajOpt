@@ -318,6 +318,14 @@ bool createBox(ur5_husky_main::Box::Request &req,
     return false;
   }
 
+  if (req.offsetX > 0 || req.offsetY > 0 || req.offsetZ > 0) {
+    Command::Ptr boxMove = renderMoveBox(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
+    if (!env->applyCommand(boxMove)) {
+      res.result = "ERROR - move create box";
+      return false;
+    }
+  }
+
   res.result = "Create box success";
   return true;
 }
