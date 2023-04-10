@@ -64,6 +64,9 @@ float box_pos_x = 0.30;
 float box_pos_y = 0.0;
 float box_pos_z = 0.0;
 
+std::string collision_cost_config_type = "DISCRETE_CONTINUOUS";
+std::string collision_constraint_config_type = "DISCRETE_CONTINUOUS";
+
 
 class SettingsCustomLibClass {
     public:
@@ -237,6 +240,13 @@ inline void SettingsCustomLibClass::update() {
                 box_pos_z = stof(line);
                 ROS_INFO("Setting updated. New value box_pos_z = %f", box_pos_z);
 
+            } else if (token == "collision_cost_config_type") {
+                collision_cost_config_type = line;
+                ROS_INFO("Setting updated. New value collision_cost_config_type = %s", robot_ip.c_str());
+
+            } else if (token == "collision_constraint_config_type") {
+                collision_constraint_config_type = line;
+                ROS_INFO("Setting updated. New value collision_constraint_config_type = %s", robot_ip.c_str());
             }
         }
     }

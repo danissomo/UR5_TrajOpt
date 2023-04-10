@@ -38,6 +38,7 @@
 
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_plan_profile.h>
+#include <tesseract_motion_planners/trajopt/profile/trajopt_default_solver_profile.h>
 
 #include <tesseract_visualization/trajectory_player.h>
 
@@ -533,16 +534,33 @@ int main(int argc, char** argv) {
   // Create profile dictionary
   auto profiles = std::make_shared<ProfileDictionary>();
 
+  // Тип коллизии задается в настройках
+  trajopt::CollisionEvaluatorType collisionCostConfigType;
+  trajopt::CollisionEvaluatorType collisionConstraintConfigType;
+  if (collision_cost_config_type == "SINGLE_TIMESTEP") {
+      collisionCostConfigType = trajopt::CollisionEvaluatorType::SINGLE_TIMESTEP;
+  } else if (collision_cost_config_type == "CAST_CONTINUOUS") {
+      collisionCostConfigType = trajopt::CollisionEvaluatorType::CAST_CONTINUOUS;
+  } else if (collision_constraint_config_type == "SINGLE_TIMESTEP") {
+      collisionConstraintConfigType = trajopt::CollisionEvaluatorType::SINGLE_TIMESTEP;
+  } else if (collision_constraint_config_type == "CAST_CONTINUOUS") {
+      collisionConstraintConfigType = trajopt::CollisionEvaluatorType::CAST_CONTINUOUS;
+  } else { // DISCRETE_CONTINUOUS - вариант по умолчанию
+      collisionCostConfigType = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
+      collisionConstraintConfigType = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
+  }
+
   auto composite_profile = std::make_shared<TrajOptDefaultCompositeProfile>();
+  composite_profile->longest_valid_segment_length = 0.05;
   composite_profile->collision_cost_config.enabled = true;
-  composite_profile->collision_cost_config.type = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
-  composite_profile->collision_cost_config.safety_margin = 0.01;
-  composite_profile->collision_cost_config.safety_margin_buffer = 0.01;
+  composite_profile->collision_cost_config.type = collisionCostConfigType;
+  composite_profile->collision_cost_config.safety_margin = 0.0;
+  composite_profile->collision_cost_config.safety_margin_buffer = 0.001;
   composite_profile->collision_cost_config.coeff = 1;
   composite_profile->collision_constraint_config.enabled = true;
-  composite_profile->collision_constraint_config.type = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
-  composite_profile->collision_constraint_config.safety_margin = 0.01;
-  composite_profile->collision_constraint_config.safety_margin_buffer = 0.01;
+  composite_profile->collision_constraint_config.type = collisionConstraintConfigType;
+  composite_profile->collision_constraint_config.safety_margin = 0.001;
+  composite_profile->collision_constraint_config.safety_margin_buffer = 0.005;
   composite_profile->collision_constraint_config.coeff = 1;
   composite_profile->smooth_velocities = true;
   composite_profile->smooth_accelerations = false;
@@ -551,13 +569,17 @@ int main(int argc, char** argv) {
   profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "DEFAULT", composite_profile);
 
   auto plan_profile = std::make_shared<TrajOptDefaultPlanProfile>();
-  plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
-  plan_profile->cartesian_coeff(0) = 0;
-  plan_profile->cartesian_coeff(1) = 0;
-  plan_profile->cartesian_coeff(2) = 0;
+  // plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
+  // plan_profile->cartesian_coeff(0) = 0;
+  // plan_profile->cartesian_coeff(1) = 0;
+  // plan_profile->cartesian_coeff(2) = 0;
+
+  auto trajopt_solver_profile = std::make_shared<TrajOptDefaultSolverProfile>();
+  trajopt_solver_profile->opt_info.max_iter = 10000;
 
   // Add profile to Dictionary
   profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "DEFAULT", plan_profile);
+  profiles->addProfile<TrajOptSolverProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "DEFAULT", trajopt_solver_profile);
 
   // Create Task Input Data
   TaskComposerDataStorage input_data;

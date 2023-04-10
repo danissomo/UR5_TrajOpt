@@ -26,12 +26,20 @@ eigenVector3d = 1.0
 # joint_start_pos_4 = -1.483593
 # joint_start_pos_5 = -1.578000
 
-joint_start_pos_0 = 1.51731
-joint_start_pos_1 = -0.796949
-joint_start_pos_2 = 2.25895
-joint_start_pos_3 = -2.89963
-joint_start_pos_4 = -1.56047
-joint_start_pos_5 = 0.020617
+# joint_start_pos_0 = 1.51731
+# joint_start_pos_1 = -0.796949
+# joint_start_pos_2 = 2.25895
+# joint_start_pos_3 = -2.89963
+# joint_start_pos_4 = -1.56047
+# joint_start_pos_5 = 0.020617
+
+### Робот под столом (тест 8 симуляция)
+joint_start_pos_0 = 1.670050
+joint_start_pos_1 = -0.923000
+joint_start_pos_2 = 1.997900
+joint_start_pos_3 = -4.200772
+joint_start_pos_4 = -1.483593
+joint_start_pos_5 = -1.578000
 
 
 # Конечное положение робота по умолчанию
@@ -59,12 +67,21 @@ joint_start_pos_5 = 0.020617
 
 
 # Тест близко к полу
-joint_end_pos_0 = 1.51731
-joint_end_pos_1 = -0.796949
-joint_end_pos_2 = 2.25895
-joint_end_pos_3 = -2.89963
-joint_end_pos_4 = -1.56047
-joint_end_pos_5 = 0.020617
+# joint_end_pos_0 = 1.51731
+# joint_end_pos_1 = -0.796949
+# joint_end_pos_2 = 2.25895
+# joint_end_pos_3 = -2.89963
+# joint_end_pos_4 = -1.56047
+# joint_end_pos_5 = 0.020617
+
+
+### Робот над столом (тест 8 симуляция)
+joint_end_pos_0 = 1.670050
+joint_end_pos_1 = -1.541200
+joint_end_pos_2 = 1.379700
+joint_end_pos_3 = -2.964372
+joint_end_pos_4 = -1.483593
+joint_end_pos_5 = -1.578000
 
 
 # IP робота
@@ -98,3 +115,9 @@ box_pos_x = 0.93
 box_pos_y = 0.02
 box_pos_z = -0.14869
 
+
+# Тип коллизии при настройке профиля для выполнения алгоритма
+# Допустимые значения: SINGLE_TIMESTEP, DISCRETE_CONTINUOUS, CAST_CONTINUOUS
+
+collision_cost_config_type = DISCRETE_CONTINUOUS
+collision_constraint_config_type = DISCRETE_CONTINUOUS
