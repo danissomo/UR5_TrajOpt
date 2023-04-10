@@ -212,13 +212,6 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
 
     env->setState(joint_names, joint_start_pos);
 
-    sensor_msgs::JointState joint_state_msg;
-    joint_state_msg.name = joint_names;
-    joint_state_msg.position = position_vector;
-    joint_state_msg.velocity = velocity;
-    joint_state_msg.effort = effort;
-    joint_pub_state.publish(joint_state_msg);
-
     res.result = "End publish";
     return true;
 }
@@ -461,14 +454,6 @@ int main(int argc, char** argv) {
   // Установить начальное положение JointState
   position_vector.resize(joint_start_pos.size());
   Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
-  sensor_msgs::JointState joint_state_msg;
-  joint_state_msg.name = joint_names;
-  joint_state_msg.position = position_vector;
-  joint_state_msg.velocity = velocity_default;
-  joint_state_msg.effort = effort_default;
-  joint_pub_state.publish(joint_state_msg);
-
-  // Сервис для отслеживания на изменения joint state
 
   ros::ServiceServer setStartJointsService = nh.advertiseService<ur5_husky_main::SetStartJointState::Request, ur5_husky_main::SetStartJointState::Response>
                       ("set_joint_start_value", boost::bind(updateStartJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
