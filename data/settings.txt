@@ -121,3 +121,9 @@ box_pos_z = -0.14869
 
 collision_cost_config_type = DISCRETE_CONTINUOUS
 collision_constraint_config_type = DISCRETE_CONTINUOUS
+
+
+# параметры для движения реального робота или в симуляции ur_sim
+ur_speed = 0.1
+ur_acceleration = 3.0
+ur_blend = 0.0

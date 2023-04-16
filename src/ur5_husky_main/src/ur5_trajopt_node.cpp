@@ -663,35 +663,20 @@ int main(int argc, char** argv) {
     RTDEControlInterface rtde_control(robot_ip);
 
     // Список доступных положений робота
-    // std::vector<std::vector<double>> jointsPath;
-    // double velocity = 0.1;
-    // double acceleration = 0.1;
-    // double blend_1 = 0.0;
-    // std::vector<double> path_pose;
+    std::vector<std::vector<double>> jointsPath;
+    std::vector<double> path_pose;
 
     for (int i = 0; i < points.size(); i++) {
-      // tesseract_common::JointState j_state = player.getByIndex(i);
-      // path_pose.resize(j_state.position.size());
-      // Eigen::VectorXd::Map(&path_pose[0], j_state.position.size()) = j_state.position;
-      // path_pose.push_back(velocity);
-      // path_pose.push_back(acceleration);
-      // path_pose.push_back(blend_1);
-      // jointsPath.push_back(path_pose);
-
-      // std::cout << "===========" << path_pose.size() << std::endl;
-
-      // for (int i = 0; i < path_pose.size(); i++) {
-      //   std::cout << "i = " << path_pose[i] << std::endl;
-      // }
-
-      if (i == 0) {
-        // loop_rate.sleep();
-      }
-
-      ROS_INFO("%d point of traectory: ", i+1);
 
       tesseract_common::JointState j_state = player.getByIndex(i);
-      j_states.push_back(j_state);
+      path_pose.resize(j_state.position.size());
+      Eigen::VectorXd::Map(&path_pose[0], j_state.position.size()) = j_state.position;
+      path_pose.push_back(ur_speed);
+      path_pose.push_back(ur_acceleration);
+      path_pose.push_back(ur_blend);
+      jointsPath.push_back(path_pose);
+
+      ROS_INFO("%d point of traectory: ", i+1);
 
       std::cout << "joint_names: ";
       for (const auto& name: j_state.joint_names) {
@@ -704,31 +689,23 @@ int main(int argc, char** argv) {
       std::cout << "acceleration: " << j_state.acceleration.transpose() << std::endl;
       std::cout << "effort: " << j_state.effort.transpose() << std::endl;
       std::cout << "====================" << std::endl;
-
-      position_vector.resize(j_state.position.size());
-      Eigen::VectorXd::Map(&position_vector[0], j_state.position.size()) = j_state.position;
-
-      // Сообщение для отправки состояния
-      sensor_msgs::JointState joint_state_msg;
-      joint_state_msg.name = j_state.joint_names;
-      joint_state_msg.position = position_vector;
-      joint_state_msg.velocity = velocity_default; // скорость
-      joint_state_msg.effort = effort_default; // усилие
-
-      rtde_control.moveJ(position_vector);
-      ROS_INFO("UR5 changed joints value");
-
-      env->setState(joint_names, j_state.position);
-      joint_pub_state.publish(joint_state_msg);
-      // loop_rate.sleep();
     }
+
+    std::cout << "jointsPath: " << jointsPath.size() << std::endl;
 
     // Обновить состояние до последней позиции
     position_vector.resize(joint_end_pos.size());
     Eigen::VectorXd::Map(&position_vector[0], joint_end_pos.size()) = joint_end_pos;
 
+    path_pose.resize(position_vector.size());
+    Eigen::VectorXd::Map(&path_pose[0], joint_end_pos.size()) = joint_end_pos;
+    path_pose.push_back(ur_speed);
+    path_pose.push_back(ur_acceleration);
+    path_pose.push_back(ur_blend);
+    jointsPath.push_back(path_pose);
+
     // Отправить на робота
-    rtde_control.moveJ(position_vector);
+    rtde_control.moveJ(jointsPath);
     rtde_control.stopScript();
 
     // Установить состояние для tesseract

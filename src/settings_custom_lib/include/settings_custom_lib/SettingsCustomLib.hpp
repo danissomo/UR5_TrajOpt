@@ -67,6 +67,10 @@ float box_pos_z = 0.0;
 std::string collision_cost_config_type = "DISCRETE_CONTINUOUS";
 std::string collision_constraint_config_type = "DISCRETE_CONTINUOUS";
 
+float ur_speed = 0.1;
+float ur_acceleration = 0.1;
+float ur_blend = 0.0;
+
 
 class SettingsCustomLibClass {
     public:
@@ -247,6 +251,18 @@ inline void SettingsCustomLibClass::update() {
             } else if (token == "collision_constraint_config_type") {
                 collision_constraint_config_type = line;
                 ROS_INFO("Setting updated. New value collision_constraint_config_type = %s", robot_ip.c_str());
+            } else if (strcmp("ur_speed", token.c_str()) == 0) {
+                ur_speed = stof(line);
+                ROS_INFO("Setting updated. New value ur_speed = %f", ur_speed);
+
+            } else if (strcmp("ur_acceleration", token.c_str()) == 0) {
+                ur_acceleration = stof(line);
+                ROS_INFO("Setting updated. New value ur_acceleration = %f", ur_acceleration);
+
+            } else if (strcmp("ur_blend", token.c_str()) == 0) {
+                ur_blend = stof(line);
+                ROS_INFO("Setting updated. New value ur_blend = %f", ur_blend);
+
             }
         }
     }
