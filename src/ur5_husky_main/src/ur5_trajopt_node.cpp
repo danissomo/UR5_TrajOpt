@@ -5,7 +5,7 @@
 #include <ros/topic.h>
 
 
-#include <ur5_husky_main/ur5_trajopt.h>
+#include <ur5_trajopt.hpp>
 #include <ur5_husky_main/SetStartJointState.h>
 #include <ur5_husky_main/SetFinishJointState.h>
 #include <ur5_husky_main/GetJointState.h>
@@ -375,10 +375,14 @@ int main(int argc, char** argv) {
   settingsConfig.update();
 
   auto env = std::make_shared<tesseract_environment::Environment>();
+
   auto locator = std::make_shared<tesseract_rosutils::ROSResourceLocator>();
   if (!env->init(urdf_xml_string, srdf_xml_string, locator)) {
     exit(1);
   }
+
+  UR5Trajopt example(12);
+  example.run();
 
   if (!ui_control) {
     // Создать стол
@@ -426,6 +430,24 @@ int main(int argc, char** argv) {
   joint_end_pos(3) = joint_end_pos_3;
   joint_end_pos(4) = joint_end_pos_4;
   joint_end_pos(5) = joint_end_pos_5;
+
+  // промежуточное положение робота
+  Eigen::VectorXd joint_middle_pos(6);
+  joint_middle_pos(0) = -4.662232;
+  joint_middle_pos(1) = -0.382847;
+  joint_middle_pos(2) = 1.830611;
+  joint_middle_pos(3) = -3.041089;
+  joint_middle_pos(4) = -1.641295;
+  joint_middle_pos(5) = 0.020593;
+
+  Eigen::VectorXd joint_middle_pos2(6);
+  joint_middle_pos2(0) = -4.662232;
+  joint_middle_pos2(1) = -1.282847;
+  joint_middle_pos2(2) = 2.230611;
+  joint_middle_pos2(3) = -2.541089;
+  joint_middle_pos2(4) = -1.641295;
+  joint_middle_pos2(5) = 0.020593;
+
 
   if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
     ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
@@ -508,10 +530,12 @@ int main(int argc, char** argv) {
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
 
   // Create Program
-  CompositeInstruction program("DEFAULT", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "ur5_tool0"));
+  CompositeInstruction program("UR5", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "ur5_tool0"));
 
   // Start and End Joint Position for the program
   StateWaypointPoly wp0{ StateWaypoint(joint_names, joint_start_pos) };
+  StateWaypointPoly wp01{ StateWaypoint(joint_names, joint_middle_pos) };
+  StateWaypointPoly wp02{ StateWaypoint(joint_names, joint_middle_pos2) };
   StateWaypointPoly wp1{ StateWaypoint(joint_names, joint_end_pos) };
 
   MoveInstruction start_instruction(wp0, MoveInstructionType::START);
@@ -519,10 +543,19 @@ int main(int argc, char** argv) {
 
   // Plan freespace from start
   // Assign a linear motion so cartesian is defined as the target
-  MoveInstruction plan_f0(wp1, MoveInstructionType::LINEAR, "DEFAULT");
+
+  MoveInstruction plan_f01(wp01, MoveInstructionType::FREESPACE, "UR5");
+  plan_f01.setDescription("freespace_plan");
+
+  MoveInstruction plan_f02(wp02, MoveInstructionType::FREESPACE, "UR5");
+  plan_f02.setDescription("freespace_plan");
+
+  MoveInstruction plan_f0(wp1, MoveInstructionType::FREESPACE, "UR5");
   plan_f0.setDescription("freespace_plan");
 
   // Add Instructions to program
+  program.appendMoveInstruction(plan_f01);
+  program.appendMoveInstruction(plan_f02);
   program.appendMoveInstruction(plan_f0);
 
   // Print Diagnostics
@@ -551,22 +584,22 @@ int main(int argc, char** argv) {
   }
 
   auto composite_profile = std::make_shared<TrajOptDefaultCompositeProfile>();
-  composite_profile->longest_valid_segment_length = 0.05;
+  // composite_profile->longest_valid_segment_length = 0.05;
   composite_profile->collision_cost_config.enabled = true;
   composite_profile->collision_cost_config.type = collisionCostConfigType;
-  composite_profile->collision_cost_config.safety_margin = 0.0;
-  composite_profile->collision_cost_config.safety_margin_buffer = 0.001;
+  composite_profile->collision_cost_config.safety_margin = 0.01;
+  composite_profile->collision_cost_config.safety_margin_buffer = 0.01;
   composite_profile->collision_cost_config.coeff = 1;
   composite_profile->collision_constraint_config.enabled = true;
   composite_profile->collision_constraint_config.type = collisionConstraintConfigType;
-  composite_profile->collision_constraint_config.safety_margin = 0.001;
-  composite_profile->collision_constraint_config.safety_margin_buffer = 0.005;
+  composite_profile->collision_constraint_config.safety_margin = 0.01;
+  composite_profile->collision_constraint_config.safety_margin_buffer = 0.01;
   composite_profile->collision_constraint_config.coeff = 1;
   composite_profile->smooth_velocities = true;
   composite_profile->smooth_accelerations = false;
   composite_profile->smooth_jerks = false;
   composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
-  profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "DEFAULT", composite_profile);
+  profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", composite_profile);
 
   auto plan_profile = std::make_shared<TrajOptDefaultPlanProfile>();
   plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
@@ -574,12 +607,12 @@ int main(int argc, char** argv) {
   plan_profile->cartesian_coeff(1) = 0;
   plan_profile->cartesian_coeff(2) = 0;
 
-  auto trajopt_solver_profile = std::make_shared<TrajOptDefaultSolverProfile>();
-  trajopt_solver_profile->opt_info.max_iter = 10000;
+  // auto trajopt_solver_profile = std::make_shared<TrajOptDefaultSolverProfile>();
+  // trajopt_solver_profile->opt_info.max_iter = 100;
 
   // Add profile to Dictionary
-  profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "DEFAULT", plan_profile);
-  profiles->addProfile<TrajOptSolverProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "DEFAULT", trajopt_solver_profile);
+  profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", plan_profile);
+  // profiles->addProfile<TrajOptSolverProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", trajopt_solver_profile);
 
   // Create Task Input Data
   TaskComposerDataStorage input_data;

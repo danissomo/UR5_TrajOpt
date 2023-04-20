@@ -149,13 +149,13 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include ${catkin_INCLUDE_DIRS}
+  include ${catkin_INCLUDE_DIRS} trajopt
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/ur5_husky_main.cpp
-# )
+# src/UR5Trajopt.cpp
+#)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -167,7 +167,11 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/ur5_husky_main_node.cpp)
 
-add_executable(ur5_trajopt_node src/ur5_trajopt_node.cpp)
+add_executable(
+  ur5_trajopt_node 
+  src/ur5_trajopt_node.cpp
+  trajopt/UR5Trajopt.cpp
+)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
