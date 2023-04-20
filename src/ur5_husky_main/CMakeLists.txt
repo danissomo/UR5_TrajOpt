@@ -29,6 +29,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
+find_package(Eigen3 REQUIRED)
+
 find_package(tesseract_environment REQUIRED)
 find_package(tesseract_command_language REQUIRED)
 find_package(tesseract_task_composer REQUIRED)
@@ -136,7 +138,7 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
+  INCLUDE_DIRS
 #  LIBRARIES ur5_husky_main
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib

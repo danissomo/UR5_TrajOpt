@@ -381,9 +381,6 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
-  UR5Trajopt example(12);
-  example.run();
-
   if (!ui_control) {
     // Создать стол
     Command::Ptr table = addBox("table", "joint_table_attached", table_length, table_width, table_height, table_pos_x, table_pos_y, table_pos_z, getDefaultColor("brown"));
@@ -430,23 +427,6 @@ int main(int argc, char** argv) {
   joint_end_pos(3) = joint_end_pos_3;
   joint_end_pos(4) = joint_end_pos_4;
   joint_end_pos(5) = joint_end_pos_5;
-
-  // промежуточное положение робота
-  Eigen::VectorXd joint_middle_pos(6);
-  joint_middle_pos(0) = -4.662232;
-  joint_middle_pos(1) = -0.382847;
-  joint_middle_pos(2) = 1.830611;
-  joint_middle_pos(3) = -3.041089;
-  joint_middle_pos(4) = -1.641295;
-  joint_middle_pos(5) = 0.020593;
-
-  Eigen::VectorXd joint_middle_pos2(6);
-  joint_middle_pos2(0) = -4.662232;
-  joint_middle_pos2(1) = -1.282847;
-  joint_middle_pos2(2) = 2.230611;
-  joint_middle_pos2(3) = -2.541089;
-  joint_middle_pos2(4) = -1.641295;
-  joint_middle_pos2(5) = 0.020593;
 
 
   if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
@@ -526,133 +506,8 @@ int main(int argc, char** argv) {
     plotter->waitForInput("Hit Enter after move robot to start position.");
   }
 
-  // Solve Trajectory
-  CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
-
-  // Create Program
-  CompositeInstruction program("UR5", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "ur5_tool0"));
-
-  // Start and End Joint Position for the program
-  StateWaypointPoly wp0{ StateWaypoint(joint_names, joint_start_pos) };
-  StateWaypointPoly wp01{ StateWaypoint(joint_names, joint_middle_pos) };
-  StateWaypointPoly wp02{ StateWaypoint(joint_names, joint_middle_pos2) };
-  StateWaypointPoly wp1{ StateWaypoint(joint_names, joint_end_pos) };
-
-  MoveInstruction start_instruction(wp0, MoveInstructionType::START);
-  program.setStartInstruction(start_instruction);
-
-  // Plan freespace from start
-  // Assign a linear motion so cartesian is defined as the target
-
-  MoveInstruction plan_f01(wp01, MoveInstructionType::FREESPACE, "UR5");
-  plan_f01.setDescription("freespace_plan");
-
-  MoveInstruction plan_f02(wp02, MoveInstructionType::FREESPACE, "UR5");
-  plan_f02.setDescription("freespace_plan");
-
-  MoveInstruction plan_f0(wp1, MoveInstructionType::FREESPACE, "UR5");
-  plan_f0.setDescription("freespace_plan");
-
-  // Add Instructions to program
-  program.appendMoveInstruction(plan_f01);
-  program.appendMoveInstruction(plan_f02);
-  program.appendMoveInstruction(plan_f0);
-
-  // Print Diagnostics
-  program.print("Program: ");
-
-  // Create Executor
-  auto executor = std::make_unique<TaskflowTaskComposerExecutor>(5);
-
-  // Create profile dictionary
-  auto profiles = std::make_shared<ProfileDictionary>();
-
-  // Тип коллизии задается в настройках
-  trajopt::CollisionEvaluatorType collisionCostConfigType;
-  trajopt::CollisionEvaluatorType collisionConstraintConfigType;
-  if (collision_cost_config_type == "SINGLE_TIMESTEP") {
-      collisionCostConfigType = trajopt::CollisionEvaluatorType::SINGLE_TIMESTEP;
-  } else if (collision_cost_config_type == "CAST_CONTINUOUS") {
-      collisionCostConfigType = trajopt::CollisionEvaluatorType::CAST_CONTINUOUS;
-  } else if (collision_constraint_config_type == "SINGLE_TIMESTEP") {
-      collisionConstraintConfigType = trajopt::CollisionEvaluatorType::SINGLE_TIMESTEP;
-  } else if (collision_constraint_config_type == "CAST_CONTINUOUS") {
-      collisionConstraintConfigType = trajopt::CollisionEvaluatorType::CAST_CONTINUOUS;
-  } else { // DISCRETE_CONTINUOUS - вариант по умолчанию
-      collisionCostConfigType = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
-      collisionConstraintConfigType = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
-  }
-
-  auto composite_profile = std::make_shared<TrajOptDefaultCompositeProfile>();
-  // composite_profile->longest_valid_segment_length = 0.05;
-  composite_profile->collision_cost_config.enabled = true;
-  composite_profile->collision_cost_config.type = collisionCostConfigType;
-  composite_profile->collision_cost_config.safety_margin = 0.01;
-  composite_profile->collision_cost_config.safety_margin_buffer = 0.01;
-  composite_profile->collision_cost_config.coeff = 1;
-  composite_profile->collision_constraint_config.enabled = true;
-  composite_profile->collision_constraint_config.type = collisionConstraintConfigType;
-  composite_profile->collision_constraint_config.safety_margin = 0.01;
-  composite_profile->collision_constraint_config.safety_margin_buffer = 0.01;
-  composite_profile->collision_constraint_config.coeff = 1;
-  composite_profile->smooth_velocities = true;
-  composite_profile->smooth_accelerations = false;
-  composite_profile->smooth_jerks = false;
-  composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
-  profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", composite_profile);
-
-  auto plan_profile = std::make_shared<TrajOptDefaultPlanProfile>();
-  plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
-  plan_profile->cartesian_coeff(0) = 0;
-  plan_profile->cartesian_coeff(1) = 0;
-  plan_profile->cartesian_coeff(2) = 0;
-
-  // auto trajopt_solver_profile = std::make_shared<TrajOptDefaultSolverProfile>();
-  // trajopt_solver_profile->opt_info.max_iter = 100;
-
-  // Add profile to Dictionary
-  profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", plan_profile);
-  // profiles->addProfile<TrajOptSolverProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", trajopt_solver_profile);
-
-  // Create Task Input Data
-  TaskComposerDataStorage input_data;
-  input_data.setData("input_program", program);
-
-  // Create Task Composer Problem
-  TaskComposerProblem problem(env, input_data);
-
-  // Задержка, чтобы показать сцену, потом строить траекторию
-  if (!ui_control && plotter != nullptr && plotter->isConnected()) {
-    plotter->waitForInput("Hit Enter to solve for trajectory.");
-  }
-
-  // Solve process plan
-  tesseract_common::Timer stopwatch;
-  stopwatch.start();
-  TaskComposerInput input(problem, profiles);
-  TrajOptMotionPipelineTask task("input_program", "output_program");
-  TaskComposerFuture::UPtr future = executor->run(task, input);
-  future->wait();
-  stopwatch.stop();
-  CONSOLE_BRIDGE_logInform("Planning took %f seconds.", stopwatch.elapsedSeconds());
-
-
-  auto ci = input.data_storage.getData("output_program").as<CompositeInstruction>();
-  tesseract_common::JointTrajectory trajectory = toJointTrajectory(ci);
-  std::vector<tesseract_planning::InstructionPoly> points = ci.getInstructions();
-
-  // Plot Process Trajectory
-  if (plotter != nullptr && plotter->isConnected()) {
-    if (!ui_control) {
-      plotter->waitForInput();
-    }
-    tesseract_common::Toolpath toolpath = toToolpath(ci, *env);
-    auto state_solver = env->getStateSolver();
-    auto scene_state = env->getState();
-
-    plotter->plotMarker(ToolpathMarker(toolpath));
-    plotter->plotTrajectory(trajectory, *state_solver);
-  }
+  UR5Trajopt example(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control);
+  tesseract_common::JointTrajectory trajectory = example.run();
 
 
   /////////////////////////////////////////////////
@@ -699,7 +554,7 @@ int main(int argc, char** argv) {
     std::vector<std::vector<double>> jointsPath;
     std::vector<double> path_pose;
 
-    for (int i = 0; i < points.size(); i++) {
+    for (int i = 0; i < trajectory.states.size(); i++) {
 
       tesseract_common::JointState j_state = player.getByIndex(i);
       path_pose.resize(j_state.position.size());
