@@ -1,10 +1,6 @@
 #include "ur5_trajopt.hpp"
 
 #include <ros/ros.h>
-#include <actionlib/client/simple_action_client.h>
-#include <control_msgs/FollowJointTrajectoryAction.h>
-#include <ros/topic.h>
-
 
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
