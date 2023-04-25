@@ -38,7 +38,7 @@
 #include <vector>
 #include <string>
 
-// #include <settings_custom_lib/SettingsCustomLib.hpp>
+#include <settings_custom_lib/AddSettingsCustomLib.hpp>
 
 using namespace tesseract_rosutils;
 
@@ -70,20 +70,20 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
   
   // промежуточное положение робота
   Eigen::VectorXd joint_middle_pos(6);
-  joint_middle_pos(0) = -4.662232;
-  joint_middle_pos(1) = -0.382847;
-  joint_middle_pos(2) = 1.830611;
-  joint_middle_pos(3) = -3.041089;
-  joint_middle_pos(4) = -1.641295;
-  joint_middle_pos(5) = 0.020593;
+  joint_middle_pos(0) = joint_middle_pos_0;
+  joint_middle_pos(1) = joint_middle_pos_1;
+  joint_middle_pos(2) = joint_middle_pos_2;
+  joint_middle_pos(3) = joint_middle_pos_3;
+  joint_middle_pos(4) = joint_middle_pos_4;
+  joint_middle_pos(5) = joint_middle_pos_5;
 
   Eigen::VectorXd joint_middle_pos2(6);
-  joint_middle_pos2(0) = -4.662232;
-  joint_middle_pos2(1) = -1.282847;
-  joint_middle_pos2(2) = 2.230611;
-  joint_middle_pos2(3) = -2.541089;
-  joint_middle_pos2(4) = -1.641295;
-  joint_middle_pos2(5) = 0.020593;
+  joint_middle_pos2(0) = joint_middle2_pos_0;
+  joint_middle_pos2(1) = joint_middle2_pos_1;
+  joint_middle_pos2(2) = joint_middle2_pos_2;
+  joint_middle_pos2(3) = joint_middle2_pos_3;
+  joint_middle_pos2(4) = joint_middle2_pos_4;
+  joint_middle_pos2(5) = joint_middle2_pos_5;
 
    // Solve Trajectory
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");

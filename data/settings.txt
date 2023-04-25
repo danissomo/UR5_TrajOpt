@@ -84,6 +84,24 @@ joint_end_pos_4 = -1.483593
 joint_end_pos_5 = -1.578000
 
 
+# Промежуточные точки
+#1
+joint_middle_pos_0 = -4.662232
+joint_middle_pos_1 = -0.382847
+joint_middle_pos_2 = 1.830611
+joint_middle_pos_3 = -3.041089
+joint_middle_pos_4 = -1.641295
+joint_middle_pos_5 = 0.020593
+
+#2
+joint_middle2_pos_0 = -4.662232
+joint_middle2_pos_1 = -1.282847
+joint_middle2_pos_2 = 2.230611
+joint_middle2_pos_3 = -2.541089
+joint_middle2_pos_4 = -1.641295
+joint_middle2_pos_5 = 0.020593
+
+
 # IP робота
 robot_ip = 127.0.0.1
 

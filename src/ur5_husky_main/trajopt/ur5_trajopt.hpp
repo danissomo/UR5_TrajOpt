@@ -9,8 +9,6 @@
 #include <vector>
 #include <string>
 
-// #include <settings_custom_lib/SettingsCustomLib.hpp>
-
 using namespace tesseract_rosutils;
 using namespace tesseract_environment;
 
