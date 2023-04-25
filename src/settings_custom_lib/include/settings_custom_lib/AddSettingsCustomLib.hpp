@@ -24,6 +24,8 @@ float joint_middle2_pos_3 = -2.541089;
 float joint_middle2_pos_4 = -1.641295;
 float joint_middle2_pos_5 = 0.020593;
 
+bool joint_middle_include = false;
+
 
 class AddSettingsCustomLibClass {
     public:
@@ -100,6 +102,10 @@ inline void AddSettingsCustomLibClass::update() {
             } else if (strcmp("joint_middle2_pos_5", token.c_str()) == 0) {
                 joint_middle2_pos_5 = stof(line);
                 ROS_INFO("Setting updated. New value joint_middle2_pos_5 = %f", joint_middle2_pos_5);
+
+            } else if (strcmp("joint_middle_include", token.c_str()) == 0) {
+                joint_middle_include = (strcmp("true", line.c_str()) == 0);
+                ROS_INFO("Setting updated. New value joint_middle_include = %f", joint_middle_include);
 
             }
         }

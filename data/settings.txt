@@ -101,6 +101,9 @@ joint_middle2_pos_3 = -2.541089
 joint_middle2_pos_4 = -1.641295
 joint_middle2_pos_5 = 0.020593
 
+# Включать ли промежуточные точки
+# 0 - нет, 1 - да
+joint_middle_include = false
 
 # IP робота
 robot_ip = 127.0.0.1

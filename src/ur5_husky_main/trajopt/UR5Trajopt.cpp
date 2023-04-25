@@ -113,8 +113,12 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
   plan_f0.setDescription("freespace_plan");
 
   // Add Instructions to program
-  program.appendMoveInstruction(plan_f01);
-  program.appendMoveInstruction(plan_f02);
+
+  if (joint_middle_include) {
+    program.appendMoveInstruction(plan_f01);
+    program.appendMoveInstruction(plan_f02);
+  }
+
   program.appendMoveInstruction(plan_f0);
 
   // Print Diagnostics
