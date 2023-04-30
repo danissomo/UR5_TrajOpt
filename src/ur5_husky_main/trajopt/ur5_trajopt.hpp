@@ -15,7 +15,15 @@ using namespace tesseract_environment;
 class UR5Trajopt
 {
 public:
-  UR5Trajopt(tesseract_environment::Environment::Ptr env, ROSPlottingPtr plotter, std::vector<std::string> joint_names, Eigen::VectorXd joint_start_pos, Eigen::VectorXd joint_end_pos, bool ui_control);
+  UR5Trajopt(tesseract_environment::Environment::Ptr env,\
+             ROSPlottingPtr plotter,
+             std::vector<std::string> joint_names,
+             Eigen::VectorXd joint_start_pos,
+             Eigen::VectorXd joint_end_pos,
+             bool ui_control,
+             Eigen::VectorXd joint_middle_pos,
+             Eigen::VectorXd joint_middle2_pos,
+             bool joint_middle_include);
   ~UR5Trajopt() = default;
   UR5Trajopt(const UR5Trajopt&) = default;
   UR5Trajopt& operator=(const UR5Trajopt&) = default;
@@ -29,8 +37,11 @@ private:
   ROSPlottingPtr plotter_;
   std::vector<std::string> joint_names_;
   Eigen::VectorXd joint_start_pos_;
+  Eigen::VectorXd joint_middle_pos_;
+  Eigen::VectorXd joint_middle2_pos_;
   Eigen::VectorXd joint_end_pos_;
   bool ui_control_;
+  bool joint_middle_include_;
   
 };
 

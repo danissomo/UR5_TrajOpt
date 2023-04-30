@@ -38,8 +38,6 @@
 #include <vector>
 #include <string>
 
-#include <settings_custom_lib/AddSettingsCustomLib.hpp>
-
 using namespace tesseract_rosutils;
 
 using namespace trajopt;
@@ -51,39 +49,27 @@ using namespace tesseract_planning;
 using tesseract_common::ManipulatorInfo;
 
 
-
 UR5Trajopt::UR5Trajopt (tesseract_environment::Environment::Ptr env,
                         ROSPlottingPtr plotter,
                         std::vector<std::string> joint_names,
                         Eigen::VectorXd joint_start_pos,
                         Eigen::VectorXd joint_end_pos,
-                        bool ui_control) {
+                        bool ui_control,
+                        Eigen::VectorXd joint_middle_pos,
+                        Eigen::VectorXd joint_middle2_pos,
+                        bool joint_middle_include) {
   env_ = env;
   plotter_ = plotter;
   joint_names_ = joint_names;
   joint_start_pos_ = joint_start_pos;
   joint_end_pos_ = joint_end_pos;
   ui_control_ = ui_control;
+  joint_middle_pos_ = joint_middle_pos;
+  joint_middle2_pos_ = joint_middle2_pos;
+  joint_middle_include_ = joint_middle_include;
 }
 
 tesseract_common::JointTrajectory UR5Trajopt::run() {
-  
-  // промежуточное положение робота
-  Eigen::VectorXd joint_middle_pos(6);
-  joint_middle_pos(0) = joint_middle_pos_0;
-  joint_middle_pos(1) = joint_middle_pos_1;
-  joint_middle_pos(2) = joint_middle_pos_2;
-  joint_middle_pos(3) = joint_middle_pos_3;
-  joint_middle_pos(4) = joint_middle_pos_4;
-  joint_middle_pos(5) = joint_middle_pos_5;
-
-  Eigen::VectorXd joint_middle_pos2(6);
-  joint_middle_pos2(0) = joint_middle2_pos_0;
-  joint_middle_pos2(1) = joint_middle2_pos_1;
-  joint_middle_pos2(2) = joint_middle2_pos_2;
-  joint_middle_pos2(3) = joint_middle2_pos_3;
-  joint_middle_pos2(4) = joint_middle2_pos_4;
-  joint_middle_pos2(5) = joint_middle2_pos_5;
 
    // Solve Trajectory
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
@@ -93,8 +79,8 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
 
   // Start and End Joint Position for the program
   StateWaypointPoly wp0{ StateWaypoint(joint_names_, joint_start_pos_) };
-  StateWaypointPoly wp01{ StateWaypoint(joint_names_, joint_middle_pos) };
-  StateWaypointPoly wp02{ StateWaypoint(joint_names_, joint_middle_pos2) };
+  StateWaypointPoly wp01{ StateWaypoint(joint_names_, joint_middle_pos_) };
+  StateWaypointPoly wp02{ StateWaypoint(joint_names_, joint_middle2_pos_) };
   StateWaypointPoly wp1{ StateWaypoint(joint_names_, joint_end_pos_) };
 
   MoveInstruction start_instruction(wp0, MoveInstructionType::START);
@@ -114,7 +100,7 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
 
   // Add Instructions to program
 
-  if (joint_middle_include) {
+  if (joint_middle_include_) {
     program.appendMoveInstruction(plan_f01);
     program.appendMoveInstruction(plan_f02);
   }

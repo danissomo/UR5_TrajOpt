@@ -429,6 +429,24 @@ int main(int argc, char** argv) {
   joint_end_pos(5) = joint_end_pos_5;
 
 
+  // промежуточное положение робота
+  Eigen::VectorXd joint_middle_pos(6);
+  joint_middle_pos(0) = joint_middle_pos_0;
+  joint_middle_pos(1) = joint_middle_pos_1;
+  joint_middle_pos(2) = joint_middle_pos_2;
+  joint_middle_pos(3) = joint_middle_pos_3;
+  joint_middle_pos(4) = joint_middle_pos_4;
+  joint_middle_pos(5) = joint_middle_pos_5;
+
+  Eigen::VectorXd joint_middle2_pos(6);
+  joint_middle2_pos(0) = joint_middle2_pos_0;
+  joint_middle2_pos(1) = joint_middle2_pos_1;
+  joint_middle2_pos(2) = joint_middle2_pos_2;
+  joint_middle2_pos(3) = joint_middle2_pos_3;
+  joint_middle2_pos(4) = joint_middle2_pos_4;
+  joint_middle2_pos(5) = joint_middle2_pos_5;
+
+
   if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
     ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
     try {
@@ -506,7 +524,7 @@ int main(int argc, char** argv) {
     plotter->waitForInput("Hit Enter after move robot to start position.");
   }
 
-  UR5Trajopt example(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control);
+  UR5Trajopt example(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos, joint_middle2_pos, joint_middle_include);
   tesseract_common::JointTrajectory trajectory = example.run();
 
 

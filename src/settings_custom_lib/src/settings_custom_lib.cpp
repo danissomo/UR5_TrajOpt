@@ -1,6 +1,5 @@
 #include <ros/ros.h>
 #include "settings_custom_lib/SettingsCustomLib.hpp"
-#include "settings_custom_lib/AddSettingsCustomLib.hpp"
 
 SettingsCustomLibClass settingsConfig;
 
