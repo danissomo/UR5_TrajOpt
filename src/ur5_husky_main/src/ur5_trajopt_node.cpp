@@ -12,6 +12,7 @@
 #include <ur5_husky_main/RobotPlanTrajectory.h>
 #include <ur5_husky_main/RobotExecuteTrajectory.h>
 #include <ur5_husky_main/Box.h>
+#include <ur5_husky_main/Freedrive.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -332,6 +333,20 @@ bool createBox(ur5_husky_main::Box::Request &req,
 }
 
 
+bool freedriveEnable(ur5_husky_main::Freedrive::Request &req, ur5_husky_main::Freedrive::Response &res) {
+  RTDEControlInterface rtde_control(robot_ip);
+  if (req.on) {
+    rtde_control.teachMode();
+    res.result = "Freedrive успешно включен";
+  } else {
+    rtde_control.endTeachMode();
+    res.result = "Freedrive успешно отключен";
+  }
+
+  return true;
+}
+
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
   ros::NodeHandle pnh("~");
@@ -504,6 +519,9 @@ int main(int argc, char** argv) {
 
   ros::ServiceServer moveBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
                       ("move_box", boost::bind(moveBox, _1, _2, env));
+
+    ros::ServiceServer freedrive = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
+                      ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
 
 
   if (debug) {

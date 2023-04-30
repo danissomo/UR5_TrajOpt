@@ -91,6 +91,7 @@ add_service_files(
   RobotPlanTrajectory.srv
   RobotExecuteTrajectory.srv
   Box.srv
+  Freedrive.srv
 )
 
 ## Generate actions in the 'action' folder
