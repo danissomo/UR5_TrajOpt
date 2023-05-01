@@ -55,18 +55,14 @@ UR5Trajopt::UR5Trajopt (tesseract_environment::Environment::Ptr env,
                         Eigen::VectorXd joint_start_pos,
                         Eigen::VectorXd joint_end_pos,
                         bool ui_control,
-                        Eigen::VectorXd joint_middle_pos,
-                        Eigen::VectorXd joint_middle2_pos,
-                        bool joint_middle_include) {
+                        std::vector<Eigen::VectorXd> joint_middle_pos_list) {
   env_ = env;
   plotter_ = plotter;
   joint_names_ = joint_names;
   joint_start_pos_ = joint_start_pos;
   joint_end_pos_ = joint_end_pos;
   ui_control_ = ui_control;
-  joint_middle_pos_ = joint_middle_pos;
-  joint_middle2_pos_ = joint_middle2_pos;
-  joint_middle_include_ = joint_middle_include;
+  joint_middle_pos_list_ = joint_middle_pos_list;
 }
 
 tesseract_common::JointTrajectory UR5Trajopt::run() {
@@ -79,32 +75,23 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
 
   // Start and End Joint Position for the program
   StateWaypointPoly wp0{ StateWaypoint(joint_names_, joint_start_pos_) };
-  StateWaypointPoly wp01{ StateWaypoint(joint_names_, joint_middle_pos_) };
-  StateWaypointPoly wp02{ StateWaypoint(joint_names_, joint_middle2_pos_) };
   StateWaypointPoly wp1{ StateWaypoint(joint_names_, joint_end_pos_) };
 
   MoveInstruction start_instruction(wp0, MoveInstructionType::START);
   program.setStartInstruction(start_instruction);
 
-  // Plan freespace from start
-  // Assign a linear motion so cartesian is defined as the target
+  // Additional provisions
+  for (int i = 0; i < joint_middle_pos_list_.size(); i++) {
+    StateWaypointPoly wp_middle{ StateWaypoint(joint_names_, joint_middle_pos_list_[i]) };
+    MoveInstruction plan_middle(wp_middle, MoveInstructionType::FREESPACE, "UR5");
+    std::string description = "freespace_middle_plan №" + std::to_string(i+1);
 
-  MoveInstruction plan_f01(wp01, MoveInstructionType::FREESPACE, "UR5");
-  plan_f01.setDescription("freespace_plan");
-
-  MoveInstruction plan_f02(wp02, MoveInstructionType::FREESPACE, "UR5");
-  plan_f02.setDescription("freespace_plan");
-
-  MoveInstruction plan_f0(wp1, MoveInstructionType::FREESPACE, "UR5");
-  plan_f0.setDescription("freespace_plan");
-
-  // Add Instructions to program
-
-  if (joint_middle_include_) {
-    program.appendMoveInstruction(plan_f01);
-    program.appendMoveInstruction(plan_f02);
+    plan_middle.setDescription(description);
+    program.appendMoveInstruction(plan_middle);
   }
 
+  MoveInstruction plan_f0(wp1, MoveInstructionType::FREESPACE, "UR5");
+  plan_f0.setDescription("freespace_finish_plan");
   program.appendMoveInstruction(plan_f0);
 
   // Print Diagnostics

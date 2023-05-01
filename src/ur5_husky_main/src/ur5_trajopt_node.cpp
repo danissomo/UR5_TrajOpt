@@ -85,6 +85,7 @@ const std::string EXAMPLE_MONITOR_NAMESPACE = "tesseract_ros_examples";
 
 Eigen::VectorXd joint_start_pos(6);
 Eigen::VectorXd joint_end_pos(6);
+std::vector<Eigen::VectorXd> joint_middle_pos_list;
 bool robotPlanTrajectory = false;
 bool robotExecuteTrajectory = false;
 bool setRobotNotConnectErrorMes = false;
@@ -226,23 +227,30 @@ bool updateFinishJointValue(ur5_husky_main::SetFinishJointState::Request &req,
                       const std::vector<std::string> &joint_names,
                       const bool connect_robot) {
 
-    std::vector<double> position;
-    std::vector<double> velocity;
-    std::vector<double> effort;
-
     int index = 0;
     for (int j = 0; j < joint_names.size(); j++) {
         for (int i = 0; i < req.name.size(); i++) {
             // нужны только избранные joints
             if (req.name[i] == joint_names[j]) {
                 joint_end_pos(index) = req.position[i];
-                position.push_back(req.position[i]);
-                velocity.push_back(req.velocity[i]);
-                effort.push_back(req.effort[i]);
-
                 index++;
             }
         }
+    }
+
+    for (int i = 0; i < req.middlePose.size(); i++) {
+      index = 0;
+      Eigen::VectorXd joint_tmp(joint_names.size());
+
+      for (int k = 0; k < joint_names.size(); k++) {
+        for (int j = 0; j < req.middlePose[i].name.size(); j++) {
+          if (req.middlePose[i].name[j] == joint_names[k]) {
+            joint_tmp(index) = req.middlePose[i].position[j];
+            index++;
+          }
+        }
+      }
+      joint_middle_pos_list.push_back(joint_tmp);
     }
 
     env->setState(joint_names, joint_end_pos);
@@ -444,24 +452,6 @@ int main(int argc, char** argv) {
   joint_end_pos(5) = joint_end_pos_5;
 
 
-  // промежуточное положение робота
-  Eigen::VectorXd joint_middle_pos(6);
-  joint_middle_pos(0) = joint_middle_pos_0;
-  joint_middle_pos(1) = joint_middle_pos_1;
-  joint_middle_pos(2) = joint_middle_pos_2;
-  joint_middle_pos(3) = joint_middle_pos_3;
-  joint_middle_pos(4) = joint_middle_pos_4;
-  joint_middle_pos(5) = joint_middle_pos_5;
-
-  Eigen::VectorXd joint_middle2_pos(6);
-  joint_middle2_pos(0) = joint_middle2_pos_0;
-  joint_middle2_pos(1) = joint_middle2_pos_1;
-  joint_middle2_pos(2) = joint_middle2_pos_2;
-  joint_middle2_pos(3) = joint_middle2_pos_3;
-  joint_middle2_pos(4) = joint_middle2_pos_4;
-  joint_middle2_pos(5) = joint_middle2_pos_5;
-
-
   if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
     ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
     try {
@@ -520,7 +510,7 @@ int main(int argc, char** argv) {
   ros::ServiceServer moveBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
                       ("move_box", boost::bind(moveBox, _1, _2, env));
 
-    ros::ServiceServer freedrive = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
+  ros::ServiceServer freedrive = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
 
 
@@ -542,7 +532,7 @@ int main(int argc, char** argv) {
     plotter->waitForInput("Hit Enter after move robot to start position.");
   }
 
-  UR5Trajopt example(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos, joint_middle2_pos, joint_middle_include);
+  UR5Trajopt example(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
   tesseract_common::JointTrajectory trajectory = example.run();
 
 

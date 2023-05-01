@@ -78,6 +78,7 @@ tesseract_variables()
 add_message_files(
     FILES
     Color.msg
+    MiddlePose.msg
 #   Message1.msg
 #   Message2.msg
 )
