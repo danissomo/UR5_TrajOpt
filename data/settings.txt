@@ -26,12 +26,20 @@ eigenVector3d = 1.0
 # joint_start_pos_4 = -1.483593
 # joint_start_pos_5 = -1.578000
 
-joint_start_pos_0 = 1.51731
-joint_start_pos_1 = -0.796949
-joint_start_pos_2 = 2.25895
-joint_start_pos_3 = -2.89963
-joint_start_pos_4 = -1.56047
-joint_start_pos_5 = 0.020617
+# joint_start_pos_0 = 1.51731
+# joint_start_pos_1 = -0.796949
+# joint_start_pos_2 = 2.25895
+# joint_start_pos_3 = -2.89963
+# joint_start_pos_4 = -1.56047
+# joint_start_pos_5 = 0.020617
+
+### Робот под столом (тест 8 симуляция)
+joint_start_pos_0 = 1.670050
+joint_start_pos_1 = -0.923000
+joint_start_pos_2 = 1.997900
+joint_start_pos_3 = -4.200772
+joint_start_pos_4 = -1.483593
+joint_start_pos_5 = -1.578000
 
 
 # Конечное положение робота по умолчанию
@@ -59,13 +67,43 @@ joint_start_pos_5 = 0.020617
 
 
 # Тест близко к полу
-joint_end_pos_0 = 1.51731
-joint_end_pos_1 = -0.796949
-joint_end_pos_2 = 2.25895
-joint_end_pos_3 = -2.89963
-joint_end_pos_4 = -1.56047
-joint_end_pos_5 = 0.020617
+# joint_end_pos_0 = 1.51731
+# joint_end_pos_1 = -0.796949
+# joint_end_pos_2 = 2.25895
+# joint_end_pos_3 = -2.89963
+# joint_end_pos_4 = -1.56047
+# joint_end_pos_5 = 0.020617
 
+
+### Робот над столом (тест 8 симуляция)
+joint_end_pos_0 = 1.670050
+joint_end_pos_1 = -1.541200
+joint_end_pos_2 = 1.379700
+joint_end_pos_3 = -2.964372
+joint_end_pos_4 = -1.483593
+joint_end_pos_5 = -1.578000
+
+
+# Промежуточные точки
+#1
+joint_middle_pos_0 = 1.612235
+joint_middle_pos_1 = -0.816569
+joint_middle_pos_2 = 2.250976
+joint_middle_pos_3 = -2.967063
+joint_middle_pos_4 = -1.554412
+joint_middle_pos_5 = 0.002781
+
+#2
+joint_middle2_pos_0 = 1.612175
+joint_middle2_pos_1 = -1.964709
+joint_middle2_pos_2 = 2.362315
+joint_middle2_pos_3 = -2.021962
+joint_middle2_pos_4 = -1.585328
+joint_middle2_pos_5 = 0.002769
+
+# Включать ли промежуточные точки
+# false - нет, true - да
+joint_middle_include = true
 
 # IP робота
 robot_ip = 127.0.0.1
@@ -98,3 +136,15 @@ box_pos_x = 0.93
 box_pos_y = 0.02
 box_pos_z = -0.14869
 
+
+# Тип коллизии при настройке профиля для выполнения алгоритма
+# Допустимые значения: SINGLE_TIMESTEP, DISCRETE_CONTINUOUS, CAST_CONTINUOUS
+
+collision_cost_config_type = DISCRETE_CONTINUOUS
+collision_constraint_config_type = DISCRETE_CONTINUOUS
+
+
+# параметры для движения реального робота или в симуляции ur_sim
+ur_speed = 0.5
+ur_acceleration = 50.0
+ur_blend = 0.0

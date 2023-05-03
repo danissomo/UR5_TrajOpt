@@ -1,4 +1,2 @@
-bool from_robot
----
 string[] name
 float64[] position

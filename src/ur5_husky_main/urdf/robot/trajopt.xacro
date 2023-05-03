@@ -71,6 +71,8 @@
     <parent link="top_plate_link"/>
     <child link="${prefix}base_link"/>
     <origin xyz="0.25 0.0 0.0" rpy="0 0 -${M_PI/2}"/>
+    <!-- не трогать xyz и rpy, иначе не считает траекторию! -->
+    <!-- <origin xyz="0.25 0.0 0.0" rpy="0 0 0"/> -->
   </joint>
 
 </robot>

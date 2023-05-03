@@ -48,6 +48,22 @@ float joint_test_pos_3 = 0.0;
 float joint_test_pos_4 = 0.0;
 float joint_test_pos_5 = 0.0;
 
+float joint_middle_pos_0 = -4.662232;
+float joint_middle_pos_1 = -0.382847;
+float joint_middle_pos_2 = 1.830611;
+float joint_middle_pos_3 = -3.041089;
+float joint_middle_pos_4 = -1.641295;
+float joint_middle_pos_5 = 0.020593;
+
+float joint_middle2_pos_0 = -4.662232;
+float joint_middle2_pos_1 = -1.282847;
+float joint_middle2_pos_2 = 2.230611;
+float joint_middle2_pos_3 = -2.541089;
+float joint_middle2_pos_4 = -1.641295;
+float joint_middle2_pos_5 = 0.020593;
+
+bool joint_middle_include = false;
+
 float delay_loop_rate = 1.0;
 
 float table_length = 0.15;
@@ -63,6 +79,13 @@ float box_height = 0.005;
 float box_pos_x = 0.30;
 float box_pos_y = 0.0;
 float box_pos_z = 0.0;
+
+std::string collision_cost_config_type = "DISCRETE_CONTINUOUS";
+std::string collision_constraint_config_type = "DISCRETE_CONTINUOUS";
+
+float ur_speed = 0.1;
+float ur_acceleration = 0.1;
+float ur_blend = 0.0;
 
 
 class SettingsCustomLibClass {
@@ -236,6 +259,77 @@ inline void SettingsCustomLibClass::update() {
             } else if (strcmp("box_pos_z", token.c_str()) == 0) {
                 box_pos_z = stof(line);
                 ROS_INFO("Setting updated. New value box_pos_z = %f", box_pos_z);
+
+            } else if (token == "collision_cost_config_type") {
+                collision_cost_config_type = line;
+                ROS_INFO("Setting updated. New value collision_cost_config_type = %s", robot_ip.c_str());
+
+            } else if (token == "collision_constraint_config_type") {
+                collision_constraint_config_type = line;
+                ROS_INFO("Setting updated. New value collision_constraint_config_type = %s", robot_ip.c_str());
+            } else if (strcmp("ur_speed", token.c_str()) == 0) {
+                ur_speed = stof(line);
+                ROS_INFO("Setting updated. New value ur_speed = %f", ur_speed);
+
+            } else if (strcmp("ur_acceleration", token.c_str()) == 0) {
+                ur_acceleration = stof(line);
+                ROS_INFO("Setting updated. New value ur_acceleration = %f", ur_acceleration);
+
+            } else if (strcmp("ur_blend", token.c_str()) == 0) {
+                ur_blend = stof(line);
+                ROS_INFO("Setting updated. New value ur_blend = %f", ur_blend);
+
+            } else if (strcmp("joint_middle_pos_0", token.c_str()) == 0) {
+                joint_middle_pos_0 = stof(line);
+                ROS_INFO("Setting updated. New value joint_middle_pos_0 = %f", joint_middle_pos_0);
+
+            } else if (strcmp("joint_middle_pos_1", token.c_str()) == 0) {
+                joint_middle_pos_1 = stof(line);
+                ROS_INFO("Setting updated. New value joint_middle_pos_1 = %f", joint_middle_pos_1);
+
+            } else if (strcmp("joint_middle_pos_2", token.c_str()) == 0) {
+                joint_middle_pos_2 = stof(line);
+                ROS_INFO("Setting updated. New value joint_middle_pos_2 = %f", joint_middle_pos_2);
+
+            } else if (strcmp("joint_middle_pos_3", token.c_str()) == 0) {
+                joint_middle_pos_3 = stof(line);
+                ROS_INFO("Setting updated. New value joint_middle_pos_3 = %f", joint_middle_pos_3);
+
+            } else if (strcmp("joint_middle_pos_4", token.c_str()) == 0) {
+                joint_middle_pos_4 = stof(line);
+                ROS_INFO("Setting updated. New value joint_middle_pos_4 = %f", joint_middle_pos_4);
+
+            } else if (strcmp("joint_middle_pos_5", token.c_str()) == 0) {
+                joint_middle_pos_5 = stof(line);
+                ROS_INFO("Setting updated. New value joint_middle_pos_5 = %f", joint_middle_pos_5);
+
+            } else if (strcmp("joint_middle2_pos_0", token.c_str()) == 0) {
+                joint_middle2_pos_0 = stof(line);
+                ROS_INFO("Setting updated. New value joint_middle2_pos_0 = %f", joint_middle2_pos_0);
+
+            } else if (strcmp("joint_middle2_pos_1", token.c_str()) == 0) {
+                joint_middle2_pos_1 = stof(line);
+                ROS_INFO("Setting updated. New value joint_middle2_pos_1 = %f", joint_middle2_pos_1);
+
+            } else if (strcmp("joint_middle2_pos_2", token.c_str()) == 0) {
+                joint_middle2_pos_2 = stof(line);
+                ROS_INFO("Setting updated. New value joint_middle2_pos_2 = %f", joint_middle2_pos_2);
+
+            } else if (strcmp("joint_middle2_pos_3", token.c_str()) == 0) {
+                joint_middle2_pos_3 = stof(line);
+                ROS_INFO("Setting updated. New value joint_middle2_pos_3 = %f", joint_middle2_pos_3);
+
+            } else if (strcmp("joint_middle2_pos_4", token.c_str()) == 0) {
+                joint_middle2_pos_4 = stof(line);
+                ROS_INFO("Setting updated. New value joint_middle2_pos_4 = %f", joint_middle2_pos_4);
+
+            } else if (strcmp("joint_middle2_pos_5", token.c_str()) == 0) {
+                joint_middle2_pos_5 = stof(line);
+                ROS_INFO("Setting updated. New value joint_middle2_pos_5 = %f", joint_middle2_pos_5);
+
+            } else if (strcmp("joint_middle_include", token.c_str()) == 0) {
+                joint_middle_include = (strcmp("true", line.c_str()) == 0);
+                ROS_INFO("Setting updated. New value joint_middle_include = %f", joint_middle_include);
 
             }
         }

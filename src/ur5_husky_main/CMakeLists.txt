@@ -29,6 +29,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
+find_package(Eigen3 REQUIRED)
+
 find_package(tesseract_environment REQUIRED)
 find_package(tesseract_command_language REQUIRED)
 find_package(tesseract_task_composer REQUIRED)
@@ -76,6 +78,7 @@ tesseract_variables()
 add_message_files(
     FILES
     Color.msg
+    MiddlePose.msg
 #   Message1.msg
 #   Message2.msg
 )
@@ -89,6 +92,7 @@ add_service_files(
   RobotPlanTrajectory.srv
   RobotExecuteTrajectory.srv
   Box.srv
+  Freedrive.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -136,7 +140,7 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
+  INCLUDE_DIRS
 #  LIBRARIES ur5_husky_main
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
@@ -149,13 +153,13 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include ${catkin_INCLUDE_DIRS}
+  include ${catkin_INCLUDE_DIRS} trajopt
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/ur5_husky_main.cpp
-# )
+# src/UR5Trajopt.cpp
+#)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -167,7 +171,11 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/ur5_husky_main_node.cpp)
 
-add_executable(ur5_trajopt_node src/ur5_trajopt_node.cpp)
+add_executable(
+  ur5_trajopt_node 
+  src/ur5_trajopt_node.cpp
+  trajopt/UR5Trajopt.cpp
+)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
