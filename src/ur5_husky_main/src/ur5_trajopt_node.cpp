@@ -20,6 +20,7 @@
 #include <std_msgs/String.h>
 #include <tesseract_environment/utils.h>
 #include <tesseract_common/timer.h>
+#include <tesseract_common/resource_locator.h>
 #include <tesseract_command_language/composite_instruction.h>
 #include <tesseract_command_language/state_waypoint.h>
 #include <tesseract_command_language/cartesian_waypoint.h>
@@ -132,6 +133,50 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
 
   return std::make_shared<tesseract_environment::AddLinkCommand>(link_sphere, joint_sphere);
 }
+
+
+
+tesseract_environment::Command::Ptr addMesh(std::string link_name, std::string joint_name) {
+
+  std::cout << "MESH !" << std::endl;
+
+  // auto mesh_vertices = std::make_shared<tesseract_common::VectorVector3d>();
+  // auto mesh_faces = std::make_shared<Eigen::VectorXi>();
+
+
+    tesseract_common::VectorVector3d mesh_vertices = { Eigen::Vector3d(0, 0, 0),
+                                                  Eigen::Vector3d(1, 0, 0),
+                                                  Eigen::Vector3d(0, 1, 0) };
+    Eigen::VectorXi mesh_faces(4);
+    mesh_faces << 3, 0, 1, 2;
+
+  tesseract_common::ResourceLocator::Ptr locator = std::make_shared<tesseract_common::GeneralResourceLocator>();
+  tesseract_common::Resource::Ptr resource = locator->locateResource("package://ur5_husky_main/urdf/objects/table.obj");
+
+  // Add sphere to environment
+  Link link_sphere(link_name.c_str());
+
+  Visual::Ptr visual = std::make_shared<Visual>();
+  visual->origin = Eigen::Isometry3d::Identity();
+  visual->origin.translation() = Eigen::Vector3d(0, 0.5, 0);
+  visual->geometry = std::make_shared<tesseract_geometry::Mesh>(std::make_shared<tesseract_common::VectorVector3d>(mesh_vertices),
+    std::make_shared<Eigen::VectorXi>(mesh_faces), resource);
+
+  link_sphere.visual.push_back(visual);
+
+  Collision::Ptr collision = std::make_shared<Collision>();
+  collision->origin = visual->origin;
+  collision->geometry = visual->geometry;
+  link_sphere.collision.push_back(collision);
+
+  Joint joint_sphere(joint_name.c_str());
+  joint_sphere.parent_link_name = "world";
+  joint_sphere.child_link_name = link_sphere.getName();
+  joint_sphere.type = JointType::FIXED;
+
+  return std::make_shared<tesseract_environment::AddLinkCommand>(link_sphere, joint_sphere);
+}
+
 
 
 tesseract_environment::Command::Ptr renderMoveBox(std::string link_name, std::string joint_name,
@@ -505,6 +550,19 @@ int main(int argc, char** argv) {
 
   ros::ServiceServer freedrive = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
+
+
+  //////////// Добавление mesh
+  // addMesh("test", "test-js"); 
+
+  Command::Ptr test_mesh = addMesh("test", "test-js");
+    if (!env->applyCommand(test_mesh)) {
+      return false;
+    }
+
+
+
+  /////////////////////////////
 
 
   if (debug) {
