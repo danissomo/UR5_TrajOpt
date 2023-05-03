@@ -342,14 +342,7 @@ bool createBox(ur5_husky_main::Box::Request &req,
 
 
 bool freedriveEnable(ur5_husky_main::Freedrive::Request &req, ur5_husky_main::Freedrive::Response &res) {
-  RTDEControlInterface rtde_control(robot_ip);
-  if (req.on) {
-    rtde_control.teachMode();
-    res.result = "Freedrive успешно включен";
-  } else {
-    rtde_control.endTeachMode();
-    res.result = "Freedrive успешно отключен";
-  }
+  // TODO connect and disconnect freedrive
 
   return true;
 }
