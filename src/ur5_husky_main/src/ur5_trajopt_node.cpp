@@ -34,6 +34,12 @@
 #include <tesseract_task_composer/taskflow/taskflow_task_composer_executor.h>
 #include <tesseract_visualization/markers/toolpath_marker.h>
 
+#include <tesseract_geometry/impl/mesh_material.h>
+#include <tesseract_geometry/geometries.h>
+#include <tesseract_geometry/mesh_parser.h>
+
+#include <tesseract_collision/bullet/convex_hull_utils.h>
+
 #include <tesseract_motion_planners/core/utils.h>
 #include <tesseract_motion_planners/default_planner_namespaces.h>
 #include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
@@ -67,6 +73,7 @@ using namespace tesseract_rosutils;
 
 using namespace trajopt;
 using namespace tesseract_environment;
+using namespace tesseract_kinematics;
 using namespace tesseract_scene_graph;
 using namespace tesseract_collision;
 using namespace tesseract_visualization;
@@ -138,36 +145,24 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
 
 tesseract_environment::Command::Ptr addMesh(std::string link_name, std::string joint_name) {
 
-  std::cout << "MESH !" << std::endl;
-
-  // auto mesh_vertices = std::make_shared<tesseract_common::VectorVector3d>();
-  // auto mesh_faces = std::make_shared<Eigen::VectorXi>();
-
-
-    tesseract_common::VectorVector3d mesh_vertices = { Eigen::Vector3d(0, 0, 0),
-                                                  Eigen::Vector3d(1, 0, 0),
-                                                  Eigen::Vector3d(0, 1, 0) };
-    Eigen::VectorXi mesh_faces(4);
-    mesh_faces << 3, 0, 1, 2;
-
   tesseract_common::ResourceLocator::Ptr locator = std::make_shared<tesseract_common::GeneralResourceLocator>();
-  tesseract_common::Resource::Ptr resource = locator->locateResource("package://ur5_husky_main/urdf/objects/table.obj");
-
-  // Add sphere to environment
-  Link link_sphere(link_name.c_str());
+  std::vector<tesseract_geometry::Mesh::Ptr> meshes =
+    tesseract_geometry::createMeshFromResource<tesseract_geometry::Mesh>(
+        locator->locateResource("package://ur5_husky_main/urdf/objects/table.obj"), Eigen::Vector3d(0.015, 0.015, 0.015), true);
 
   Visual::Ptr visual = std::make_shared<Visual>();
   visual->origin = Eigen::Isometry3d::Identity();
-  visual->origin.translation() = Eigen::Vector3d(0, 0.5, 0);
-  visual->geometry = std::make_shared<tesseract_geometry::Mesh>(std::make_shared<tesseract_common::VectorVector3d>(mesh_vertices),
-    std::make_shared<Eigen::VectorXi>(mesh_faces), resource);
-
+  visual->origin.translation() = Eigen::Vector3d(1.7, 0.0, -0.14869);
+  visual->geometry = meshes[0];
+  Link link_sphere(link_name.c_str());
   link_sphere.visual.push_back(visual);
 
-  Collision::Ptr collision = std::make_shared<Collision>();
-  collision->origin = visual->origin;
-  collision->geometry = visual->geometry;
-  link_sphere.collision.push_back(collision);
+  for (auto& mesh : meshes) {
+    Collision::Ptr collision = std::make_shared<Collision>();
+    collision->origin = visual->origin;
+    collision->geometry = makeConvexMesh(*mesh);
+    link_sphere.collision.push_back(collision);
+  }
 
   Joint joint_sphere(joint_name.c_str());
   joint_sphere.parent_link_name = "world";
