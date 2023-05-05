@@ -143,21 +143,29 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
 
 
 
-tesseract_environment::Command::Ptr addMesh(std::string link_name, std::string joint_name) {
+tesseract_environment::Command::Ptr addMesh(std::string link_name,
+                                            std::string joint_name,
+                                            std::string mesh_name,
+                                            Eigen::Vector3d scale,
+                                            Eigen::Vector3d translation) {
+
+  std::string mesh_path = "package://ur5_husky_main/urdf/objects/" + mesh_name;
 
   tesseract_common::ResourceLocator::Ptr locator = std::make_shared<tesseract_common::GeneralResourceLocator>();
   std::vector<tesseract_geometry::Mesh::Ptr> meshes =
     tesseract_geometry::createMeshFromResource<tesseract_geometry::Mesh>(
-        locator->locateResource("package://ur5_husky_main/urdf/objects/table.obj"), Eigen::Vector3d(0.015, 0.015, 0.015), true);
+        locator->locateResource(mesh_path), scale, true);
 
-  Visual::Ptr visual = std::make_shared<Visual>();
-  visual->origin = Eigen::Isometry3d::Identity();
-  visual->origin.translation() = Eigen::Vector3d(1.7, 0.0, -0.14869);
-  visual->geometry = meshes[0];
   Link link_sphere(link_name.c_str());
-  link_sphere.visual.push_back(visual);
 
   for (auto& mesh : meshes) {
+
+    Visual::Ptr visual = std::make_shared<Visual>();
+    visual->origin = Eigen::Isometry3d::Identity();
+    visual->origin.translation() = translation;
+    visual->geometry = mesh;
+    link_sphere.visual.push_back(visual);
+
     Collision::Ptr collision = std::make_shared<Collision>();
     collision->origin = visual->origin;
     collision->geometry = makeConvexMesh(*mesh);
@@ -548,14 +556,17 @@ int main(int argc, char** argv) {
 
 
   //////////// Добавление mesh
-  // addMesh("test", "test-js"); 
 
-  Command::Ptr test_mesh = addMesh("test", "test-js");
-    if (!env->applyCommand(test_mesh)) {
-      return false;
-    }
+  Command::Ptr table_mesh = addMesh("table", "table-js", "table.obj", Eigen::Vector3d(0.015, 0.015, 0.015), Eigen::Vector3d(1.7, 0.0, -0.14869));
+  if (!env->applyCommand(table_mesh)) {
+    return false;
+  }
 
 
+  Command::Ptr burner_mesh = addMesh("burner", "burner-js", "burner.obj", Eigen::Vector3d(0.03, 0.03, 0.03), Eigen::Vector3d(1.0, 0.0, 0.57));
+  if (!env->applyCommand(burner_mesh)) {
+    return false;
+  }
 
   /////////////////////////////
 
