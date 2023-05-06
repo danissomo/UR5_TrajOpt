@@ -12,6 +12,7 @@
 #include <ur5_husky_main/RobotPlanTrajectory.h>
 #include <ur5_husky_main/RobotExecuteTrajectory.h>
 #include <ur5_husky_main/Box.h>
+#include <ur5_husky_main/Mesh.h>
 #include <ur5_husky_main/Freedrive.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
@@ -389,6 +390,25 @@ bool createBox(ur5_husky_main::Box::Request &req,
 }
 
 
+bool createMesh(ur5_husky_main::Mesh::Request &req,
+              ur5_husky_main::Mesh::Response &res,
+              const std::shared_ptr<tesseract_environment::Environment> &env) {
+
+  std::string joint_name = std::string(req.name) + "_joints";
+
+  Command::Ptr mesh = addMesh(req.name, joint_name.c_str(), req.fileName,
+                      Eigen::Vector3d(req.scale, req.scale, req.scale), Eigen::Vector3d(req.x, req.y, req.z));
+
+  if (!env->applyCommand(mesh)) {
+    res.result = "ERROR - create mesh";
+    return false;
+  }
+
+  res.result = "Create mesh success";
+  return true;
+}
+
+
 bool freedriveEnable(ur5_husky_main::Freedrive::Request &req, ur5_husky_main::Freedrive::Response &res) {
   // TODO connect and disconnect freedrive
 
@@ -455,6 +475,18 @@ int main(int argc, char** argv) {
     // Создать коробку
     Command::Ptr box = addBox("box", "joint_box_attached", box_length, box_width, box_height, box_pos_x, box_pos_y, box_pos_z, getDefaultColor(""));
     if (!env->applyCommand(box)) {
+      return false;
+    }
+
+    // Создать стол из mesh
+    Command::Ptr table_mesh = addMesh("table", "table-js", "table-noise-2.obj", Eigen::Vector3d(0.015, 0.015, 0.015), Eigen::Vector3d(1.7, 0.0, -0.14869));
+    if (!env->applyCommand(table_mesh)) {
+      return false;
+    }
+
+    // Создать горелку из mesh
+    Command::Ptr burner_mesh = addMesh("burner", "burner-js", "burner.obj", Eigen::Vector3d(0.03, 0.03, 0.03), Eigen::Vector3d(1.0, 0.0, 0.57));
+    if (!env->applyCommand(burner_mesh)) {
       return false;
     }
   }
@@ -548,27 +580,14 @@ int main(int argc, char** argv) {
   ros::ServiceServer createBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
                       ("create_box", boost::bind(createBox, _1, _2, env));
 
+  ros::ServiceServer createMeshService = nh.advertiseService<ur5_husky_main::Mesh::Request, ur5_husky_main::Mesh::Response>
+                      ("create_mesh", boost::bind(createMesh, _1, _2, env));
+
   ros::ServiceServer moveBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
                       ("move_box", boost::bind(moveBox, _1, _2, env));
 
   ros::ServiceServer freedrive = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
-
-
-  //////////// Добавление mesh
-
-  Command::Ptr table_mesh = addMesh("table", "table-js", "table.obj", Eigen::Vector3d(0.015, 0.015, 0.015), Eigen::Vector3d(1.7, 0.0, -0.14869));
-  if (!env->applyCommand(table_mesh)) {
-    return false;
-  }
-
-
-  Command::Ptr burner_mesh = addMesh("burner", "burner-js", "burner.obj", Eigen::Vector3d(0.03, 0.03, 0.03), Eigen::Vector3d(1.0, 0.0, 0.57));
-  if (!env->applyCommand(burner_mesh)) {
-    return false;
-  }
-
-  /////////////////////////////
 
 
   if (debug) {
