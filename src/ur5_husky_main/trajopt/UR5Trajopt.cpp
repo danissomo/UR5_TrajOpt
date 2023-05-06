@@ -32,6 +32,8 @@
 
 #include <tesseract_visualization/trajectory_player.h>
 
+#include <trajopt_sco/osqp_interface.hpp>
+
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -121,34 +123,44 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
 
   auto composite_profile = std::make_shared<TrajOptDefaultCompositeProfile>();
   // composite_profile->longest_valid_segment_length = 0.05;
-  composite_profile->collision_cost_config.enabled = true;
-  composite_profile->collision_cost_config.type = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
-  composite_profile->collision_cost_config.safety_margin = 0.01;
-  composite_profile->collision_cost_config.safety_margin_buffer = 0.01;
-  composite_profile->collision_cost_config.coeff = 1;
+  // composite_profile->collision_cost_config.enabled = true;
+  // composite_profile->collision_cost_config.type = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
+  // composite_profile->collision_cost_config.safety_margin = 0.01;
+  // composite_profile->collision_cost_config.safety_margin_buffer = 0.01;
+  // composite_profile->collision_cost_config.coeff = 1;
+  // composite_profile->collision_constraint_config.enabled = true;
+  // composite_profile->collision_constraint_config.type = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
+  // composite_profile->collision_constraint_config.safety_margin = 0.01;
+  // composite_profile->collision_constraint_config.safety_margin_buffer = 0.01;
+  // composite_profile->collision_constraint_config.coeff = 1;
+  // composite_profile->smooth_velocities = true;
+  // composite_profile->smooth_accelerations = false;
+  // composite_profile->smooth_jerks = false;
+  // composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
   composite_profile->collision_constraint_config.enabled = true;
-  composite_profile->collision_constraint_config.type = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
-  composite_profile->collision_constraint_config.safety_margin = 0.01;
-  composite_profile->collision_constraint_config.safety_margin_buffer = 0.01;
-  composite_profile->collision_constraint_config.coeff = 1;
-  composite_profile->smooth_velocities = true;
-  composite_profile->smooth_accelerations = false;
-  composite_profile->smooth_jerks = false;
-  composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
+  composite_profile->collision_cost_config.enabled = true;
+  composite_profile->collision_cost_config.safety_margin = 0.025;
+  composite_profile->collision_cost_config.type = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
+  composite_profile->collision_cost_config.coeff = 20;
   profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", composite_profile);
 
   auto plan_profile = std::make_shared<TrajOptDefaultPlanProfile>();
-  plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
-  plan_profile->cartesian_coeff(0) = 0;
-  plan_profile->cartesian_coeff(1) = 0;
-  plan_profile->cartesian_coeff(2) = 0;
+  // plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
+  // plan_profile->cartesian_coeff(0) = 0;
+  // plan_profile->cartesian_coeff(1) = 0;
+  // plan_profile->cartesian_coeff(2) = 0;
+  plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 10);
+  plan_profile->cartesian_coeff(5) = 0;
 
-  // auto trajopt_solver_profile = std::make_shared<TrajOptDefaultSolverProfile>();
-  // trajopt_solver_profile->opt_info.max_iter = 100;
+  auto trajopt_solver_profile = std::make_shared<TrajOptDefaultSolverProfile>();
+  trajopt_solver_profile->convex_solver = sco::ModelType::OSQP;
+  trajopt_solver_profile->opt_info.max_iter = 200;
+  trajopt_solver_profile->opt_info.min_approx_improve = 1e-3;
+  trajopt_solver_profile->opt_info.min_trust_box_size = 1e-3;
 
   // Add profile to Dictionary
   profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", plan_profile);
-  // profiles->addProfile<TrajOptSolverProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", trajopt_solver_profile);
+  profiles->addProfile<TrajOptSolverProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", trajopt_solver_profile);
 
   // Create Task Input Data
   TaskComposerDataStorage input_data;
