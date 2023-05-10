@@ -38,7 +38,7 @@ find_package(tesseract_common REQUIRED)
 find_package(tesseract_support REQUIRED)
 find_package(tesseract_visualization REQUIRED)
 
-find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde/build/ur_rtde")
+find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde")
 
 
 # Load variable for clang tidy args, compiler options and cxx version

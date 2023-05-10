@@ -97,7 +97,7 @@ RUN apt-get install ros-noetic*joint-trajectory-controller*
 
 # URTD lib
 RUN sudo apt-get install libboost-all-dev
-RUN sudo add-apt-repository ppa:sdurobotics/ur-rtde
-RUN sudo apt-get update
-RUN sudo apt install librtde librtde-dev
+# RUN sudo add-apt-repository ppa:sdurobotics/ur-rtde
+# RUN sudo apt-get update
+# RUN sudo apt install librtde librtde-dev
 

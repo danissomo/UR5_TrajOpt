@@ -37,7 +37,7 @@
 
 Запуск rViz для подбора поз робота  <code>roslaunch ur5_single_arm_manipulation ur5.rviz.launch</code>
 
-#### Собрать ur_rtde (опционально)
+#### Собрать ur_rtde
 <pre><code>cd /workspace/src/ur_rtde
 git submodule update --init --recursive
 cd build
