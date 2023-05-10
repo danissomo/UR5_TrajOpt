@@ -1,0 +1,3 @@
+<launch>
+  <node name="freedrive_node" pkg="ur5_husky_main" type="freedrive_node" respawn="false" output="screen" />
+</launch>

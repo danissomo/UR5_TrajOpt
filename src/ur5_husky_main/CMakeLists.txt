@@ -178,6 +178,11 @@ add_executable(
   trajopt/UR5Trajopt.cpp
 )
 
+add_executable(
+  freedrive_node
+  src/freedrive_node.cpp
+)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -189,6 +194,7 @@ add_executable(
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_dependencies(ur5_trajopt_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(freedrive_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
@@ -204,6 +210,12 @@ target_link_libraries(ur5_trajopt_node
    PRIVATE tesseract::tesseract_common
    PRIVATE tesseract::tesseract_support
    PRIVATE tesseract::tesseract_visualization
+   ${catkin_LIBRARIES}
+)
+
+
+target_link_libraries(freedrive_node
+   PRIVATE ur_rtde::rtde
    ${catkin_LIBRARIES}
 )
 
