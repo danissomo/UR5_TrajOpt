@@ -410,7 +410,25 @@ bool createMesh(ur5_husky_main::Mesh::Request &req,
 
 
 bool freedriveEnable(ur5_husky_main::Freedrive::Request &req, ur5_husky_main::Freedrive::Response &res) {
-  // TODO connect and disconnect freedrive
+  try {
+    RTDEControlInterface rtde_control(robot_ip);
+    if (rtde_control.isConnected()) {
+      if (req.on) {
+        rtde_control.teachMode();
+        res.result = "Freedrive успешно включен";
+
+      } else {
+        rtde_control.endTeachMode();
+        res.result = "Freedrive успешно отключен";
+      }
+    }
+
+    rtde_control.stopScript();
+
+  } catch(...) {
+    ROS_ERROR(" Connect error");
+    res.result = "Ошибка подключения для управления Freedrive";
+  }
 
   return true;
 }
