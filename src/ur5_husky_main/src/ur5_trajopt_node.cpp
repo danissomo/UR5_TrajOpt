@@ -239,6 +239,28 @@ bool moveMesh(ur5_husky_main::Mesh::Request &req,
   return true;
 }
 
+tesseract_environment::Command::Ptr renderRemoveLink(std::string link_name) {
+  return std::make_shared<tesseract_environment::RemoveLinkCommand>(link_name);
+}
+
+tesseract_environment::Command::Ptr renderHideLink(std::string link_name) {
+  return std::make_shared<tesseract_environment::ChangeLinkVisibilityCommand>(link_name, false);
+}
+
+bool removeBox(ur5_husky_main::Box::Request &req,
+             ur5_husky_main::Box::Response &res,
+             const std::shared_ptr<tesseract_environment::Environment> &env) {
+  Command::Ptr boxLink = renderHideLink(req.name);
+  if (!env->applyCommand(boxLink)) {
+    res.result = "ERROR - remove link box";
+    return false;
+  }
+
+  res.result = "Remove Box end...";
+
+  return true;
+}
+
 
 bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
                       ur5_husky_main::SetStartJointState::Response &res,
@@ -642,6 +664,9 @@ int main(int argc, char** argv) {
 
   ros::ServiceServer moveMeshService = nh.advertiseService<ur5_husky_main::Mesh::Request, ur5_husky_main::Mesh::Response>
                       ("move_mesh", boost::bind(moveMesh, _1, _2, env));
+
+  ros::ServiceServer removeBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
+                      ("remove_box", boost::bind(removeBox, _1, _2, env));
 
   ros::ServiceServer freedrive = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
