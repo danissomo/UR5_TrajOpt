@@ -94,6 +94,7 @@ add_service_files(
   Box.srv
   Freedrive.srv
   Mesh.srv
+  RobotRestart.srv
 )
 
 ## Generate actions in the 'action' folder
