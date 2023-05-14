@@ -183,7 +183,7 @@ tesseract_environment::Command::Ptr addMesh(std::string link_name,
 
 
 
-tesseract_environment::Command::Ptr renderMoveBox(std::string link_name, std::string joint_name,
+tesseract_environment::Command::Ptr renderMove(std::string link_name, std::string joint_name,
                                            float pos_x, float pos_y, float pos_z) {
 
   auto joint_limits =  std::make_shared<tesseract_scene_graph::JointLimits>();
@@ -208,13 +208,31 @@ bool moveBox(ur5_husky_main::Box::Request &req,
 
   std::string joint_name = std::string(req.name) + "_joints";
 
-  Command::Ptr box = renderMoveBox(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
+  Command::Ptr box = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
   if (!env->applyCommand(box)) {
     res.result = "ERROR - create box";
     return false;
   }
 
   res.result = "Move Box end...";
+
+  return true;
+}
+
+
+bool moveMesh(ur5_husky_main::Mesh::Request &req,
+             ur5_husky_main::Mesh::Response &res,
+             const std::shared_ptr<tesseract_environment::Environment> &env) {
+
+  std::string joint_name = std::string(req.name) + "_joints";
+
+  Command::Ptr mesh = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
+  if (!env->applyCommand(mesh)) {
+    res.result = "ERROR - move mesh";
+    return false;
+  }
+
+  res.result = "Move Mesh end...";
 
   return true;
 }
@@ -378,7 +396,7 @@ bool createBox(ur5_husky_main::Box::Request &req,
   }
 
   if (req.offsetX > 0 || req.offsetY > 0 || req.offsetZ > 0) {
-    Command::Ptr boxMove = renderMoveBox(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
+    Command::Ptr boxMove = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
     if (!env->applyCommand(boxMove)) {
       res.result = "ERROR - move create box";
       return false;
@@ -603,6 +621,9 @@ int main(int argc, char** argv) {
 
   ros::ServiceServer moveBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
                       ("move_box", boost::bind(moveBox, _1, _2, env));
+
+  ros::ServiceServer moveMeshService = nh.advertiseService<ur5_husky_main::Mesh::Request, ur5_husky_main::Mesh::Response>
+                      ("move_mesh", boost::bind(moveMesh, _1, _2, env));
 
   ros::ServiceServer freedrive = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
