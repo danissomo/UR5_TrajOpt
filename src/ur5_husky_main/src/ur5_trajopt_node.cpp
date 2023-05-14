@@ -646,6 +646,9 @@ int main(int argc, char** argv) {
   ros::ServiceServer freedrive = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
 
+  ros::Publisher finishInfo = nh.advertise<std_msgs::String>("chatter", 1000);
+  std_msgs::String msg;
+
 
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
@@ -689,6 +692,12 @@ int main(int argc, char** argv) {
 
     UR5Trajopt example(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
     tesseract_common::JointTrajectory trajectory = example.run();
+
+    msg.data = "plan_finish";
+    ROS_INFO("Sent message to UI: %s", msg.data.c_str());
+    finishInfo.publish(msg);
+    ros::spinOnce();
+    loop_rate.sleep();
 
 
     /////////////////////////////////////////////////
@@ -792,6 +801,10 @@ int main(int argc, char** argv) {
     } else {
       std::cout << "The trajectory in the simulator will not be executed. \n";
     }
+
+    msg.data = "execute_finish";
+    ROS_INFO("Sent message to UI: %s", msg.data.c_str());
+    finishInfo.publish(msg);
 
     ros::spinOnce();
     loop_rate.sleep();
