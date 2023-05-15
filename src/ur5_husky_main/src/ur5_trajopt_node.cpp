@@ -52,7 +52,9 @@
 
 #include <tesseract_visualization/trajectory_player.h>
 
+#include <ur_rtde/dashboard_client.h>
 #include <ur_rtde/rtde_control_interface.h>
+#include <ur_rtde/rtde_io_interface.h>
 #include <ur_rtde/rtde_receive_interface.h>
 
 #include <iostream>
@@ -100,6 +102,7 @@ bool robotPlanTrajectory = false;
 bool robotExecuteTrajectory = false;
 bool setRobotNotConnectErrorMes = false;
 bool robotRestart = true;
+bool freeDriveOn = false;
 
 
 ColorInfo getDefaultColor(std::string colorName) {
@@ -250,7 +253,7 @@ tesseract_environment::Command::Ptr renderHideLink(std::string link_name) {
 bool removeBox(ur5_husky_main::Box::Request &req,
              ur5_husky_main::Box::Response &res,
              const std::shared_ptr<tesseract_environment::Environment> &env) {
-  Command::Ptr boxLink = renderHideLink(req.name);
+  Command::Ptr boxLink = renderRemoveLink(req.name);
   if (!env->applyCommand(boxLink)) {
     res.result = "ERROR - remove link box";
     return false;
@@ -464,26 +467,63 @@ bool createMesh(ur5_husky_main::Mesh::Request &req,
 }
 
 
-bool freedriveEnable(ur5_husky_main::Freedrive::Request &req, ur5_husky_main::Freedrive::Response &res) {
+void freedriveControl(ros::Rate &loop_rate) {
+
   try {
     RTDEControlInterface rtde_control(robot_ip);
-    if (rtde_control.isConnected()) {
-      if (req.on) {
-        rtde_control.teachMode();
-        res.result = "Freedrive успешно включен";
+    RTDEReceiveInterface rtde_receive(robot_ip);
+    DashboardClient dash_board(robot_ip);
 
-      } else {
+    dash_board.connect();
+
+    if (rtde_control.isConnected()) {
+
+        rtde_control.teachMode();
+
+        // Если значения ниже - 7 7 2, то freedrive включен
+        std::cout << "Robot mode: " << rtde_receive.getRobotMode() << "\n";
+        std::cout << "Robot status: " << rtde_receive.getRobotStatus() << "\n";
+        std::cout << "RuntimeState: " << rtde_receive.getRuntimeState() << "\n";
+        std::cout << dash_board.polyscopeVersion() << "\n";
+
+        ROS_INFO("Freedrive on");
+
+        while(ros::ok()) {
+          ros::spinOnce();
+          loop_rate.sleep();
+          if (!freeDriveOn) {
+            break;
+          }
+        }
+
         rtde_control.endTeachMode();
-        res.result = "Freedrive успешно отключен";
-      }
+        std::cout << "Robot status: " << rtde_receive.getRobotStatus() << "\n";
+
+        ROS_INFO("Freedrive off");
     }
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     rtde_control.stopScript();
+    rtde_control.disconnect();
+    dash_board.stop();
+    dash_board.disconnect();
+    std::cout<<"stop script..." <<std::endl;
 
   } catch(...) {
-    ROS_ERROR(" Connect error");
-    res.result = "Ошибка подключения для управления Freedrive";
+    ROS_ERROR(" Connect error with UR5 for Freedrive");
   }
+}
+
+
+bool freedriveEnable(ur5_husky_main::Freedrive::Request &req,
+                    ur5_husky_main::Freedrive::Response &res) {
+
+  std::string str = req.on ? "true" : "false";
+  std::cout << "Freedrive comand: " <<  str << std::endl;
+  freeDriveOn = req.on;
+
+  std::string mess = "Freedrive command: " + str + ". Freedrive state changed! ";
+  res.result = mess.c_str();
 
   return true;
 }
@@ -671,7 +711,7 @@ int main(int argc, char** argv) {
   ros::ServiceServer freedrive = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
 
-  ros::Publisher finishInfo = nh.advertise<std_msgs::String>("chatter", 1000);
+  ros::Publisher messagePub = nh.advertise<std_msgs::String>("chatter", 1000);
   std_msgs::String msg;
 
 
@@ -705,6 +745,20 @@ int main(int argc, char** argv) {
     if (ui_control && !robotPlanTrajectory) {
       std::cout << "Waiting for the command to plan the trajectory... \n";
       while(ros::ok()) {
+
+        // До начала планирования можно подключить freedrive
+        if (freeDriveOn) {
+          msg.data = "freedrive_on";
+          ROS_INFO("Sent message to UI: %s", msg.data.c_str());
+          messagePub.publish(msg);
+
+          freedriveControl(loop_rate);
+
+          msg.data = "freedrive_off";
+          ROS_INFO("Sent message to UI: %s", msg.data.c_str());
+          messagePub.publish(msg);
+        }
+
         ros::spinOnce();
         loop_rate.sleep();
         if (robotPlanTrajectory) {
@@ -720,7 +774,7 @@ int main(int argc, char** argv) {
 
     msg.data = "plan_finish";
     ROS_INFO("Sent message to UI: %s", msg.data.c_str());
-    finishInfo.publish(msg);
+    messagePub.publish(msg);
     ros::spinOnce();
     loop_rate.sleep();
 
@@ -829,7 +883,7 @@ int main(int argc, char** argv) {
 
     msg.data = "execute_finish";
     ROS_INFO("Sent message to UI: %s", msg.data.c_str());
-    finishInfo.publish(msg);
+    messagePub.publish(msg);
 
     ros::spinOnce();
     loop_rate.sleep();
