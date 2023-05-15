@@ -12,23 +12,26 @@
 using namespace ur_rtde;
 using namespace std::chrono;
 
-
-RTDEIOInterface rtde_io(robot_ip);
-RTDEReceiveInterface rtde_receive(robot_ip);
-RTDEControlInterface rtde_control(robot_ip);
-DashboardClient dash_board(robot_ip);
+SettingsCustomLibClass settingsConfig;
 
 int main(int argc, char* argv[]){
 
   ros::init(argc, argv, "freedrive_node");
   ros::NodeHandle n;
 
-  bool teachModeGo();
+  settingsConfig.update();
+
+  RTDEIOInterface rtde_io(robot_ip);
+  RTDEReceiveInterface rtde_receive(robot_ip);
+  RTDEControlInterface rtde_control(robot_ip);
+  DashboardClient dash_board(robot_ip);
+
+  bool teachModeGo(RTDEReceiveInterface&, RTDEControlInterface&, DashboardClient&);
 
   ros::Rate loop_rate(10);
 
   while(ros::ok()) {
-    bool exit = teachModeGo();
+    bool exit = teachModeGo(rtde_receive, rtde_control, dash_board);
     if (exit) {
       std::cout<<"Exit freedrive" <<std::endl;
       break;
@@ -50,7 +53,7 @@ int main(int argc, char* argv[]){
 }
 
 
-bool teachModeGo() {
+bool teachModeGo(RTDEReceiveInterface &rtde_receive, RTDEControlInterface &rtde_control, DashboardClient &dash_board) {
    
   dash_board.connect();
 
