@@ -32,6 +32,8 @@
 
 #include <tesseract_visualization/trajectory_player.h>
 
+#include <trajopt_sco/osqp_interface.hpp>
+
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -143,12 +145,15 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
   plan_profile->cartesian_coeff(1) = 0;
   plan_profile->cartesian_coeff(2) = 0;
 
-  // auto trajopt_solver_profile = std::make_shared<TrajOptDefaultSolverProfile>();
-  // trajopt_solver_profile->opt_info.max_iter = 100;
+  auto trajopt_solver_profile = std::make_shared<TrajOptDefaultSolverProfile>();
+  trajopt_solver_profile->convex_solver = sco::ModelType::OSQP;
+  trajopt_solver_profile->opt_info.max_iter = 200;
+  trajopt_solver_profile->opt_info.min_approx_improve = 1e-3;
+  trajopt_solver_profile->opt_info.min_trust_box_size = 1e-3;
 
   // Add profile to Dictionary
   profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", plan_profile);
-  // profiles->addProfile<TrajOptSolverProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", trajopt_solver_profile);
+  profiles->addProfile<TrajOptSolverProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", trajopt_solver_profile);
 
   // Create Task Input Data
   TaskComposerDataStorage input_data;

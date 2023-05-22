@@ -11,7 +11,9 @@
 #include <ur5_husky_main/GetJointState.h>
 #include <ur5_husky_main/RobotPlanTrajectory.h>
 #include <ur5_husky_main/RobotExecuteTrajectory.h>
+#include <ur5_husky_main/RobotRestart.h>
 #include <ur5_husky_main/Box.h>
+#include <ur5_husky_main/Mesh.h>
 #include <ur5_husky_main/Freedrive.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
@@ -20,6 +22,7 @@
 #include <std_msgs/String.h>
 #include <tesseract_environment/utils.h>
 #include <tesseract_common/timer.h>
+#include <tesseract_common/resource_locator.h>
 #include <tesseract_command_language/composite_instruction.h>
 #include <tesseract_command_language/state_waypoint.h>
 #include <tesseract_command_language/cartesian_waypoint.h>
@@ -33,6 +36,12 @@
 #include <tesseract_task_composer/taskflow/taskflow_task_composer_executor.h>
 #include <tesseract_visualization/markers/toolpath_marker.h>
 
+#include <tesseract_geometry/impl/mesh_material.h>
+#include <tesseract_geometry/geometries.h>
+#include <tesseract_geometry/mesh_parser.h>
+
+#include <tesseract_collision/bullet/convex_hull_utils.h>
+
 #include <tesseract_motion_planners/core/utils.h>
 #include <tesseract_motion_planners/default_planner_namespaces.h>
 #include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
@@ -43,7 +52,9 @@
 
 #include <tesseract_visualization/trajectory_player.h>
 
+#include <ur_rtde/dashboard_client.h>
 #include <ur_rtde/rtde_control_interface.h>
+#include <ur_rtde/rtde_io_interface.h>
 #include <ur_rtde/rtde_receive_interface.h>
 
 #include <iostream>
@@ -66,6 +77,7 @@ using namespace tesseract_rosutils;
 
 using namespace trajopt;
 using namespace tesseract_environment;
+using namespace tesseract_kinematics;
 using namespace tesseract_scene_graph;
 using namespace tesseract_collision;
 using namespace tesseract_visualization;
@@ -89,6 +101,8 @@ std::vector<Eigen::VectorXd> joint_middle_pos_list;
 bool robotPlanTrajectory = false;
 bool robotExecuteTrajectory = false;
 bool setRobotNotConnectErrorMes = false;
+bool robotRestart = true;
+bool freeDriveOn = false;
 
 
 ColorInfo getDefaultColor(std::string colorName) {
@@ -134,7 +148,47 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
 }
 
 
-tesseract_environment::Command::Ptr renderMoveBox(std::string link_name, std::string joint_name,
+
+tesseract_environment::Command::Ptr addMesh(std::string link_name,
+                                            std::string joint_name,
+                                            std::string mesh_name,
+                                            Eigen::Vector3d scale,
+                                            Eigen::Vector3d translation) {
+
+  std::string mesh_path = "package://ur5_husky_main/urdf/objects/" + mesh_name;
+
+  tesseract_common::ResourceLocator::Ptr locator = std::make_shared<tesseract_common::GeneralResourceLocator>();
+  std::vector<tesseract_geometry::Mesh::Ptr> meshes =
+    tesseract_geometry::createMeshFromResource<tesseract_geometry::Mesh>(
+        locator->locateResource(mesh_path), scale, true);
+
+  Link link_sphere(link_name.c_str());
+
+  for (auto& mesh : meshes) {
+
+    Visual::Ptr visual = std::make_shared<Visual>();
+    visual->origin = Eigen::Isometry3d::Identity();
+    visual->origin.translation() = translation;
+    visual->geometry = mesh;
+    link_sphere.visual.push_back(visual);
+
+    Collision::Ptr collision = std::make_shared<Collision>();
+    collision->origin = visual->origin;
+    collision->geometry = makeConvexMesh(*mesh);
+    link_sphere.collision.push_back(collision);
+  }
+
+  Joint joint_sphere(joint_name.c_str());
+  joint_sphere.parent_link_name = "world";
+  joint_sphere.child_link_name = link_sphere.getName();
+  joint_sphere.type = JointType::FIXED;
+
+  return std::make_shared<tesseract_environment::AddLinkCommand>(link_sphere, joint_sphere);
+}
+
+
+
+tesseract_environment::Command::Ptr renderMove(std::string link_name, std::string joint_name,
                                            float pos_x, float pos_y, float pos_z) {
 
   auto joint_limits =  std::make_shared<tesseract_scene_graph::JointLimits>();
@@ -159,13 +213,68 @@ bool moveBox(ur5_husky_main::Box::Request &req,
 
   std::string joint_name = std::string(req.name) + "_joints";
 
-  Command::Ptr box = renderMoveBox(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
+  Command::Ptr box = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
   if (!env->applyCommand(box)) {
     res.result = "ERROR - create box";
     return false;
   }
 
   res.result = "Move Box end...";
+
+  return true;
+}
+
+
+bool moveMesh(ur5_husky_main::Mesh::Request &req,
+             ur5_husky_main::Mesh::Response &res,
+             const std::shared_ptr<tesseract_environment::Environment> &env) {
+
+  std::string joint_name = std::string(req.name) + "_joints";
+
+  Command::Ptr mesh = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
+  if (!env->applyCommand(mesh)) {
+    res.result = "ERROR - move mesh";
+    return false;
+  }
+
+  res.result = "Move Mesh end...";
+
+  return true;
+}
+
+tesseract_environment::Command::Ptr renderRemoveLink(std::string link_name) {
+  return std::make_shared<tesseract_environment::RemoveLinkCommand>(link_name);
+}
+
+tesseract_environment::Command::Ptr renderHideLink(std::string link_name) {
+  return std::make_shared<tesseract_environment::ChangeLinkVisibilityCommand>(link_name, false);
+}
+
+bool removeBox(ur5_husky_main::Box::Request &req,
+             ur5_husky_main::Box::Response &res,
+             const std::shared_ptr<tesseract_environment::Environment> &env) {
+  Command::Ptr boxLink = renderRemoveLink(req.name);
+  if (!env->applyCommand(boxLink)) {
+    res.result = "ERROR - remove link box";
+    return false;
+  }
+
+  res.result = "Remove Box end...";
+
+  return true;
+}
+
+
+bool removeMesh(ur5_husky_main::Mesh::Request &req,
+             ur5_husky_main::Mesh::Response &res,
+             const std::shared_ptr<tesseract_environment::Environment> &env) {
+  Command::Ptr meshLink = renderRemoveLink(req.name);
+  if (!env->applyCommand(meshLink)) {
+    res.result = "ERROR - remove link box";
+    return false;
+  }
+
+  res.result = "Remove Box end...";
 
   return true;
 }
@@ -301,6 +410,7 @@ bool getJointValue(ur5_husky_main::GetJointState::Request &req,
 }
 
 bool robotPlanTrajectoryMethod(ur5_husky_main::RobotPlanTrajectory::Request &req, ur5_husky_main::RobotPlanTrajectory::Response &res) {
+
    robotPlanTrajectory = true;
    res.result = "Plan Trajectory";
    res.success = true;
@@ -313,6 +423,18 @@ bool robotExecuteTrajectoryMethod(ur5_husky_main::RobotExecuteTrajectory::Reques
   res.success = true;
   return true;
 }
+
+bool robotRestartMethod(ur5_husky_main::RobotRestart::Request &req, ur5_husky_main::RobotRestart::Response &res) {
+  robotRestart = true;
+
+  // Откатить начальное значения
+  robotPlanTrajectory = false;
+  robotExecuteTrajectory = false;
+  setRobotNotConnectErrorMes = false;
+  res.result = "Start Plan Trajectory";
+  return true;
+}
+
 
 bool createBox(ur5_husky_main::Box::Request &req,
               ur5_husky_main::Box::Response &res,
@@ -329,7 +451,7 @@ bool createBox(ur5_husky_main::Box::Request &req,
   }
 
   if (req.offsetX > 0 || req.offsetY > 0 || req.offsetZ > 0) {
-    Command::Ptr boxMove = renderMoveBox(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
+    Command::Ptr boxMove = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
     if (!env->applyCommand(boxMove)) {
       res.result = "ERROR - move create box";
       return false;
@@ -341,8 +463,82 @@ bool createBox(ur5_husky_main::Box::Request &req,
 }
 
 
-bool freedriveEnable(ur5_husky_main::Freedrive::Request &req, ur5_husky_main::Freedrive::Response &res) {
-  // TODO connect and disconnect freedrive
+bool createMesh(ur5_husky_main::Mesh::Request &req,
+              ur5_husky_main::Mesh::Response &res,
+              const std::shared_ptr<tesseract_environment::Environment> &env) {
+
+  std::string joint_name = std::string(req.name) + "_joints";
+
+  Command::Ptr mesh = addMesh(req.name, joint_name.c_str(), req.fileName,
+                      Eigen::Vector3d(req.scale, req.scale, req.scale), Eigen::Vector3d(req.x, req.y, req.z));
+
+  if (!env->applyCommand(mesh)) {
+    res.result = "ERROR - create mesh";
+    return false;
+  }
+
+  res.result = "Create mesh success";
+  return true;
+}
+
+
+void freedriveControl(ros::Rate &loop_rate) {
+
+  try {
+    RTDEControlInterface rtde_control(robot_ip);
+    RTDEReceiveInterface rtde_receive(robot_ip);
+    DashboardClient dash_board(robot_ip);
+
+    dash_board.connect();
+
+    if (rtde_control.isConnected()) {
+
+        rtde_control.teachMode();
+
+        // Если значения ниже - 7 7 2, то freedrive включен
+        std::cout << "Robot mode: " << rtde_receive.getRobotMode() << "\n";
+        std::cout << "Robot status: " << rtde_receive.getRobotStatus() << "\n";
+        std::cout << "RuntimeState: " << rtde_receive.getRuntimeState() << "\n";
+        std::cout << dash_board.polyscopeVersion() << "\n";
+
+        ROS_INFO("Freedrive on");
+
+        while(ros::ok()) {
+          ros::spinOnce();
+          loop_rate.sleep();
+          if (!freeDriveOn) {
+            break;
+          }
+        }
+
+        rtde_control.endTeachMode();
+        std::cout << "Robot status: " << rtde_receive.getRobotStatus() << "\n";
+
+        ROS_INFO("Freedrive off");
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    rtde_control.stopScript();
+    rtde_control.disconnect();
+    dash_board.stop();
+    dash_board.disconnect();
+    std::cout<<"stop script..." <<std::endl;
+
+  } catch(...) {
+    ROS_ERROR(" Connect error with UR5 for Freedrive");
+  }
+}
+
+
+bool freedriveEnable(ur5_husky_main::Freedrive::Request &req,
+                    ur5_husky_main::Freedrive::Response &res) {
+
+  std::string str = req.on ? "true" : "false";
+  std::cout << "Freedrive comand: " <<  str << std::endl;
+  freeDriveOn = req.on;
+
+  std::string mess = "Freedrive command: " + str + ". Freedrive state changed! ";
+  res.result = mess.c_str();
 
   return true;
 }
@@ -407,6 +603,18 @@ int main(int argc, char** argv) {
     // Создать коробку
     Command::Ptr box = addBox("box", "joint_box_attached", box_length, box_width, box_height, box_pos_x, box_pos_y, box_pos_z, getDefaultColor(""));
     if (!env->applyCommand(box)) {
+      return false;
+    }
+
+    // Создать стол из mesh
+    Command::Ptr table_mesh = addMesh("table", "table-js", "table-noise-2.obj", Eigen::Vector3d(0.015, 0.015, 0.015), Eigen::Vector3d(1.7, 0.0, -0.14869));
+    if (!env->applyCommand(table_mesh)) {
+      return false;
+    }
+
+    // Создать горелку из mesh
+    Command::Ptr burner_mesh = addMesh("burner", "burner-js", "burner.obj", Eigen::Vector3d(0.03, 0.03, 0.03), Eigen::Vector3d(1.0, 0.0, 0.57));
+    if (!env->applyCommand(burner_mesh)) {
       return false;
     }
   }
@@ -497,142 +705,204 @@ int main(int argc, char** argv) {
   ros::ServiceServer robotExecuteService = nh.advertiseService<ur5_husky_main::RobotExecuteTrajectory::Request, ur5_husky_main::RobotExecuteTrajectory::Response>
                       ("robot_execute_trajectory", boost::bind(robotExecuteTrajectoryMethod, _1, _2));
 
+  ros::ServiceServer robotRestartService = nh.advertiseService<ur5_husky_main::RobotRestart::Request, ur5_husky_main::RobotRestart::Response>
+                      ("robot_restart", boost::bind(robotRestartMethod, _1, _2));
+
   ros::ServiceServer createBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
                       ("create_box", boost::bind(createBox, _1, _2, env));
+
+  ros::ServiceServer createMeshService = nh.advertiseService<ur5_husky_main::Mesh::Request, ur5_husky_main::Mesh::Response>
+                      ("create_mesh", boost::bind(createMesh, _1, _2, env));
 
   ros::ServiceServer moveBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
                       ("move_box", boost::bind(moveBox, _1, _2, env));
 
+  ros::ServiceServer moveMeshService = nh.advertiseService<ur5_husky_main::Mesh::Request, ur5_husky_main::Mesh::Response>
+                      ("move_mesh", boost::bind(moveMesh, _1, _2, env));
+
+  ros::ServiceServer removeBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
+                      ("remove_box", boost::bind(removeBox, _1, _2, env));
+
+  ros::ServiceServer removeMeshService = nh.advertiseService<ur5_husky_main::Mesh::Request, ur5_husky_main::Mesh::Response>
+                      ("remove_mesh", boost::bind(removeMesh, _1, _2, env));
+
   ros::ServiceServer freedrive = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
+
+  ros::Publisher messagePub = nh.advertise<std_msgs::String>("chatter", 1000);
+  std_msgs::String msg;
 
 
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
   }
 
-  // Ждем команды на планирование траектории
-  if (ui_control && !robotPlanTrajectory) {
-    std::cout << "Waiting for the command to plan the trajectory... \n";
-    while(ros::ok()) {
-      ros::spinOnce();
-      loop_rate.sleep();
-      if (robotPlanTrajectory) {
-        break;
+
+
+  while(ros::ok()) {
+
+    // Ждем команды для старта
+    if (ui_control) {
+      std::cout << "Waiting for the command to start ... \n";
+      while(ros::ok()) {
+        ros::spinOnce();
+        loop_rate.sleep();
+        if (robotRestart) {
+          break;
+        }
+      }
+    } else {
+      plotter->waitForInput("Hit Enter for start.");
+    }
+
+    robotRestart = false;
+    plotter->clear();
+
+
+    // Ждем команды на планирование траектории
+    if (ui_control && !robotPlanTrajectory) {
+      std::cout << "Waiting for the command to plan the trajectory... \n";
+      while(ros::ok()) {
+
+        // До начала планирования можно подключить freedrive
+        if (freeDriveOn) {
+          msg.data = "freedrive_on";
+          ROS_INFO("Sent message to UI: %s", msg.data.c_str());
+          messagePub.publish(msg);
+
+          freedriveControl(loop_rate);
+
+          msg.data = "freedrive_off";
+          ROS_INFO("Sent message to UI: %s", msg.data.c_str());
+          messagePub.publish(msg);
+        }
+
+        ros::spinOnce();
+        loop_rate.sleep();
+        if (robotPlanTrajectory) {
+          break;
+        }
+      }
+    } else {
+      plotter->waitForInput("Hit Enter after move robot to start position.");
+    }
+
+    UR5Trajopt example(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
+    tesseract_common::JointTrajectory trajectory = example.run();
+
+    msg.data = "plan_finish";
+    ROS_INFO("Sent message to UI: %s", msg.data.c_str());
+    messagePub.publish(msg);
+    ros::spinOnce();
+    loop_rate.sleep();
+
+
+    /////////////////////////////////////////////////
+    //
+    //   Выполнение траектории в симуляторе rViz
+    //
+    /////////////////////////////////////////////////
+
+    // TODO Проверка флага на подключение connect_robot
+
+    char input_simbol = 'n';
+
+    if (!ui_control) {
+      std::cout << "Execute Trajectory on UR5? y/n \n";
+      std::cin >> input_simbol;
+    }
+
+    // Ждем команды на выполнение траектории
+    if (ui_control && !robotExecuteTrajectory) {
+      std::cout << "Waiting for the command to execute the trajectory... \n";
+      while(ros::ok()) {
+        ros::spinOnce();
+        loop_rate.sleep();
+        if (robotExecuteTrajectory) {
+          break;
+        }
       }
     }
-  } else {
-    plotter->waitForInput("Hit Enter after move robot to start position.");
-  }
+    
+    if (robotExecuteTrajectory || input_simbol == 'y') {
+      std::cout << "Executing... \n";
 
-  UR5Trajopt example(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
-  tesseract_common::JointTrajectory trajectory = example.run();
+      TrajectoryPlayer player;
+      player.setTrajectory(trajectory);
 
+      std::vector<tesseract_common::JointState> j_states;
+          
+      ROS_INFO("Added intermediate joints: ");
 
-  /////////////////////////////////////////////////
-  //
-  //   Выполнение траектории в симуляторе rViz
-  //
-  /////////////////////////////////////////////////
+      // Проверка связи с роботом или с ursim
+      RTDEControlInterface rtde_control(robot_ip);
 
-  // TODO Проверка флага на подключение connect_robot
+      // Список доступных положений робота
+      std::vector<std::vector<double>> jointsPath;
+      std::vector<double> path_pose;
 
-  char input_simbol = 'n';
+      for (int i = 0; i < trajectory.states.size(); i++) {
 
-  if (!ui_control) {
-    std::cout << "Execute Trajectory on UR5? y/n \n";
-    std::cin >> input_simbol;
-  }
+        tesseract_common::JointState j_state = player.getByIndex(i);
+        path_pose.resize(j_state.position.size());
+        Eigen::VectorXd::Map(&path_pose[0], j_state.position.size()) = j_state.position;
+        path_pose.push_back(ur_speed);
+        path_pose.push_back(ur_acceleration);
+        path_pose.push_back(ur_blend);
+        jointsPath.push_back(path_pose);
 
-  // Ждем команды на выполнение траектории
-  if (ui_control && !robotExecuteTrajectory) {
-    std::cout << "Waiting for the command to execute the trajectory... \n";
-    while(ros::ok()) {
-      ros::spinOnce();
-      loop_rate.sleep();
-      if (robotExecuteTrajectory) {
-        break;
-      }
-    }
-  }
-  
-  if (robotExecuteTrajectory || input_simbol == 'y') {
-    std::cout << "Executing... \n";
+        ROS_INFO("%d point of traectory: ", i+1);
 
-    TrajectoryPlayer player;
-    player.setTrajectory(trajectory);
-
-    std::vector<tesseract_common::JointState> j_states;
+        std::cout << "joint_names: ";
+        for (const auto& name: j_state.joint_names) {
+          std::cout << name.c_str() << ' ';
+        }
+        std::cout << std::endl;
         
-    ROS_INFO("Added intermediate joints: ");
+        std::cout << "positions: " << j_state.position.transpose() << std::endl;
+        std::cout << "velocity: " << j_state.velocity.transpose() << std::endl;
+        std::cout << "acceleration: " << j_state.acceleration.transpose() << std::endl;
+        std::cout << "effort: " << j_state.effort.transpose() << std::endl;
+        std::cout << "====================" << std::endl;
+      }
 
-    // Проверка связи с роботом или с ursim
-    RTDEControlInterface rtde_control(robot_ip);
+      std::cout << "jointsPath: " << jointsPath.size() << std::endl;
 
-    // Список доступных положений робота
-    std::vector<std::vector<double>> jointsPath;
-    std::vector<double> path_pose;
+      // Обновить состояние до последней позиции
+      position_vector.resize(joint_end_pos.size());
+      Eigen::VectorXd::Map(&position_vector[0], joint_end_pos.size()) = joint_end_pos;
 
-    for (int i = 0; i < trajectory.states.size(); i++) {
-
-      tesseract_common::JointState j_state = player.getByIndex(i);
-      path_pose.resize(j_state.position.size());
-      Eigen::VectorXd::Map(&path_pose[0], j_state.position.size()) = j_state.position;
+      path_pose.resize(position_vector.size());
+      Eigen::VectorXd::Map(&path_pose[0], joint_end_pos.size()) = joint_end_pos;
       path_pose.push_back(ur_speed);
       path_pose.push_back(ur_acceleration);
       path_pose.push_back(ur_blend);
       jointsPath.push_back(path_pose);
 
-      ROS_INFO("%d point of traectory: ", i+1);
+      // Отправить на робота
+      rtde_control.moveJ(jointsPath);
+      rtde_control.stopScript();
 
-      std::cout << "joint_names: ";
-      for (const auto& name: j_state.joint_names) {
-        std::cout << name.c_str() << ' ';
-      }
-      std::cout << std::endl;
-      
-      std::cout << "positions: " << j_state.position.transpose() << std::endl;
-      std::cout << "velocity: " << j_state.velocity.transpose() << std::endl;
-      std::cout << "acceleration: " << j_state.acceleration.transpose() << std::endl;
-      std::cout << "effort: " << j_state.effort.transpose() << std::endl;
-      std::cout << "====================" << std::endl;
+      // Установить состояние для tesseract
+      env->setState(joint_names, joint_end_pos);
+
+      // Сообщение для отправки конечного состояния для обновления в rViz
+      sensor_msgs::JointState joint_state_msg;
+      joint_state_msg.name = joint_names;
+      joint_state_msg.position = position_vector;
+      joint_state_msg.velocity = velocity_default; // скорость
+      joint_state_msg.effort = effort_default; // усилие
+      joint_pub_state.publish(joint_state_msg);
+
+
+    } else {
+      std::cout << "The trajectory in the simulator will not be executed. \n";
     }
 
-    std::cout << "jointsPath: " << jointsPath.size() << std::endl;
+    msg.data = "execute_finish";
+    ROS_INFO("Sent message to UI: %s", msg.data.c_str());
+    messagePub.publish(msg);
 
-    // Обновить состояние до последней позиции
-    position_vector.resize(joint_end_pos.size());
-    Eigen::VectorXd::Map(&position_vector[0], joint_end_pos.size()) = joint_end_pos;
-
-    path_pose.resize(position_vector.size());
-    Eigen::VectorXd::Map(&path_pose[0], joint_end_pos.size()) = joint_end_pos;
-    path_pose.push_back(ur_speed);
-    path_pose.push_back(ur_acceleration);
-    path_pose.push_back(ur_blend);
-    jointsPath.push_back(path_pose);
-
-    // Отправить на робота
-    rtde_control.moveJ(jointsPath);
-    rtde_control.stopScript();
-
-    // Установить состояние для tesseract
-    env->setState(joint_names, joint_end_pos);
-
-    // Сообщение для отправки конечного состояния для обновления в rViz
-    sensor_msgs::JointState joint_state_msg;
-    joint_state_msg.name = joint_names;
-    joint_state_msg.position = position_vector;
-    joint_state_msg.velocity = velocity_default; // скорость
-    joint_state_msg.effort = effort_default; // усилие
-    joint_pub_state.publish(joint_state_msg);
-
-
-  } else {
-    std::cout << "The trajectory in the simulator will not be executed. \n";
-  }
-
-
-  while(ros::ok()) {
     ros::spinOnce();
     loop_rate.sleep();
   }

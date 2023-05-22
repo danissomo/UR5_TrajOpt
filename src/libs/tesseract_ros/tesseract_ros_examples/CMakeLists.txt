@@ -20,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(tesseract_environment REQUIRED)
 find_package(tesseract_examples REQUIRED)
-find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde/build/ur_rtde")
+find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde")
 
 catkin_package()
 

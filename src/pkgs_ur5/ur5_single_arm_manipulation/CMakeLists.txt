@@ -44,7 +44,7 @@ find_package(tesseract_support REQUIRED)
 find_package(trajopt_sqp REQUIRED)
 find_package(trajopt_ifopt REQUIRED)
 find_package(tesseract_kinematics REQUIRED)
-find_package(ur_rtde REQUIRED PATH "/workspace/src/ur_rtde/build/ur_rtde")
+find_package(ur_rtde REQUIRED PATH "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde")
 
 
 # Load variable for clang tidy args, compiler options and cxx version

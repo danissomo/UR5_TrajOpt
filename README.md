@@ -37,8 +37,12 @@
 
 Запуск rViz для подбора поз робота  <code>roslaunch ur5_single_arm_manipulation ur5.rviz.launch</code>
 
-#### Собрать ur_rtde (опционально)
-<pre><code>cd /workspace/src/ur_rtde/build
+Запустить Freedrive <code>roslaunch ur5_husky_main freedrive_node.launch</code>
+
+#### Собрать ur_rtde
+<pre><code>cd /workspace/src/ur_rtde
+git submodule update --init --recursive
+cd build
 cmake ..
 make
 sudo make install</code></pre>
