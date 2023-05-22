@@ -145,6 +145,7 @@ collision_constraint_config_type = DISCRETE_CONTINUOUS
 
 
 # параметры для движения реального робота или в симуляции ur_sim
-ur_speed = 0.5
-ur_acceleration = 50.0
+# максимальное значение ur_speed = 3.14, ur_acceleration = 40, ur_blend = 2
+ur_speed = 0.1
+ur_acceleration = 10.0
 ur_blend = 0.0
