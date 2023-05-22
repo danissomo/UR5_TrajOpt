@@ -155,7 +155,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include ${catkin_INCLUDE_DIRS} trajopt
+  include ${catkin_INCLUDE_DIRS} trajopt ik
 )
 
 ## Declare a C++ library
@@ -177,6 +177,7 @@ add_executable(
   ur5_trajopt_node 
   src/ur5_trajopt_node.cpp
   trajopt/UR5Trajopt.cpp
+  ik/InverseKinematics.cpp
 )
 
 add_executable(
