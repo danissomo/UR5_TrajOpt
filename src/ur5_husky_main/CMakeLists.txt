@@ -95,6 +95,7 @@ add_service_files(
   Freedrive.srv
   Mesh.srv
   RobotRestart.srv
+  IKSolver.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -177,7 +178,7 @@ add_executable(
   ur5_trajopt_node 
   src/ur5_trajopt_node.cpp
   trajopt/UR5Trajopt.cpp
-  ik/InverseKinematics.cpp
+  ik/InverseKinematicsUR5.cpp
 )
 
 add_executable(

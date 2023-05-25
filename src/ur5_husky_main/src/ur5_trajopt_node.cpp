@@ -4,8 +4,9 @@
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <ros/topic.h>
 
-
+#include <InverseKinematicsUR5.hpp>
 #include <ur5_trajopt.hpp>
+
 #include <ur5_husky_main/SetStartJointState.h>
 #include <ur5_husky_main/SetFinishJointState.h>
 #include <ur5_husky_main/GetJointState.h>
@@ -15,6 +16,7 @@
 #include <ur5_husky_main/Box.h>
 #include <ur5_husky_main/Mesh.h>
 #include <ur5_husky_main/Freedrive.h>
+#include <ur5_husky_main/IKSolver.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -544,6 +546,16 @@ bool freedriveEnable(ur5_husky_main::Freedrive::Request &req,
 }
 
 
+bool alphaIKSolver(ur5_husky_main::IKSolver::Request &req,
+                   ur5_husky_main::IKSolver::Response &res) {
+
+  InverseKinematicsUR5 ik(req.x, req.y, req.z);
+  std::vector<double> joints = ik.calculate();
+
+  return true;
+}
+
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
   ros::NodeHandle pnh("~");
@@ -726,8 +738,11 @@ int main(int argc, char** argv) {
   ros::ServiceServer removeMeshService = nh.advertiseService<ur5_husky_main::Mesh::Request, ur5_husky_main::Mesh::Response>
                       ("remove_mesh", boost::bind(removeMesh, _1, _2, env));
 
-  ros::ServiceServer freedrive = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
+  ros::ServiceServer freedriveService = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
+
+  ros::ServiceServer ikSolverService = nh.advertiseService<ur5_husky_main::IKSolver::Request, ur5_husky_main::IKSolver::Response>
+                      ("ik_solver", boost::bind(alphaIKSolver, _1, _2));
 
   ros::Publisher messagePub = nh.advertise<std_msgs::String>("chatter", 1000);
   std_msgs::String msg;
