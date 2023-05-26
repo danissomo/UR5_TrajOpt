@@ -44,7 +44,12 @@ std::vector<double> InverseKinematicsUR5::calculate() {
     std::vector<double> a = {0, -0.425, -0.39225, 0, 0, 0};
     std::vector<double> d = {0.089159, 0, 0, 0.10915, 0.09465, 0.0823};
     std::vector<double> alpha = {pi/2, 0, 0, pi/2, -pi/2, 0};
-    double theta1[2] = {0, 0}, theta2 = 0, theta3 = 0, theta4 = 0, theta5[2] = {0, 0}, theta6 = 0;
+    double theta1[2] = {0, 0},
+           theta2 = 0,
+           theta3[8] = {0, 0, 0, 0, 0, 0, 0, 0},
+           theta4 = 0,
+           theta5[4] = {0, 0, 0, 0},
+           theta6[4] = {0, 0, 0, 0};
 
     // Матрица вращения по углам Эйлера
     Matrix3d rotationMatrix = euler2Quaternion(roll_, pitch_, yaw_);
@@ -63,18 +68,48 @@ std::vector<double> InverseKinematicsUR5::calculate() {
     ////////////////////////////////// theta1 ///////////////////////////////
 
     Vector4d vec5(0, 0, -d[5], 1);
-    Vector4d P5 = T06 * vec5;
+    Vector4d P05 = T06 * vec5;
 
-    std::cout << "P5 === " << std::endl << P5 << std::endl;
+    std::cout << "P05 === " << std::endl << P05 << std::endl;
 
-    double theta1_ = atan2(P5(1), P5(0)) + pi/2;
-    double tmp_ = acos(d[3] / sqrt(pow(P5(0), 2) + pow(P5(1), 2)));
+    double theta1_ = atan2(P05(1), P05(0)) + pi/2;
+    double acosTmp_ = acos(d[3] / sqrt(pow(P05(0), 2) + pow(P05(1), 2)));
 
-    theta1[0] = theta1_ + tmp_;
-    theta1[1] = theta1_ - tmp_;
+    theta1[0] = theta1_ + acosTmp_; // положительное θ1
+    theta1[1] = theta1_ - acosTmp_; // отрицательное θ1
 
 
     ////////////////////////////////// theta5 ///////////////////////////////
+
+    Vector3d P06(posX_, posY_, posZ_);
+    for (int i = 0, j = 0; i < (sizeof(theta1)/sizeof(*theta1)); i++) {
+        acosTmp_ = (P06(0)*sin(theta1[i]) - P06(1)*cos(theta1[i]) - d[3])/d[5];
+        theta5[j] = acosTmp_;     // для положительного θ1
+        theta5[j+1] = -acosTmp_;  // для отрицательного θ1
+        j += 2;
+    }
+
+    for (int k = 0; k < (sizeof(theta5)/sizeof(*theta5)); k++) {
+        std::cout << "theta5 = " << theta5[k] << std::endl;
+    }
+
+
+    ////////////////////////////////// theta6 ///////////////////////////////
+
+    Vector2d X06(T06(0, 0), T06(0, 1));
+    Vector2d Y06(T06(1, 0), T06(1, 1));
+
+    for (int i = 0, j = 0; i < (sizeof(theta5)/sizeof(*theta5)); i++) {
+        theta6[i] = atan2((-X06(1) * sin(theta1[j]) + Y06(1))/sin(theta5[i]), (X06(0)*sin(theta1[j]) - Y06(0)*cos(theta1[j]))/sin(theta5[i]));
+        if (i % 2 == 1) {
+            j++; // смена знака для θ1
+        }
+    }
+
+
+    ////////////////////////////////// theta3 ///////////////////////////////
+    T14
+    
 
 
 
