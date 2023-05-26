@@ -59,12 +59,21 @@ double createTheta4(Matrix4d T14, std::vector<double> alpha, std::vector<double>
     std::cout << "T34: " << std::endl;
     std::cout << T34 << std::endl;
 
-    return atan2(T06(0, 0), T06(0, 1));
+    return atan2(T34(0, 0), T34(0, 1));
 }
 
-std::vector<double> InverseKinematicsUR5::calculate() {
+void printTheta(int index, double *theta) {
+    std::cout << "theta" << index << ": ";
+    for (int k = 0; k < (sizeof(theta)/sizeof(*theta)); k++) {
+        std::cout << theta[k] << " ";
+    }
+    std::cout << std::endl;
+}
 
-    std::cout << "X = " << posX_ << ", Y = " << posY_ << ", Z = " << posZ_ << std::endl;
+MatrixXd InverseKinematicsUR5::calculate() {
+
+    std::cout << "X = " << posX_ << ", Y = " << posY_ << ", Z = " << posZ_;
+    std::cout << ", roll = " << roll_ << ", pitch = " << pitch_ << ", yaw = " << yaw_ << std::endl;
 
     std::vector<double> a = {0, -0.425, -0.39225, 0, 0, 0};
     std::vector<double> d = {0.089159, 0, 0, 0.10915, 0.09465, 0.0823};
@@ -105,6 +114,8 @@ std::vector<double> InverseKinematicsUR5::calculate() {
     theta1[0] = theta1_ + acosTmp_; // положительное θ1
     theta1[1] = theta1_ - acosTmp_; // отрицательное θ1
 
+    printTheta(1, theta1);
+
 
     ////////////////////////////////// theta5 ///////////////////////////////
 
@@ -116,9 +127,7 @@ std::vector<double> InverseKinematicsUR5::calculate() {
         j += 2;
     }
 
-    for (int k = 0; k < (sizeof(theta5)/sizeof(*theta5)); k++) {
-        std::cout << "theta5 = " << theta5[k] << std::endl;
-    }
+    printTheta(5, theta5);
 
 
     ////////////////////////////////// theta6 ///////////////////////////////
@@ -132,6 +141,8 @@ std::vector<double> InverseKinematicsUR5::calculate() {
             j++; // смена знака для θ1
         }
     }
+
+    printTheta(6, theta6);
 
 
     ////////////////////////////////// theta3 ///////////////////////////////
@@ -174,17 +185,20 @@ std::vector<double> InverseKinematicsUR5::calculate() {
             j++; // смена знака для θ1
         }
     }
-    
 
+   printTheta(3, theta3);
+   printTheta(2, theta2);
+   printTheta(4, theta4);
 
+    MatrixXd solutions(8, 6);
+    solutions << theta1[0], theta2[0], theta3[0], theta4[0], theta5[0], theta6[0],
+                 theta1[0], theta2[1], theta3[1], theta4[1], theta5[1], theta6[1],
+                 theta1[1], theta2[2], theta3[2], theta4[2], theta5[2], theta6[2],
+                 theta1[1], theta2[3], theta3[3], theta4[3], theta5[3], theta6[3],
+                 theta1[0], theta2[4], theta3[4], theta4[4], theta5[0], theta6[0],
+                 theta1[0], theta2[5], theta3[5], theta4[5], theta5[1], theta6[1],
+                 theta1[1], theta2[6], theta3[6], theta4[6], theta5[2], theta6[2],
+                 theta1[1], theta2[7], theta3[7], theta4[7], theta5[3], theta6[3];
 
-    std::vector<double> joints;
-
-    for (int i = 0; i < 6; i++) {
-        joints.push_back(0);
-    }
-
-
-
-    return joints;
+    return solutions;
 }

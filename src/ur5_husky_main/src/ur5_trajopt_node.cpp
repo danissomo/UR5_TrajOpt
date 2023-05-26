@@ -545,12 +545,72 @@ bool freedriveEnable(ur5_husky_main::Freedrive::Request &req,
   return true;
 }
 
+void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &env,
+                   const std::vector<std::string> &joint_names) {
+  std::cout << "Проверка расчета обратной кинематики" << std::endl;
+
+  try {
+    RTDEControlInterface rtde_control(robot_ip);
+    if (rtde_control.isConnected()) {
+        std::vector<double> fk = rtde_control.getForwardKinematics();
+        std::cout << "Прямая кинематика: ";
+        for (int i = 0; i < fk.size(); i++) {
+          std::cout << fk[i] << " ";
+        }
+        std::cout << std::endl;
+
+        std::vector<double> ik = rtde_control.getInverseKinematics(fk);
+        std::cout << "Обратная кинематика (ur_rtde): ";
+        for (int i = 0; i < ik.size(); i++) {
+          std::cout << ik[i] << " ";
+        }
+        std::cout << std::endl;
+
+        InverseKinematicsUR5 ik2(fk[0], fk[1], fk[2], fk[3], fk[4], fk[5]);
+        Eigen::MatrixXd solutions = ik2.calculate();
+
+        std::cout << "===============================" << std::endl;
+        std::cout << "Обратная кинематика (8 решений): " << std::endl;
+        std::cout << solutions << std::endl;
+
+        char test_robot_pose = 'n';
+
+        for (int i = 0; i < solutions.rows(); i++) {
+          std::cout << "Нажмите любую клавишу, чтобы продолжить..." << std::endl;
+          std::cin >> test_robot_pose;
+          std::cout << "Проверка позы №" << i+1 << std::endl;
+
+          std::vector<double> pos_vector;
+          for (int j = 0; j < solutions.cols(); j++) {
+            pos_vector.push_back(solutions(i, j));
+          }
+
+          rtde_control.moveJ(pos_vector);
+
+          Eigen::VectorXd joint_test_pos(6);
+          for (auto i = 0; i < pos_vector.size(); i++) {
+            joint_test_pos(i) = pos_vector[i];
+          }
+          env->setState(joint_names, joint_test_pos);
+        }
+    }
+    rtde_control.stopScript();
+    rtde_control.disconnect();
+  } catch(...) {
+    ROS_ERROR(" Connect error with UR5 for Freedrive");
+  }
+}
+
 
 bool alphaIKSolver(ur5_husky_main::IKSolver::Request &req,
-                   ur5_husky_main::IKSolver::Response &res) {
+                   ur5_husky_main::IKSolver::Response &res,
+                   const std::shared_ptr<tesseract_environment::Environment> &env,
+                   const std::vector<std::string> &joint_names) {
 
-  InverseKinematicsUR5 ik(req.x, req.y, req.z, req.roll, req.pitch, req.yaw);
-  std::vector<double> joints = ik.calculate();
+  // InverseKinematicsUR5 ik(req.x, req.y, req.z, req.roll, req.pitch, req.yaw);
+  // Eigen::MatrixXd joints = ik.calculate();
+
+  ikSolverCheck(env, joint_names);
 
   return true;
 }
@@ -742,7 +802,7 @@ int main(int argc, char** argv) {
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
 
   ros::ServiceServer ikSolverService = nh.advertiseService<ur5_husky_main::IKSolver::Request, ur5_husky_main::IKSolver::Response>
-                      ("ik_solver", boost::bind(alphaIKSolver, _1, _2));
+                      ("ik_solver", boost::bind(alphaIKSolver, _1, _2, env, joint_names));
 
   ros::Publisher messagePub = nh.advertise<std_msgs::String>("chatter", 1000);
   std_msgs::String msg;
