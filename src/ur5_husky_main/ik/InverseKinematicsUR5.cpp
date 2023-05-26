@@ -37,6 +37,31 @@ Matrix3d euler2Quaternion(double roll, double pitch, double yaw) {
     return rotationMatrix;
 }
 
+Matrix4d createTransformMatrix(double alpha, double a, double d, double theta) {
+    Matrix4d matrix;
+    matrix << cos(theta),               -sin(theta),                0,              a,
+              sin(theta)*cos(alpha),    cos(theta)*cos(alpha),      -sin(alpha),    -sin(alpha)*d,
+              sin(theta)*sin(alpha),    cos(theta)*sin(alpha),      cos(alpha),     cos(alpha)*d,
+              0,                        0,                          0,              1;
+
+    return matrix;
+}
+
+double createTheta2(Vector2d P14_, double a3, double theta3, double P14_xx) {
+    return atan2(-P14_(1), -P14_(0)) - asin(-a3*sin(theta3/abs(P14_xx)));
+}
+
+double createTheta4(Matrix4d T14, std::vector<double> alpha, std::vector<double> a, std::vector<double> d, double theta2, double theta3) {
+    Matrix4d T12 = createTransformMatrix(alpha[0], a[0], d[1], theta2);
+    Matrix4d T23 = createTransformMatrix(alpha[1], a[1], d[2], theta3);
+    Matrix4d T34 = T12.inverse() * T23.inverse() * T14;
+
+    std::cout << "T34: " << std::endl;
+    std::cout << T34 << std::endl;
+
+    return atan2(T06(0, 0), T06(0, 1));
+}
+
 std::vector<double> InverseKinematicsUR5::calculate() {
 
     std::cout << "X = " << posX_ << ", Y = " << posY_ << ", Z = " << posZ_ << std::endl;
@@ -45,11 +70,13 @@ std::vector<double> InverseKinematicsUR5::calculate() {
     std::vector<double> d = {0.089159, 0, 0, 0.10915, 0.09465, 0.0823};
     std::vector<double> alpha = {pi/2, 0, 0, pi/2, -pi/2, 0};
     double theta1[2] = {0, 0},
-           theta2 = 0,
+           theta2[8] = {0, 0, 0, 0, 0, 0, 0, 0},
            theta3[8] = {0, 0, 0, 0, 0, 0, 0, 0},
-           theta4 = 0,
+           theta4[8] = {0, 0, 0, 0, 0, 0, 0, 0},
            theta5[4] = {0, 0, 0, 0},
            theta6[4] = {0, 0, 0, 0};
+
+    std::vector<int> thetaErrors;
 
     // Матрица вращения по углам Эйлера
     Matrix3d rotationMatrix = euler2Quaternion(roll_, pitch_, yaw_);
@@ -108,7 +135,45 @@ std::vector<double> InverseKinematicsUR5::calculate() {
 
 
     ////////////////////////////////// theta3 ///////////////////////////////
-    T14
+
+    for (int i = 0, j = 0; i < (sizeof(theta5)/sizeof(*theta5)); i++) {
+        Matrix4d T01 = createTransformMatrix(0, 0, d[0], theta1[j]);
+        Matrix4d T45 = createTransformMatrix(alpha[3], a[3], d[4], theta5[i]);
+        Matrix4d T56 = createTransformMatrix(alpha[4], a[4], d[5], theta6[i]);
+
+        Matrix4d T14 = T01.inverse() * T06 * T45.inverse() * T56.inverse();
+        Vector3d P14(T14(0,3), T14(1,3), T14(2,3));
+
+        Vector2d P14_(P14(0), P14(2));
+        double P14_xx = P14_.norm();
+
+        // по условию задачи:  | 1 P 4xz | ∈ [|a 2 − a 3 |; |a 2 + a 3 |].
+        if (P14_xx > abs(a[1] - a[2]) || P14_xx < abs(a[1] + a[2])) {
+            acosTmp_ = acos((pow(P14_xx, 2) - pow(a[1], 2) - pow(a[2], 2)) / (2 * a[1] * a[2]));
+            theta3[i*2] = acosTmp_;
+            theta3[i*2+1] = -acosTmp_;
+
+            ////////////////////////////////// theta2 ///////////////////////////////
+
+            theta2[i*2] = createTheta2(P14_, a[2], theta3[i*2], P14_xx);
+            theta2[i*2+1] = createTheta2(P14_, a[2], theta3[i*2+1], P14_xx);
+
+            ////////////////////////////////// theta4 ///////////////////////////////
+
+            theta4[i*2] = createTheta4(T14, alpha, a, d, theta2[i*2], theta3[i*2]);
+            theta4[i*2+1] = createTheta4(T14, alpha, a, d, theta2[i*2+1], theta3[i*2+1]);
+
+        } else {
+            // TODO
+            // Обработать
+            thetaErrors.push_back(i);
+            std::cout << "Error finding theta3: | 1 P 4xz | ∈ [|a 2 − a 3 |; |a 2 + a 3 |]" << std::endl;
+        }
+
+        if (i % 2 == 1) {
+            j++; // смена знака для θ1
+        }
+    }
     
 
 
