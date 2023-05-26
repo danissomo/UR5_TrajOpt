@@ -11,12 +11,13 @@ class InverseKinematicsUR5
 {
 public:
   InverseKinematicsUR5(double, double, double);
+  InverseKinematicsUR5(double, double, double, double, double, double);
   ~InverseKinematicsUR5() = default;
 
   std::vector<double> calculate();
 
 private:
-  double posX_, posY_, posZ_, orientC_ = 0, orientP_ = 0, orientY_ = 0;
+  double posX_, posY_, posZ_, roll_ = 0, pitch_ = 0, yaw_ = 0;
 
   
 };

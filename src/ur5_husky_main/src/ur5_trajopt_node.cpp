@@ -549,7 +549,7 @@ bool freedriveEnable(ur5_husky_main::Freedrive::Request &req,
 bool alphaIKSolver(ur5_husky_main::IKSolver::Request &req,
                    ur5_husky_main::IKSolver::Response &res) {
 
-  InverseKinematicsUR5 ik(req.x, req.y, req.z);
+  InverseKinematicsUR5 ik(req.x, req.y, req.z, req.roll, req.pitch, req.yaw);
   std::vector<double> joints = ik.calculate();
 
   return true;
