@@ -92,7 +92,7 @@ MatrixXd InverseKinematicsUR5::calculate() {
 
     // Матрица вращения по углам Эйлера
     Matrix3d rotationMatrix = euler2Quaternion(roll_, pitch_, yaw_);
-    std::cout << "Rotation Matrix: " << rotationMatrix << std::endl;
+    std::cout << "Rotation Matrix: \n" << rotationMatrix << std::endl;
 
     Matrix4d T06;
     T06.setIdentity();
