@@ -139,10 +139,9 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
     ////////////////////////////////// theta5 ///////////////////////////////
 
     Vector3d P06(posX_, posY_, posZ_);
-    // std::cout << "P06 = " << P06 << std::endl;
+
     for (int i = 0, j = 0; i < (sizeof(theta1)/sizeof(*theta1)); i++) {
         double acosValTmp_ = (P06(0)*sin(theta1[i]) - P06(1)*cos(theta1[i]) - d[3])/d[5];
-        // std::cout << "acos : " << acosValTmp_ << std::endl;
         if (acosValTmp_ > 1) {
             std::cout << "Error theta5: | 1 P 6y − d 4 | ≤ |d 6 |" << std::endl;
         } else {
