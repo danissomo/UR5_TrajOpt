@@ -597,7 +597,7 @@ void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &en
     rtde_control.stopScript();
     rtde_control.disconnect();
   } catch(...) {
-    ROS_ERROR(" Connect error with UR5 for Freedrive");
+    ROS_ERROR(" Connect error with UR5 for check inverse kinematics");
   }
 }
 

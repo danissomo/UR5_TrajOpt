@@ -47,24 +47,27 @@ Matrix4d createTransformMatrix(double alpha, double a, double d, double theta) {
     return matrix;
 }
 
-double createTheta2(Vector2d P14_, double a3, double theta3, double P14_xx) {
-    return atan2(-P14_(1), -P14_(0)) - asin(-a3*sin(theta3/abs(P14_xx)));
+double createTheta6(Vector2d X06, Vector2d Y06, double theta1, double theta5) {
+    return atan2((-X06(1) * sin(theta1) + Y06(1) * cos(theta1))/sin(theta5), (X06(0)*sin(theta1) - Y06(0)*cos(theta1))/sin(theta5));
 }
 
-double createTheta4(Matrix4d T14, std::vector<double> alpha, std::vector<double> a, std::vector<double> d, double theta2, double theta3) {
+double createTheta2(Vector2d P14_, double a3, double theta3, double P14_xx) {
+    return atan2(-P14_(1), -P14_(0)) - asin(-a3*sin(theta3)/abs(P14_xx));
+}
+
+double createTheta4(Matrix4d T14, std::vector<double> &alpha, std::vector<double> &a, std::vector<double> &d, double theta2, double theta3) {
     Matrix4d T12 = createTransformMatrix(alpha[0], a[0], d[1], theta2);
     Matrix4d T23 = createTransformMatrix(alpha[1], a[1], d[2], theta3);
-    Matrix4d T34 = T12.inverse() * T23.inverse() * T14;
+    Matrix4d T34 = T23.inverse() * T12.inverse() * T14;
 
-    std::cout << "T34: " << std::endl;
-    std::cout << T34 << std::endl;
+    Vector2d X34(T34(0,0), T34(1, 0)); // Берем 1 столбец
 
-    return atan2(T34(0, 0), T34(0, 1));
+    return atan2(X34(1), X34(0));
 }
 
-void printTheta(int index, double *theta) {
+void printTheta(int index, double *theta, int count) {
     std::cout << "theta" << index << ": ";
-    for (int k = 0; k < (sizeof(theta)/sizeof(*theta)); k++) {
+    for (int k = 0; k < count; k++) {
         std::cout << theta[k] << " ";
     }
     std::cout << std::endl;
@@ -72,7 +75,7 @@ void printTheta(int index, double *theta) {
 
 MatrixXd InverseKinematicsUR5::calculate() {
 
-    std::cout << "X = " << posX_ << ", Y = " << posY_ << ", Z = " << posZ_;
+    std::cout << "Input data for calculate: X = " << posX_ << ", Y = " << posY_ << ", Z = " << posZ_;
     std::cout << ", roll = " << roll_ << ", pitch = " << pitch_ << ", yaw = " << yaw_ << std::endl;
 
     std::vector<double> a = {0, -0.425, -0.39225, 0, 0, 0};
@@ -99,14 +102,12 @@ MatrixXd InverseKinematicsUR5::calculate() {
     T06(2,3) = posZ_;
 
 
-    std::cout << "Matrix: " << std::endl << T06 << std::endl;
+    std::cout << "Matrix T06: " << std::endl << T06 << std::endl;
 
     ////////////////////////////////// theta1 ///////////////////////////////
 
     Vector4d vec5(0, 0, -d[5], 1);
     Vector4d P05 = T06 * vec5;
-
-    std::cout << "P05 === " << std::endl << P05 << std::endl;
 
     double theta1_ = atan2(P05(1), P05(0)) + pi/2;
     double acosTmp_ = acos(d[3] / sqrt(pow(P05(0), 2) + pow(P05(1), 2)));
@@ -114,20 +115,27 @@ MatrixXd InverseKinematicsUR5::calculate() {
     theta1[0] = theta1_ + acosTmp_; // положительное θ1
     theta1[1] = theta1_ - acosTmp_; // отрицательное θ1
 
-    printTheta(1, theta1);
+    printTheta(1, theta1, (sizeof(theta1)/sizeof(*theta1)));
 
 
     ////////////////////////////////// theta5 ///////////////////////////////
 
     Vector3d P06(posX_, posY_, posZ_);
+    // std::cout << "P06 = " << P06 << std::endl;
     for (int i = 0, j = 0; i < (sizeof(theta1)/sizeof(*theta1)); i++) {
-        acosTmp_ = (P06(0)*sin(theta1[i]) - P06(1)*cos(theta1[i]) - d[3])/d[5];
-        theta5[j] = acosTmp_;     // для положительного θ1
-        theta5[j+1] = -acosTmp_;  // для отрицательного θ1
+        double acosValTmp_ = (P06(0)*sin(theta1[i]) - P06(1)*cos(theta1[i]) - d[3])/d[5];
+        // std::cout << "acos : " << acosValTmp_ << std::endl;
+        if (acosValTmp_ > 1) {
+            std::cout << "Error theta5: | 1 P 6y − d 4 | ≤ |d 6 |" << std::endl;
+        } else {
+            theta5[j] = acos(acosValTmp_);     // для положительного θ1
+            theta5[j+1] = -acos(acosValTmp_);  // для отрицательного θ1
+        }
+        
         j += 2;
     }
 
-    printTheta(5, theta5);
+    printTheta(5, theta5, (sizeof(theta5)/sizeof(*theta5)));
 
 
     ////////////////////////////////// theta6 ///////////////////////////////
@@ -135,24 +143,25 @@ MatrixXd InverseKinematicsUR5::calculate() {
     Vector2d X06(T06(0, 0), T06(0, 1));
     Vector2d Y06(T06(1, 0), T06(1, 1));
 
-    for (int i = 0, j = 0; i < (sizeof(theta5)/sizeof(*theta5)); i++) {
-        theta6[i] = atan2((-X06(1) * sin(theta1[j]) + Y06(1))/sin(theta5[i]), (X06(0)*sin(theta1[j]) - Y06(0)*cos(theta1[j]))/sin(theta5[i]));
-        if (i % 2 == 1) {
-            j++; // смена знака для θ1
-        }
+    for (int i = 0, j = 0; i < (sizeof(theta1)/sizeof(*theta1)); i++) {
+        theta6[j] = createTheta6(X06, Y06, theta1[i], theta5[j]);
+        theta6[j+1] = createTheta6(X06, Y06, theta1[i], theta5[j+1]);
+        j += 2;
     }
 
-    printTheta(6, theta6);
+    printTheta(6, theta6, (sizeof(theta6)/sizeof(*theta6)));
 
 
     ////////////////////////////////// theta3 ///////////////////////////////
+
 
     for (int i = 0, j = 0; i < (sizeof(theta5)/sizeof(*theta5)); i++) {
         Matrix4d T01 = createTransformMatrix(0, 0, d[0], theta1[j]);
         Matrix4d T45 = createTransformMatrix(alpha[3], a[3], d[4], theta5[i]);
         Matrix4d T56 = createTransformMatrix(alpha[4], a[4], d[5], theta6[i]);
 
-        Matrix4d T14 = T01.inverse() * T06 * T45.inverse() * T56.inverse();
+        Matrix4d T14 = T01.inverse() * T06 * T56.inverse() * T45.inverse();
+
         Vector3d P14(T14(0,3), T14(1,3), T14(2,3));
 
         Vector2d P14_(P14(0), P14(2));
@@ -164,16 +173,6 @@ MatrixXd InverseKinematicsUR5::calculate() {
             theta3[i*2] = acosTmp_;
             theta3[i*2+1] = -acosTmp_;
 
-            ////////////////////////////////// theta2 ///////////////////////////////
-
-            theta2[i*2] = createTheta2(P14_, a[2], theta3[i*2], P14_xx);
-            theta2[i*2+1] = createTheta2(P14_, a[2], theta3[i*2+1], P14_xx);
-
-            ////////////////////////////////// theta4 ///////////////////////////////
-
-            theta4[i*2] = createTheta4(T14, alpha, a, d, theta2[i*2], theta3[i*2]);
-            theta4[i*2+1] = createTheta4(T14, alpha, a, d, theta2[i*2+1], theta3[i*2+1]);
-
         } else {
             // TODO
             // Обработать
@@ -181,23 +180,33 @@ MatrixXd InverseKinematicsUR5::calculate() {
             std::cout << "Error finding theta3: | 1 P 4xz | ∈ [|a 2 − a 3 |; |a 2 + a 3 |]" << std::endl;
         }
 
+        ////////////////////////////////// theta2 ///////////////////////////////
+
+        theta2[i*2] = createTheta2(P14_, a[2], theta3[i*2], P14_xx);
+        theta2[i*2+1] = createTheta2(P14_, a[2], theta3[i*2+1], P14_xx);
+
+        ////////////////////////////////// theta4 ///////////////////////////////
+
+        theta4[i*2] = createTheta4(T14, alpha, a, d, theta2[i*2], theta3[i*2]);
+        theta4[i*2+1] = createTheta4(T14, alpha, a, d, theta2[i*2+1], theta3[i*2+1]);
+
         if (i % 2 == 1) {
             j++; // смена знака для θ1
         }
     }
 
-   printTheta(3, theta3);
-   printTheta(2, theta2);
-   printTheta(4, theta4);
+   printTheta(3, theta3, (sizeof(theta3)/sizeof(*theta3)));
+   printTheta(2, theta2, (sizeof(theta2)/sizeof(*theta2)));
+   printTheta(4, theta4, (sizeof(theta4)/sizeof(*theta4)));
 
     MatrixXd solutions(8, 6);
     solutions << theta1[0], theta2[0], theta3[0], theta4[0], theta5[0], theta6[0],
-                 theta1[0], theta2[1], theta3[1], theta4[1], theta5[1], theta6[1],
-                 theta1[1], theta2[2], theta3[2], theta4[2], theta5[2], theta6[2],
-                 theta1[1], theta2[3], theta3[3], theta4[3], theta5[3], theta6[3],
-                 theta1[0], theta2[4], theta3[4], theta4[4], theta5[0], theta6[0],
-                 theta1[0], theta2[5], theta3[5], theta4[5], theta5[1], theta6[1],
-                 theta1[1], theta2[6], theta3[6], theta4[6], theta5[2], theta6[2],
+                 theta1[0], theta2[2], theta3[2], theta4[2], theta5[1], theta6[1],
+                 theta1[1], theta2[4], theta3[4], theta4[4], theta5[2], theta6[2],
+                 theta1[1], theta2[6], theta3[6], theta4[6], theta5[3], theta6[3],
+                 theta1[0], theta2[1], theta3[1], theta4[1], theta5[0], theta6[0],
+                 theta1[0], theta2[3], theta3[3], theta4[3], theta5[1], theta6[1],
+                 theta1[1], theta2[5], theta3[5], theta4[5], theta5[2], theta6[2],
                  theta1[1], theta2[7], theta3[7], theta4[7], theta5[3], theta6[3];
 
     return solutions;
