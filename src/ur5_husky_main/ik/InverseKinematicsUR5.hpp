@@ -14,13 +14,18 @@ class InverseKinematicsUR5
 {
 public:
   InverseKinematicsUR5(double, double, double);
+  InverseKinematicsUR5(double, double, double, bool);
   InverseKinematicsUR5(double, double, double, double, double, double);
+  InverseKinematicsUR5(double, double, double, double, double, double, bool);
   ~InverseKinematicsUR5() = default;
 
-  MatrixXd calculate();
+  MatrixXd calculateAllSolutions();              // Матрица всех решений
+  VectorXd getBestSolution(VectorXd);            // Лучшее решение
+  VectorXd getBestSolution(MatrixXd, VectorXd);  // Лучшее решение
 
 private:
   double posX_, posY_, posZ_, roll_ = 0, pitch_ = 0, yaw_ = 0;
+  bool debug_ = false;
 
   
 };

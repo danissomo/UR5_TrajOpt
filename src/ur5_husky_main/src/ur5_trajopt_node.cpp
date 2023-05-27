@@ -567,32 +567,82 @@ void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &en
         std::cout << std::endl;
 
         InverseKinematicsUR5 ik2(fk[0], fk[1], fk[2], fk[3], fk[4], fk[5]);
-        Eigen::MatrixXd solutions = ik2.calculate();
+        Eigen::MatrixXd solutions = ik2.calculateAllSolutions();
 
         std::cout << "===============================" << std::endl;
         std::cout << "Обратная кинематика (8 решений): " << std::endl;
         std::cout << solutions << std::endl;
 
+        std::cout << "Устанавливаю робота в стартовое положение \"(11 - start (long))\" для расчета лучшей траектории..." << std::endl;
+        VectorXd start(6);
+        start(0) = 1.770050;
+        start(1) = -0.241200;
+        start(2) = 1.179700;
+        start(3) = -2.664372;
+        start(4) = -1.683593;
+        start(5) = -1.578000;
+
+        std::vector<double> vec(start.data(), start.data() + start.rows() * start.cols());
+        rtde_control.moveJ(vec);
+
+        Eigen::MatrixXd bestSolution = ik2.getBestSolution(solutions, start);
+        std::cout << "===============================" << std::endl;
+        std::cout << "Лучшее решение: " << std::endl;
+        std::cout << bestSolution << std::endl;
+
         char test_robot_pose = 'n';
+        std::cout << "Воспроизвести все решения поочередно? Нажмите y, если да, и любой другой символ, если нет. " << std::endl;
+        std::cin >> test_robot_pose;
 
-        for (int i = 0; i < solutions.rows(); i++) {
-          std::cout << "Нажмите любую клавишу, чтобы продолжить..." << std::endl;
-          std::cin >> test_robot_pose;
-          std::cout << "Проверка позы №" << i+1 << std::endl;
+        if (test_robot_pose == 'y') {
+          for (int i = 0; i < solutions.rows(); i++) {
+            std::cout << "Введите любой символ и нажмите Enter, чтобы продолжить и q для выхода..." << std::endl;
+            std::cin >> test_robot_pose;
 
-          std::vector<double> pos_vector;
-          for (int j = 0; j < solutions.cols(); j++) {
-            pos_vector.push_back(solutions(i, j));
+            if (test_robot_pose == 'q') {
+              std::cout << "Операция прервана." << std::endl;
+              break;
+            }
+
+            std::cout << "Проверка позы №" << i+1 << std::endl;
+
+            std::vector<double> pos_vector;
+            for (int j = 0; j < solutions.cols(); j++) {
+              pos_vector.push_back(solutions(i, j));
+            }
+
+            rtde_control.moveJ(pos_vector);
+
+            // Eigen::VectorXd joint_test_pos(6);
+            // for (auto i = 0; i < pos_vector.size(); i++) {
+            //   joint_test_pos(i) = pos_vector[i];
+            // }
+            // env->setState(joint_names, joint_test_pos);
           }
-
-          rtde_control.moveJ(pos_vector);
-
-          Eigen::VectorXd joint_test_pos(6);
-          for (auto i = 0; i < pos_vector.size(); i++) {
-            joint_test_pos(i) = pos_vector[i];
-          }
-          env->setState(joint_names, joint_test_pos);
+        } else {
+          std::cout << "Воспроизведение всех решений пропущено." << std::endl;
         }
+
+        test_robot_pose = 'n';
+        std::cout << "Воспроизвести лучшее решение? Нажмите y, если да, и любой другой символ, если нет. " << std::endl;
+        std::cin >> test_robot_pose;
+
+        if (test_robot_pose == 'y') {
+            std::cout << "Воспроизвожу..." << std::endl;
+
+            std::vector<double> pos_vector;
+            for (int j = 0; j < bestSolution.size(); j++) {
+              pos_vector.push_back(bestSolution(j));
+            }
+
+            rtde_control.moveJ(pos_vector);
+
+        } else {
+          std::cout << "Воспроизведение лучшего решения было пропущено." << std::endl;
+        }
+
+        std::cout << "Воспроизведение завершено." << std::endl;
+
     }
     rtde_control.stopScript();
     rtde_control.disconnect();

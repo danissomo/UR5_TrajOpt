@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <limits>
 
 using namespace Eigen;
 
@@ -18,6 +19,13 @@ InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z) {
     posZ_ = z;
 }
 
+InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z, bool debug) {
+    posX_ = x;
+    posY_ = y;
+    posZ_ = z;
+    debug_ = debug;
+}
+
 InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z, double roll, double pitch, double yaw) {
     posX_ = x;
     posY_ = y;
@@ -25,6 +33,16 @@ InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z, double 
     roll_ = roll;
     pitch_ = pitch;
     yaw_ = yaw;
+}
+
+InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z, double roll, double pitch, double yaw, bool debug) {
+    posX_ = x;
+    posY_ = y;
+    posZ_ = z;
+    roll_ = roll;
+    pitch_ = pitch;
+    yaw_ = yaw;
+    debug_ = debug;
 }
 
 Matrix3d euler2Quaternion(double roll, double pitch, double yaw) {
@@ -73,7 +91,7 @@ void printTheta(int index, double *theta, int count) {
     std::cout << std::endl;
 }
 
-MatrixXd InverseKinematicsUR5::calculate() {
+MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
 
     std::cout << "Input data for calculate: X = " << posX_ << ", Y = " << posY_ << ", Z = " << posZ_;
     std::cout << ", roll = " << roll_ << ", pitch = " << pitch_ << ", yaw = " << yaw_ << std::endl;
@@ -195,9 +213,9 @@ MatrixXd InverseKinematicsUR5::calculate() {
         }
     }
 
-   printTheta(3, theta3, (sizeof(theta3)/sizeof(*theta3)));
-   printTheta(2, theta2, (sizeof(theta2)/sizeof(*theta2)));
-   printTheta(4, theta4, (sizeof(theta4)/sizeof(*theta4)));
+    printTheta(3, theta3, (sizeof(theta3)/sizeof(*theta3)));
+    printTheta(2, theta2, (sizeof(theta2)/sizeof(*theta2)));
+    printTheta(4, theta4, (sizeof(theta4)/sizeof(*theta4)));
 
     MatrixXd solutions(8, 6);
     solutions << theta1[0], theta2[0], theta3[0], theta4[0], theta5[0], theta6[0],
@@ -210,4 +228,33 @@ MatrixXd InverseKinematicsUR5::calculate() {
                  theta1[1], theta2[7], theta3[7], theta4[7], theta5[3], theta6[3];
 
     return solutions;
+}
+
+
+VectorXd InverseKinematicsUR5::getBestSolution(MatrixXd solutions, VectorXd currentPose) {
+    std::vector<int> weights = {6, 5, 4, 3, 2, 1};
+    long long minDistance = std::numeric_limits<long long>::max();
+    VectorXd solution(6);
+
+    
+    for (int i = 0; i < solutions.rows(); i++) {
+        double distance = 0;
+        for (int j = 0; j < solutions.cols(); j++) {
+            distance += pow(solutions(i, j) - currentPose(j) * weights[j], 2);
+        }
+
+        if (distance < minDistance) {
+            minDistance = distance;
+            solution = solutions.row(i);
+            std::cout << "row = " << i << std::endl;
+        }
+    }
+
+    return solution;
+}
+
+
+VectorXd InverseKinematicsUR5::getBestSolution(VectorXd currentPose) {
+    MatrixXd solutions = calculateAllSolutions();
+    return getBestSolution(solutions, currentPose);
 }
