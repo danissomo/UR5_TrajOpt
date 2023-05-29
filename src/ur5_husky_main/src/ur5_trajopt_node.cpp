@@ -3,6 +3,7 @@
 #include <actionlib/client/simple_action_client.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <ros/topic.h>
+#include <termios.h>
 
 #include <InverseKinematicsUR5.hpp>
 #include <ur5_trajopt.hpp>
@@ -282,16 +283,27 @@ bool removeMesh(ur5_husky_main::Mesh::Request &req,
 }
 
 
-void robotMove(std::vector<double> &path_pose, RTDEControlInterface &rtde_control) {
-    
-    path_pose.push_back(ur_speed);
-    path_pose.push_back(ur_acceleration);
-    path_pose.push_back(ur_blend);
+void robotMove(std::vector<double> &path_pose) {
+    try {
 
-    std::vector<std::vector<double>> jointsPath;
-    jointsPath.push_back(path_pose);
-    rtde_control.moveJ(jointsPath);
-    rtde_control.stopScript();
+        RTDEControlInterface rtde_control(robot_ip);
+        path_pose.push_back(ur_speed);
+        path_pose.push_back(ur_acceleration);
+        path_pose.push_back(ur_blend);
+
+        std::vector<std::vector<double>> jointsPath;
+        jointsPath.push_back(path_pose);
+        rtde_control.moveJ(jointsPath);
+        rtde_control.stopScript();
+        rtde_control.disconnect();
+    
+    } catch (...) {
+        if (!setRobotNotConnectErrorMes) {
+          // 1 сообщения хватит
+          setRobotNotConnectErrorMes = true;
+          ROS_ERROR("I can't connect with UR5.");
+        }
+    }
 }
 
 
@@ -324,16 +336,7 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
     Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
 
     if (connect_robot) {
-        try {
-            RTDEControlInterface rtde_control(robot_ip);
-            robotMove(position_vector, rtde_control);
-        } catch (...) {
-          if (!setRobotNotConnectErrorMes) {
-            // 1 сообщения хватит
-            setRobotNotConnectErrorMes = true;
-            ROS_ERROR("I can't connect with UR5.");
-          }
-        }
+        robotMove(position_vector);
     }
 
     env->setState(joint_names, joint_start_pos);
@@ -557,8 +560,58 @@ bool freedriveEnable(ur5_husky_main::Freedrive::Request &req,
   return true;
 }
 
+
+// Ввод символов с клавиатуры без блокировки потока ros
+char getch() {
+    fd_set set;
+    struct timeval timeout;
+    int rv;
+    char buff = 0;
+    int len = 1;
+    int filedesc = 0;
+    FD_ZERO(&set);
+    FD_SET(filedesc, &set);
+
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 1000;
+
+    rv = select(filedesc + 1, &set, NULL, NULL, &timeout);
+
+    struct termios old = {0};
+    if (tcgetattr(filedesc, &old) < 0) {
+      ROS_ERROR("tcsetattr()");
+    }
+
+    old.c_lflag &= ~ICANON;
+    old.c_lflag &= ~ECHO;
+    old.c_cc[VMIN] = 1;
+    old.c_cc[VTIME] = 0;
+    if (tcsetattr(filedesc, TCSANOW, &old) < 0) {
+      ROS_ERROR("tcsetattr ICANON");
+    }
+
+    if(rv == -1) {
+      ROS_ERROR("select");
+    } else if(rv == 0) {
+      ROS_INFO("no_key_pressed");
+    } else {
+      read(filedesc, &buff, len );
+    }
+
+    old.c_lflag |= ICANON;
+    old.c_lflag |= ECHO;
+    if (tcsetattr(filedesc, TCSADRAIN, &old) < 0) {
+      ROS_ERROR ("tcsetattr ~ICANON");
+    }
+        
+    return (buff);
+}
+
+
+
 void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &env,
-                   const std::vector<std::string> &joint_names) {
+                   const std::vector<std::string> &joint_names,
+                   ros::Rate &loop_rate) {
   std::cout << "Проверка расчета обратной кинематики" << std::endl;
 
   try {
@@ -573,6 +626,9 @@ void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &en
 
         auto begin = std::chrono::steady_clock::now();
         std::vector<double> ik = rtde_control.getInverseKinematics(fk);
+        rtde_control.stopScript();
+        rtde_control.disconnect();
+
         auto end = std::chrono::steady_clock::now();
         auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
         std::cout << "Время работы алгоритма расчета IK: " << elapsed_ms.count() << " ms\n";
@@ -623,12 +679,23 @@ void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &en
             pos_vector.push_back(solutions(i, j));
           }
 
-          robotMove(pos_vector, rtde_control);
+          robotMove(pos_vector);
         }
 
         std::cout << "===============================" << std::endl;
-        std::cout << "Установите робота в стартовое положение для расчета лучшего решения. После установки введите любой символ." << std::endl;
-        std::cin >> test_robot_pose;
+        std::cout << "Установите робота в стартовое положение для расчета лучшего решения. После установки введите 'y'." << std::endl;
+        test_robot_pose = 'n';
+
+        while(ros::ok()) {
+          test_robot_pose = getch();
+
+          if (test_robot_pose == 'y') {
+            break;
+          }
+
+          ros::spinOnce();
+          loop_rate.sleep();
+        }
 
         Eigen::MatrixXd bestSolution = ik2.getBestSolution(solutions, joint_start_pos);
         std::cout << "===============================" << std::endl;
@@ -647,17 +714,15 @@ void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &en
               pos_vector.push_back(bestSolution(j));
             }
 
-            robotMove(pos_vector, rtde_control);
+            robotMove(pos_vector);
 
         } else {
           std::cout << "Воспроизведение лучшего решения было пропущено." << std::endl;
         }
 
         std::cout << "Воспроизведение завершено." << std::endl;
-
     }
-    rtde_control.stopScript();
-    rtde_control.disconnect();
+
   } catch(...) {
     ROS_ERROR(" Connect error with UR5 for check inverse kinematics");
   }
@@ -667,12 +732,13 @@ void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &en
 bool alphaIKSolver(ur5_husky_main::IKSolver::Request &req,
                    ur5_husky_main::IKSolver::Response &res,
                    const std::shared_ptr<tesseract_environment::Environment> &env,
-                   const std::vector<std::string> &joint_names) {
+                   const std::vector<std::string> &joint_names,
+                   ros::Rate &loop_rate) {
 
   // InverseKinematicsUR5 ik(req.x, req.y, req.z, req.roll, req.pitch, req.yaw);
   // Eigen::MatrixXd joints = ik.calculate();
 
-  ikSolverCheck(env, joint_names);
+  ikSolverCheck(env, joint_names, loop_rate);
 
   return true;
 }
@@ -864,7 +930,7 @@ int main(int argc, char** argv) {
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
 
   ros::ServiceServer ikSolverService = nh.advertiseService<ur5_husky_main::IKSolver::Request, ur5_husky_main::IKSolver::Response>
-                      ("ik_solver", boost::bind(alphaIKSolver, _1, _2, env, joint_names));
+                      ("ik_solver", boost::bind(alphaIKSolver, _1, _2, env, joint_names, loop_rate));
 
   ros::Publisher messagePub = nh.advertise<std_msgs::String>("chatter", 1000);
   std_msgs::String msg;
