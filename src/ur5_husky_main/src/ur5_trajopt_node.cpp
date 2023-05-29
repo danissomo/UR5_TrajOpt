@@ -282,6 +282,19 @@ bool removeMesh(ur5_husky_main::Mesh::Request &req,
 }
 
 
+void robotMove(std::vector<double> &path_pose, RTDEControlInterface &rtde_control) {
+    
+    path_pose.push_back(ur_speed);
+    path_pose.push_back(ur_acceleration);
+    path_pose.push_back(ur_blend);
+
+    std::vector<std::vector<double>> jointsPath;
+    jointsPath.push_back(path_pose);
+    rtde_control.moveJ(jointsPath);
+    rtde_control.stopScript();
+}
+
+
 bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
                       ur5_husky_main::SetStartJointState::Response &res,
                       const std::shared_ptr<tesseract_environment::Environment> &env,
@@ -309,15 +322,11 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
 
     position_vector.resize(joint_start_pos.size());
     Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
-    position_vector.push_back(ur_speed);
-    position_vector.push_back(ur_acceleration);
-    position_vector.push_back(ur_blend);
 
     if (connect_robot) {
         try {
             RTDEControlInterface rtde_control(robot_ip);
-            rtde_control.moveJ(position_vector);
-            rtde_control.stopScript();
+            robotMove(position_vector, rtde_control);
         } catch (...) {
           if (!setRobotNotConnectErrorMes) {
             // 1 сообщения хватит
@@ -562,7 +571,12 @@ void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &en
         }
         std::cout << std::endl;
 
+        auto begin = std::chrono::steady_clock::now();
         std::vector<double> ik = rtde_control.getInverseKinematics(fk);
+        auto end = std::chrono::steady_clock::now();
+        auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
+        std::cout << "Время работы алгоритма расчета IK: " << elapsed_ms.count() << " ms\n";
+
         std::cout << "Обратная кинематика (ur_rtde): ";
         for (int i = 0; i < ik.size(); i++) {
           std::cout << ik[i] << " ";
@@ -579,50 +593,40 @@ void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &en
         std::cout << "\n\n-------------------------------" << std::endl;
         std::cout << "Проверка каждого решения обратной кинематики: " << std::endl;
         for (int i = 0; i < solutions.rows(); i++) {
-          std::cout << "Проверяемое положение №" << i+1  << std::endl;
+          std::cout << "Проверяемое решение №" << i+1 << ": " << solutions.row(i) << std::endl;
           Eigen::MatrixXd fkCheck = ik2.getCheckIK(solutions.row(i));
-          std::cout << solutions.row(i) << std::endl;
           std::cout << "Ошибка по положению" << fkCheck.row(0)  << std::endl;
           std::cout << "Ошибка по ориентации" << fkCheck.row(1)  << std::endl;
           std::cout << "\n" << std::endl;
         }
 
         char test_robot_pose = 'n';
-        std::cin >> test_robot_pose;
+        std::cout << "===============================" << std::endl;
+        for (int i = 0; i < solutions.rows(); i++) {
+          std::cout << "Проверить решение №" << i+1 << ": XYZ = " << solutions(i, 0) << " " << solutions(i, 1) << " "<< solutions(i, 2) << ", CPY = " 
+                    << solutions(i, 3) << " " << solutions(i, 4) << " "<< solutions(i, 5) << " ?" << std::endl;
+          std::cout << "Введите 'y' и нажмите Enter, чтобы продолжить, 'n' - чтобы пропустить и q, чтобы завершить проверку решений..." << std::endl;
+          std::cin >> test_robot_pose;
 
-        if (test_robot_pose == 'y') {
-          for (int i = 0; i < solutions.rows(); i++) {
-            std::cout << "Проверить решение №" << i+1 << ": XYZ = " << solutions(i, 0) << " " << solutions(i, 1) << " "<< solutions(i, 2) << ", CPY = " 
-                      << solutions(i, 3) << " " << solutions(i, 4) << " "<< solutions(i, 5) << " ?" << std::endl;
-            std::cout << "Введите 'y' и нажмите Enter, чтобы продолжить, 'n' - чтобы пропустить и q, чтобы завершить проверку решений..." << std::endl;
-            std::cin >> test_robot_pose;
-
-            if (test_robot_pose == 'q') {
-              std::cout << "Операция прервана." << std::endl;
-              break;
-            } else if (test_robot_pose == 'n') {
-              std::cout << "Воспроизведение решения пропущено." << std::endl;
-              continue;
-            }
-
-            std::cout << "Проверка позы №" << i+1 << std::endl;
-
-            std::vector<double> pos_vector;
-            for (int j = 0; j < solutions.cols(); j++) {
-              pos_vector.push_back(solutions(i, j));
-            }
-
-            pos_vector.push_back(ur_speed);
-            pos_vector.push_back(ur_acceleration);
-            pos_vector.push_back(ur_blend);
-
-            rtde_control.moveJ(pos_vector);
-
+          if (test_robot_pose == 'q') {
+            std::cout << "Операция прервана." << std::endl;
+            break;
+          } else if (test_robot_pose == 'n') {
+            std::cout << "Воспроизведение решения пропущено." << std::endl;
+            continue;
           }
-        } else {
-          std::cout << "Воспроизведение всех решений пропущено." << std::endl;
+
+          std::cout << "Проверка позы №" << i+1 << std::endl;
+
+          std::vector<double> pos_vector;
+          for (int j = 0; j < solutions.cols(); j++) {
+            pos_vector.push_back(solutions(i, j));
+          }
+
+          robotMove(pos_vector, rtde_control);
         }
 
+        std::cout << "===============================" << std::endl;
         std::cout << "Установите робота в стартовое положение для расчета лучшего решения. После установки введите любой символ." << std::endl;
         std::cin >> test_robot_pose;
 
@@ -643,11 +647,7 @@ void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &en
               pos_vector.push_back(bestSolution(j));
             }
 
-            pos_vector.push_back(ur_speed);
-            pos_vector.push_back(ur_acceleration);
-            pos_vector.push_back(ur_blend);
-
-            rtde_control.moveJ(pos_vector);
+            robotMove(pos_vector, rtde_control);
 
         } else {
           std::cout << "Воспроизведение лучшего решения было пропущено." << std::endl;

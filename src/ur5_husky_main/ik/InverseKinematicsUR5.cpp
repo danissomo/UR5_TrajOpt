@@ -72,9 +72,9 @@ Vector3d quaternion2Euler(Matrix3d r) {
 
     //std::cout << "roll = " << roll << ", pitch = " << pitch << ", yaw = " << yaw << std::endl;
 
-    orientation(0) = roll;
-    orientation(1) = pitch;
-    orientation(2) = yaw;
+    orientation(0) = std::fmod(roll, pi);
+    orientation(1) = std::fmod(pitch, pi);
+    orientation(2) = std::fmod(yaw, pi);
 
     return orientation;
 }
@@ -309,7 +309,6 @@ VectorXd InverseKinematicsUR5::getForwardkinematics(VectorXd joints) {
     std::cout << "Forward Kinematics = " << fk(0) << " " << fk(1) << " " << fk(2) << " " << fk(3) << " " << fk(4) << " " << fk(5) << std::endl;
 
     return fk;
-
 }
 
 
