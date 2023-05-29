@@ -12,6 +12,10 @@ using namespace Eigen;
 
 #define pi 3.14159265358979323846
 
+std::vector<double> a = {0, -0.425, -0.39225, 0, 0, 0};
+std::vector<double> d = {0.089159, 0, 0, 0.10915, 0.09465, 0.0823};
+std::vector<double> alpha = {pi/2, 0, 0, pi/2, -pi/2, 0};
+
 
 InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z) {
     posX_ = x;
@@ -55,6 +59,27 @@ Matrix3d euler2Quaternion(double roll, double pitch, double yaw) {
     return rotationMatrix;
 }
 
+
+Vector3d quaternion2Euler(Matrix3d r) {
+
+    // std::cout << "Get rotationMatrix R: " << std::endl;
+    // std::cout << r << std::endl;
+
+    Vector3d orientation(3);
+    double roll = atan2(r(2,1), r(2,2));
+    double pitch = atan2(-r(2, 0), sqrt(pow(r(2,1), 2) + pow(r(2,2), 2)));
+    double yaw = atan2(r(1,0), r(0,0));
+
+    //std::cout << "roll = " << roll << ", pitch = " << pitch << ", yaw = " << yaw << std::endl;
+
+    orientation(0) = roll;
+    orientation(1) = pitch;
+    orientation(2) = yaw;
+
+    return orientation;
+}
+
+
 Matrix4d createTransformMatrix(double alpha, double a, double d, double theta) {
     Matrix4d matrix;
     matrix << cos(theta),               -sin(theta),                0,              a,
@@ -96,9 +121,6 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
     std::cout << "Input data for calculate: X = " << posX_ << ", Y = " << posY_ << ", Z = " << posZ_;
     std::cout << ", roll = " << roll_ << ", pitch = " << pitch_ << ", yaw = " << yaw_ << std::endl;
 
-    std::vector<double> a = {0, -0.425, -0.39225, 0, 0, 0};
-    std::vector<double> d = {0.089159, 0, 0, 0.10915, 0.09465, 0.0823};
-    std::vector<double> alpha = {pi/2, 0, 0, pi/2, -pi/2, 0};
     double theta1[2] = {0, 0},
            theta2[8] = {0, 0, 0, 0, 0, 0, 0, 0},
            theta3[8] = {0, 0, 0, 0, 0, 0, 0, 0},
@@ -170,7 +192,6 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
 
 
     ////////////////////////////////// theta3 ///////////////////////////////
-
 
     for (int i = 0, j = 0; i < (sizeof(theta5)/sizeof(*theta5)); i++) {
         Matrix4d T01 = createTransformMatrix(0, 0, d[0], theta1[j]);
@@ -256,4 +277,62 @@ VectorXd InverseKinematicsUR5::getBestSolution(MatrixXd solutions, VectorXd curr
 VectorXd InverseKinematicsUR5::getBestSolution(VectorXd currentPose) {
     MatrixXd solutions = calculateAllSolutions();
     return getBestSolution(solutions, currentPose);
+}
+
+
+VectorXd InverseKinematicsUR5::getForwardkinematics(VectorXd joints) {
+    VectorXd fk(6); // 1=X 2=Y 3=Z 4=Roll 5=Pitch 6=Yaw
+
+    Matrix4d T01 = createTransformMatrix(0, 0, d[0], joints(0));
+    Matrix4d T12 = createTransformMatrix(alpha[0], a[0], d[1], joints(1));
+    Matrix4d T23 = createTransformMatrix(alpha[1], a[1], d[2], joints(2));
+    Matrix4d T34 = createTransformMatrix(alpha[2], a[2], d[3], joints(3));
+    Matrix4d T45 = createTransformMatrix(alpha[3], a[3], d[4], joints(4));
+    Matrix4d T56 = createTransformMatrix(alpha[4], a[4], d[5], joints(5));
+
+
+    Matrix4d T06 = T01 * T12 * T23 * T34 * T45 * T56;
+
+    Matrix3d rotationMatrix = euler2Quaternion(roll_, pitch_, yaw_);
+    Vector3d orientation = quaternion2Euler(rotationMatrix);
+
+    // положение
+    fk(0) = T06(0,3);
+    fk(1) = T06(1,3);
+    fk(2) = T06(2,3);
+
+    // ориентация
+    fk(3) = orientation(0);
+    fk(4) = orientation(1);
+    fk(5) = orientation(2);
+
+    std::cout << "Forward Kinematics = " << fk(0) << " " << fk(1) << " " << fk(2) << " " << fk(3) << " " << fk(4) << " " << fk(5) << std::endl;
+
+    return fk;
+
+}
+
+
+MatrixXd InverseKinematicsUR5::getCheckIK(VectorXd testedPose) {
+
+    VectorXd fk(6);
+    fk = getForwardkinematics(testedPose);
+
+    MatrixXd result(2, 3);
+    VectorXd positionError(3);
+    VectorXd orientationError(3);
+
+    positionError(0) = fk(0) - posX_;
+    positionError(1) = fk(1) - posY_;
+    positionError(2) = fk(2) - posZ_;
+
+    result.row(0) = positionError;
+
+    orientationError(0) = fk(3) - roll_;
+    orientationError(1) = fk(4) - pitch_;
+    orientationError(2) = fk(5) - yaw_;
+
+    result.row(1) = orientationError;
+
+    return result;
 }
