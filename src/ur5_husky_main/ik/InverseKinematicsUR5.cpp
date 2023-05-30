@@ -50,11 +50,11 @@ InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z, double 
 }
 
 Matrix3d euler2Quaternion(double roll, double pitch, double yaw) {
-    AngleAxisd rollAngle(roll, Vector3d::UnitX());
-    AngleAxisd pitchAngle(pitch, Vector3d::UnitY());
-    AngleAxisd yawAngle(yaw, Vector3d::UnitZ());
+    AngleAxisd rollAngle(roll, Vector3d::UnitZ());
+    AngleAxisd pitchAngle(pitch, Vector3d::UnitX());
+    AngleAxisd yawAngle(yaw, Vector3d::UnitY());
 
-    Quaterniond q = yawAngle * pitchAngle * rollAngle;
+    Quaterniond q = rollAngle * yawAngle * pitchAngle;
     Matrix3d rotationMatrix = q.matrix();
     return rotationMatrix;
 }
@@ -302,9 +302,9 @@ VectorXd InverseKinematicsUR5::getForwardkinematics(VectorXd joints) {
     fk(2) = T06(2,3);
 
     // ориентация
-    fk(3) = orientation(0);
-    fk(4) = orientation(1);
-    fk(5) = orientation(2);
+    fk(3) = orientation(2); // Y
+    fk(4) = orientation(0); // R
+    fk(5) = orientation(1); // P
 
     std::cout << "Forward Kinematics = " << fk(0) << " " << fk(1) << " " << fk(2) << " " << fk(3) << " " << fk(4) << " " << fk(5) << std::endl;
 

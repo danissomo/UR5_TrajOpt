@@ -651,15 +651,15 @@ void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &en
         for (int i = 0; i < solutions.rows(); i++) {
           std::cout << "Проверяемое решение №" << i+1 << ": " << solutions.row(i) << std::endl;
           Eigen::MatrixXd fkCheck = ik2.getCheckIK(solutions.row(i));
-          std::cout << "Ошибка по положению" << fkCheck.row(0)  << std::endl;
-          std::cout << "Ошибка по ориентации" << fkCheck.row(1)  << std::endl;
+          std::cout << "Ошибка по положению: " << fkCheck.row(0)  << std::endl;
+          std::cout << "Ошибка по ориентации: " << fkCheck.row(1)  << std::endl;
           std::cout << "\n" << std::endl;
         }
 
         char test_robot_pose = 'n';
         std::cout << "===============================" << std::endl;
         for (int i = 0; i < solutions.rows(); i++) {
-          std::cout << "Проверить решение №" << i+1 << ": XYZ = " << solutions(i, 0) << " " << solutions(i, 1) << " "<< solutions(i, 2) << ", CPY = " 
+          std::cout << "Проверить решение №" << i+1 << ": XYZ = " << solutions(i, 0) << " " << solutions(i, 1) << " "<< solutions(i, 2) << ", RPY = " 
                     << solutions(i, 3) << " " << solutions(i, 4) << " "<< solutions(i, 5) << " ?" << std::endl;
           std::cout << "Введите 'y' и нажмите Enter, чтобы продолжить, 'n' - чтобы пропустить и q, чтобы завершить проверку решений..." << std::endl;
           std::cin >> test_robot_pose;
