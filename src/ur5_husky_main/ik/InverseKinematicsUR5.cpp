@@ -7,11 +7,17 @@
 #include <string>
 #include <cmath>
 #include <limits>
+#include <complex>
 
 using namespace Eigen;
 
 #define pi 3.14159265358979323846
+#define errorMarker 1000000
 
+/**
+ * Denavit Hartenberg Parameters - DH Parameters
+ * See more https://www.universal-robots.com/articles/ur/application-installation/dh-parameters-for-calculations-of-kinematics-and-dynamics
+ * **/
 std::vector<double> a = {0, -0.425, -0.39225, 0, 0, 0};
 std::vector<double> d = {0.089159, 0, 0, 0.10915, 0.09465, 0.0823};
 std::vector<double> alpha = {pi/2, 0, 0, pi/2, -pi/2, 0};
@@ -49,6 +55,7 @@ InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z, double 
     debug_ = debug;
 }
 
+
 Matrix3d euler2Quaternion(double roll, double pitch, double yaw) {
     AngleAxisd rollAngle(roll, Vector3d::UnitZ());
     AngleAxisd pitchAngle(pitch, Vector3d::UnitX());
@@ -85,13 +92,16 @@ Matrix4d createTransformMatrix(double alpha, double a, double d, double theta) {
     return matrix;
 }
 
+
 double createTheta6(Vector2d X06, Vector2d Y06, double theta1, double theta5) {
     return atan2((-X06(1) * sin(theta1) + Y06(1) * cos(theta1))/sin(theta5), (X06(0)*sin(theta1) - Y06(0)*cos(theta1))/sin(theta5));
 }
 
+
 double createTheta2(Vector2d P14_, double a3, double theta3, double P14_xx) {
     return atan2(-P14_(1), -P14_(0)) - asin(-a3*sin(theta3)/abs(P14_xx));
 }
+
 
 double createTheta4(Matrix4d T14, std::vector<double> &alpha, std::vector<double> &a, std::vector<double> &d, double theta2, double theta3) {
     Matrix4d T12 = createTransformMatrix(alpha[0], a[0], d[1], theta2);
@@ -103,8 +113,9 @@ double createTheta4(Matrix4d T14, std::vector<double> &alpha, std::vector<double
     return atan2(X34(1), X34(0));
 }
 
+
 void printTheta(int index, double *theta, int count, bool debug) {
-    if (debug_) {
+    if (debug) {
         std::cout << "theta" << index << ": ";
         for (int k = 0; k < count; k++) {
             std::cout << theta[k] << " ";
@@ -112,6 +123,18 @@ void printTheta(int index, double *theta, int count, bool debug) {
         std::cout << std::endl;
     }
 }
+
+
+void removeRow(Eigen::MatrixXd& matrix, unsigned int rowToRemove) {
+    unsigned int numRows = matrix.rows()-1;
+
+    if(rowToRemove < numRows) {
+        matrix.block(rowToRemove, 0, numRows - rowToRemove, matrix.cols()) = matrix.block(rowToRemove+1, 0, numRows - rowToRemove, matrix.cols());
+    }
+
+    matrix.conservativeResize(numRows, matrix.cols());
+}
+
 
 MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
 
@@ -126,8 +149,6 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
            theta4[8] = {0, 0, 0, 0, 0, 0, 0, 0},
            theta5[4] = {0, 0, 0, 0},
            theta6[4] = {0, 0, 0, 0};
-
-    std::vector<int> thetaErrors;
 
     // Матрица вращения по углам Эйлера
     Matrix3d rotationMatrix = euler2Quaternion(roll_, pitch_, yaw_);
@@ -153,7 +174,9 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
     Vector4d P05 = T06 * vec5;
 
     double theta1_ = atan2(P05(1), P05(0)) + pi/2;
-    double acosTmp_ = acos(d[3] / sqrt(pow(P05(0), 2) + pow(P05(1), 2)));
+
+    std::complex<double> denominator = sqrt(pow(P05(0), 2) + pow(P05(1), 2));
+    double acosTmp_ = (P05(0) == 0 && P05(1) == 0 || denominator.real() == 0) ? 0 : acos(d[3] / denominator.real());
 
     theta1[0] = theta1_ + acosTmp_; // положительное θ1
     theta1[1] = theta1_ - acosTmp_; // отрицательное θ1
@@ -169,6 +192,8 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
         double acosValTmp_ = (P06(0)*sin(theta1[i]) - P06(1)*cos(theta1[i]) - d[3])/d[5];
         if (acosValTmp_ > 1) {
             std::cout << "Error theta5: | 1 P 6y − d 4 | ≤ |d 6 |" << std::endl;
+            theta5[j] = errorMarker;
+            theta5[j+1] = errorMarker;
         } else {
             theta5[j] = acos(acosValTmp_);     // для положительного θ1
             theta5[j+1] = -acos(acosValTmp_);  // для отрицательного θ1
@@ -215,10 +240,9 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
             theta3[i*2+1] = -acosTmp_;
 
         } else {
-            // TODO
-            // Обработать
-            thetaErrors.push_back(i);
             std::cout << "Error finding theta3: | 1 P 4xz | ∈ [|a 2 − a 3 |; |a 2 + a 3 |]" << std::endl;
+            theta3[i*2] = errorMarker;
+            theta3[i*2+1] = errorMarker;
         }
 
         ////////////////////////////////// theta2 ///////////////////////////////
@@ -250,6 +274,19 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
                  theta1[1], theta2[5], theta3[5], theta4[5], theta5[2], theta6[2],
                  theta1[1], theta2[7], theta3[7], theta4[7], theta5[3], theta6[3];
 
+    if (debug_) {
+        std::cout << "All solutions: " << std::endl;
+        std::cout << solutions << std::endl;
+    }
+
+    for (int i = 0; i < solutions.rows(); i++) {
+        // Удалить все строки, которые помечены ошибочными, ошибки могут быть в theta3 и theta5
+        if (solutions(i, 2) == errorMarker || solutions(i, 4) == errorMarker) {
+            removeRow(solutions, i);
+            i--;
+        }
+    }
+                 
     return solutions;
 }
 
