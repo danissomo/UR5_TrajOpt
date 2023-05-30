@@ -6,6 +6,7 @@
 #include <termios.h>
 
 #include <InverseKinematicsUR5.hpp>
+#include <TestIK.hpp>
 #include <ur5_trajopt.hpp>
 
 #include <ur5_husky_main/SetStartJointState.h>
@@ -561,174 +562,6 @@ bool freedriveEnable(ur5_husky_main::Freedrive::Request &req,
 }
 
 
-// Ввод символов с клавиатуры без блокировки потока ros
-char getch() {
-    fd_set set;
-    struct timeval timeout;
-    int rv;
-    char buff = 0;
-    int len = 1;
-    int filedesc = 0;
-    FD_ZERO(&set);
-    FD_SET(filedesc, &set);
-
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 1000;
-
-    rv = select(filedesc + 1, &set, NULL, NULL, &timeout);
-
-    struct termios old = {0};
-    if (tcgetattr(filedesc, &old) < 0) {
-      ROS_ERROR("tcsetattr()");
-    }
-
-    old.c_lflag &= ~ICANON;
-    old.c_lflag &= ~ECHO;
-    old.c_cc[VMIN] = 1;
-    old.c_cc[VTIME] = 0;
-    if (tcsetattr(filedesc, TCSANOW, &old) < 0) {
-      ROS_ERROR("tcsetattr ICANON");
-    }
-
-    if(rv == -1) {
-      ROS_ERROR("select");
-    } else if(rv == 0) {
-      ROS_INFO("no_key_pressed");
-    } else {
-      read(filedesc, &buff, len );
-    }
-
-    old.c_lflag |= ICANON;
-    old.c_lflag |= ECHO;
-    if (tcsetattr(filedesc, TCSADRAIN, &old) < 0) {
-      ROS_ERROR ("tcsetattr ~ICANON");
-    }
-        
-    return (buff);
-}
-
-
-
-void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &env,
-                   const std::vector<std::string> &joint_names,
-                   ros::Rate &loop_rate) {
-  std::cout << "Проверка расчета обратной кинематики" << std::endl;
-
-  try {
-    RTDEControlInterface rtde_control(robot_ip);
-    if (rtde_control.isConnected()) {
-        std::vector<double> fk = rtde_control.getForwardKinematics();
-        std::cout << "Прямая кинематика: ";
-        for (int i = 0; i < fk.size(); i++) {
-          std::cout << fk[i] << " ";
-        }
-        std::cout << std::endl;
-
-        auto begin = std::chrono::steady_clock::now();
-        std::vector<double> ik = rtde_control.getInverseKinematics(fk);
-        rtde_control.stopScript();
-        rtde_control.disconnect();
-
-        auto end = std::chrono::steady_clock::now();
-        auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-        std::cout << "Время работы алгоритма расчета IK: " << elapsed_ms.count() << " ms\n";
-
-        std::cout << "Обратная кинематика (ur_rtde): ";
-        for (int i = 0; i < ik.size(); i++) {
-          std::cout << ik[i] << " ";
-        }
-        std::cout << std::endl;
-
-        InverseKinematicsUR5 ik2(fk[0], fk[1], fk[2], fk[3], fk[4], fk[5], true);
-        Eigen::MatrixXd solutions = ik2.calculateAllSolutions();
-
-        std::cout << "===============================" << std::endl;
-        std::cout << "Обратная кинематика (8 решений): " << std::endl;
-        std::cout << solutions << std::endl;
-
-        std::cout << "\n\n-------------------------------" << std::endl;
-        std::cout << "Проверка каждого решения обратной кинематики: " << std::endl;
-        for (int i = 0; i < solutions.rows(); i++) {
-          std::cout << "Проверяемое решение №" << i+1 << ": " << solutions.row(i) << std::endl;
-          Eigen::MatrixXd fkCheck = ik2.getCheckIK(solutions.row(i));
-          std::cout << "Ошибка по положению: " << fkCheck.row(0)  << std::endl;
-          std::cout << "Ошибка по ориентации: " << fkCheck.row(1)  << std::endl;
-          std::cout << "\n" << std::endl;
-        }
-
-        char test_robot_pose = 'n';
-        std::cout << "===============================" << std::endl;
-        for (int i = 0; i < solutions.rows(); i++) {
-          std::cout << "Проверить решение №" << i+1 << ": XYZ = " << solutions(i, 0) << " " << solutions(i, 1) << " "<< solutions(i, 2) << ", RPY = " 
-                    << solutions(i, 3) << " " << solutions(i, 4) << " "<< solutions(i, 5) << " ?" << std::endl;
-          std::cout << "Введите 'y' и нажмите Enter, чтобы продолжить, 'n' - чтобы пропустить и q, чтобы завершить проверку решений..." << std::endl;
-          std::cin >> test_robot_pose;
-
-          if (test_robot_pose == 'q') {
-            std::cout << "Операция прервана." << std::endl;
-            break;
-          } else if (test_robot_pose == 'n') {
-            std::cout << "Воспроизведение решения пропущено." << std::endl;
-            continue;
-          }
-
-          std::cout << "Проверка позы №" << i+1 << std::endl;
-
-          std::vector<double> pos_vector;
-          for (int j = 0; j < solutions.cols(); j++) {
-            pos_vector.push_back(solutions(i, j));
-          }
-
-          robotMove(pos_vector);
-        }
-
-        std::cout << "===============================" << std::endl;
-        std::cout << "Установите робота в стартовое положение для расчета лучшего решения. После установки введите 'y'." << std::endl;
-        test_robot_pose = 'n';
-
-        while(ros::ok()) {
-          test_robot_pose = getch();
-
-          if (test_robot_pose == 'y') {
-            break;
-          }
-
-          ros::spinOnce();
-          loop_rate.sleep();
-        }
-
-        Eigen::MatrixXd bestSolution = ik2.getBestSolution(solutions, joint_start_pos);
-        std::cout << "===============================" << std::endl;
-        std::cout << "Лучшее решение: " << std::endl;
-        std::cout << bestSolution << std::endl;
-
-        test_robot_pose = 'n';
-        std::cout << "Воспроизвести лучшее решение? Нажмите y, если да, и любой другой символ, если нет. " << std::endl;
-        std::cin >> test_robot_pose;
-
-        if (test_robot_pose == 'y') {
-            std::cout << "Воспроизвожу..." << std::endl;
-
-            std::vector<double> pos_vector;
-            for (int j = 0; j < bestSolution.size(); j++) {
-              pos_vector.push_back(bestSolution(j));
-            }
-
-            robotMove(pos_vector);
-
-        } else {
-          std::cout << "Воспроизведение лучшего решения было пропущено." << std::endl;
-        }
-
-        std::cout << "Воспроизведение завершено." << std::endl;
-    }
-
-  } catch(...) {
-    ROS_ERROR(" Connect error with UR5 for check inverse kinematics");
-  }
-}
-
-
 bool alphaIKSolver(ur5_husky_main::IKSolver::Request &req,
                    ur5_husky_main::IKSolver::Response &res,
                    const std::shared_ptr<tesseract_environment::Environment> &env,
@@ -738,7 +571,8 @@ bool alphaIKSolver(ur5_husky_main::IKSolver::Request &req,
   // InverseKinematicsUR5 ik(req.x, req.y, req.z, req.roll, req.pitch, req.yaw);
   // Eigen::MatrixXd joints = ik.calculate();
 
-  ikSolverCheck(env, joint_names, loop_rate);
+  TestIK ik(robot_ip, ur_speed, ur_acceleration, ur_blend);
+  ik.ikSolverCheck(loop_rate, joint_start_pos);
 
   return true;
 }
