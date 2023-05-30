@@ -124,12 +124,11 @@ void TestIK::ikSolverCheck(ros::Rate& loop_rate, Eigen::VectorXd& joint_start_po
         }
         std::cout << std::endl;
 
+        std::cout << "===============================" << std::endl;
+        std::cout << "Обратная кинематика: " << std::endl;
+
         InverseKinematicsUR5 ik2(fk[0], fk[1], fk[2], fk[3], fk[4], fk[5], true);
         Eigen::MatrixXd solutions = ik2.calculateAllSolutions();
-
-        std::cout << "===============================" << std::endl;
-        std::cout << "Обратная кинематика (8 решений): " << std::endl;
-        std::cout << solutions << std::endl;
 
         std::cout << "\n\n-------------------------------" << std::endl;
         std::cout << "Проверка каждого решения обратной кинематики: " << std::endl;

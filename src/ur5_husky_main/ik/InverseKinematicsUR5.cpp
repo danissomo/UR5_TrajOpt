@@ -275,7 +275,7 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
                  theta1[1], theta2[7], theta3[7], theta4[7], theta5[3], theta6[3];
 
     if (debug_) {
-        std::cout << "All solutions: " << std::endl;
+        std::cout << "All solutions (" << solutions.rows() << "):" << std::endl;
         std::cout << solutions << std::endl;
     }
 
@@ -285,6 +285,11 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
             removeRow(solutions, i);
             i--;
         }
+    }
+
+    if (debug_) {
+        std::cout << "All solutions without errors (" << solutions.rows() << "):" << std::endl;
+        std::cout << solutions << std::endl;
     }
                  
     return solutions;
