@@ -62,15 +62,10 @@ Matrix3d euler2Quaternion(double roll, double pitch, double yaw) {
 
 Vector3d quaternion2Euler(Matrix3d r) {
 
-    // std::cout << "Get rotationMatrix R: " << std::endl;
-    // std::cout << r << std::endl;
-
     Vector3d orientation(3);
     double roll = atan2(r(2,1), r(2,2));
     double pitch = atan2(-r(2, 0), sqrt(pow(r(2,1), 2) + pow(r(2,2), 2)));
     double yaw = atan2(r(1,0), r(0,0));
-
-    //std::cout << "roll = " << roll << ", pitch = " << pitch << ", yaw = " << yaw << std::endl;
 
     orientation(0) = std::fmod(roll, pi);
     orientation(1) = std::fmod(pitch, pi);
@@ -108,18 +103,22 @@ double createTheta4(Matrix4d T14, std::vector<double> &alpha, std::vector<double
     return atan2(X34(1), X34(0));
 }
 
-void printTheta(int index, double *theta, int count) {
-    std::cout << "theta" << index << ": ";
-    for (int k = 0; k < count; k++) {
-        std::cout << theta[k] << " ";
+void printTheta(int index, double *theta, int count, bool debug) {
+    if (debug_) {
+        std::cout << "theta" << index << ": ";
+        for (int k = 0; k < count; k++) {
+            std::cout << theta[k] << " ";
+        }
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
 }
 
 MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
 
-    std::cout << "Input data for calculate: X = " << posX_ << ", Y = " << posY_ << ", Z = " << posZ_;
-    std::cout << ", roll = " << roll_ << ", pitch = " << pitch_ << ", yaw = " << yaw_ << std::endl;
+    if (debug_) {
+        std::cout << "Input data for calculate: X = " << posX_ << ", Y = " << posY_ << ", Z = " << posZ_;
+        std::cout << ", roll = " << roll_ << ", pitch = " << pitch_ << ", yaw = " << yaw_ << std::endl;
+    }
 
     double theta1[2] = {0, 0},
            theta2[8] = {0, 0, 0, 0, 0, 0, 0, 0},
@@ -132,7 +131,9 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
 
     // Матрица вращения по углам Эйлера
     Matrix3d rotationMatrix = euler2Quaternion(roll_, pitch_, yaw_);
-    std::cout << "Rotation Matrix: \n" << rotationMatrix << std::endl;
+    if (debug_) {
+        std::cout << "Rotation Matrix: \n" << rotationMatrix << std::endl;
+    }
 
     Matrix4d T06;
     T06.setIdentity();
@@ -141,8 +142,10 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
     T06(1,3) = posY_;
     T06(2,3) = posZ_;
 
-
-    std::cout << "Matrix T06: " << std::endl << T06 << std::endl;
+    if (debug_) {
+        std::cout << "Matrix T06: " << std::endl << T06 << std::endl;
+    }
+    
 
     ////////////////////////////////// theta1 ///////////////////////////////
 
@@ -155,7 +158,7 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
     theta1[0] = theta1_ + acosTmp_; // положительное θ1
     theta1[1] = theta1_ - acosTmp_; // отрицательное θ1
 
-    printTheta(1, theta1, (sizeof(theta1)/sizeof(*theta1)));
+    printTheta(1, theta1, (sizeof(theta1)/sizeof(*theta1)), debug_);
 
 
     ////////////////////////////////// theta5 ///////////////////////////////
@@ -174,7 +177,7 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
         j += 2;
     }
 
-    printTheta(5, theta5, (sizeof(theta5)/sizeof(*theta5)));
+    printTheta(5, theta5, (sizeof(theta5)/sizeof(*theta5)), debug_);
 
 
     ////////////////////////////////// theta6 ///////////////////////////////
@@ -188,7 +191,7 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
         j += 2;
     }
 
-    printTheta(6, theta6, (sizeof(theta6)/sizeof(*theta6)));
+    printTheta(6, theta6, (sizeof(theta6)/sizeof(*theta6)), debug_);
 
 
     ////////////////////////////////// theta3 ///////////////////////////////
@@ -233,9 +236,9 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
         }
     }
 
-    printTheta(3, theta3, (sizeof(theta3)/sizeof(*theta3)));
-    printTheta(2, theta2, (sizeof(theta2)/sizeof(*theta2)));
-    printTheta(4, theta4, (sizeof(theta4)/sizeof(*theta4)));
+    printTheta(3, theta3, (sizeof(theta3)/sizeof(*theta3)), debug_);
+    printTheta(2, theta2, (sizeof(theta2)/sizeof(*theta2)), debug_);
+    printTheta(4, theta4, (sizeof(theta4)/sizeof(*theta4)), debug_);
 
     MatrixXd solutions(8, 6);
     solutions << theta1[0], theta2[0], theta3[0], theta4[0], theta5[0], theta6[0],
@@ -306,7 +309,9 @@ VectorXd InverseKinematicsUR5::getForwardkinematics(VectorXd joints) {
     fk(4) = orientation(0); // R
     fk(5) = orientation(1); // P
 
-    std::cout << "Forward Kinematics = " << fk(0) << " " << fk(1) << " " << fk(2) << " " << fk(3) << " " << fk(4) << " " << fk(5) << std::endl;
+    if (debug_) {
+        std::cout << "Forward Kinematics = " << fk(0) << " " << fk(1) << " " << fk(2) << " " << fk(3) << " " << fk(4) << " " << fk(5) << std::endl;
+    }
 
     return fk;
 }

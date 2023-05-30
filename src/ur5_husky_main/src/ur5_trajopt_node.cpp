@@ -639,7 +639,7 @@ void ikSolverCheck(const std::shared_ptr<tesseract_environment::Environment> &en
         }
         std::cout << std::endl;
 
-        InverseKinematicsUR5 ik2(fk[0], fk[1], fk[2], fk[3], fk[4], fk[5]);
+        InverseKinematicsUR5 ik2(fk[0], fk[1], fk[2], fk[3], fk[4], fk[5], true);
         Eigen::MatrixXd solutions = ik2.calculateAllSolutions();
 
         std::cout << "===============================" << std::endl;

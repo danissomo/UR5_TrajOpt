@@ -22,7 +22,7 @@ public:
   MatrixXd calculateAllSolutions();                             // Матрица всех решений
   VectorXd getBestSolution(VectorXd);                           // Лучшее решение
   VectorXd getBestSolution(MatrixXd, VectorXd);                 // Лучшее решение
-  MatrixXd getCheckIK(VectorXd);          // Проверка решения обратной кинематики
+  MatrixXd getCheckIK(VectorXd);                                // Проверка решения обратной кинематики
   VectorXd getForwardkinematics(VectorXd);                      // Расчет прямой кинематики       
 
 private:
