@@ -140,8 +140,10 @@ void TestIK::ikSolverCheck(ros::Rate& loop_rate, Eigen::VectorXd& joint_start_po
           std::cout << "\n" << std::endl;
         }
 
-        char test_robot_pose = 'n';
+        char test_robot_pose = 'n', cont = ' ';
         std::cout << "===============================" << std::endl;
+        std::cout << "Введите любой символ для продолжения и нажмите Enter" << std::endl;
+        std::cin >> cont;
         for (int i = 0; i < solutions.rows(); i++) {
           std::cout << "Проверить решение №" << i+1 << ": XYZ = " << solutions(i, 0) << " " << solutions(i, 1) << " "<< solutions(i, 2) << ", RPY = " 
                     << solutions(i, 3) << " " << solutions(i, 4) << " "<< solutions(i, 5) << " ?" << std::endl;
@@ -167,13 +169,13 @@ void TestIK::ikSolverCheck(ros::Rate& loop_rate, Eigen::VectorXd& joint_start_po
         }
 
         std::cout << "===============================" << std::endl;
-        std::cout << "Установите робота в стартовое положение для расчета лучшего решения. После установки введите 'y'." << std::endl;
+        std::cout << "Установите робота в стартовое положение для расчета лучшего решения. После установки введите 'y'. Для выхода нажмите 'q'" << std::endl;
         test_robot_pose = 'n';
 
         while(ros::ok()) {
           test_robot_pose = getch();
 
-          if (test_robot_pose == 'y') {
+          if (test_robot_pose == 'y' || test_robot_pose == 'q') {
             break;
           }
 
@@ -181,27 +183,29 @@ void TestIK::ikSolverCheck(ros::Rate& loop_rate, Eigen::VectorXd& joint_start_po
           loop_rate.sleep();
         }
 
-        Eigen::MatrixXd bestSolution = ik2.getBestSolution(solutions, joint_start_pos);
-        std::cout << "===============================" << std::endl;
-        std::cout << "Лучшее решение: " << std::endl;
-        std::cout << bestSolution << std::endl;
-
-        test_robot_pose = 'n';
-        std::cout << "Воспроизвести лучшее решение? Нажмите y, если да, и любой другой символ, если нет. " << std::endl;
-        std::cin >> test_robot_pose;
-
         if (test_robot_pose == 'y') {
-            std::cout << "Воспроизвожу..." << std::endl;
+          Eigen::MatrixXd bestSolution = ik2.getBestSolution(solutions, joint_start_pos);
+          std::cout << "===============================" << std::endl;
+          std::cout << "Лучшее решение: " << std::endl;
+          std::cout << bestSolution << std::endl;
 
-            std::vector<double> pos_vector;
-            for (int j = 0; j < bestSolution.size(); j++) {
-              pos_vector.push_back(bestSolution(j));
-            }
+          test_robot_pose = 'n';
+          std::cout << "Воспроизвести лучшее решение? Нажмите y, если да, и любой другой символ, если нет. " << std::endl;
+          std::cin >> test_robot_pose;
 
-            robotMove(pos_vector, robot_ip_, ur_speed_, ur_acceleration_, ur_blend_);
+          if (test_robot_pose == 'y') {
+              std::cout << "Воспроизвожу..." << std::endl;
 
-        } else {
-          std::cout << "Воспроизведение лучшего решения было пропущено." << std::endl;
+              std::vector<double> pos_vector;
+              for (int j = 0; j < bestSolution.size(); j++) {
+                pos_vector.push_back(bestSolution(j));
+              }
+
+              robotMove(pos_vector, robot_ip_, ur_speed_, ur_acceleration_, ur_blend_);
+
+          } else {
+            std::cout << "Воспроизведение лучшего решения было пропущено." << std::endl;
+          }
         }
 
         std::cout << "Воспроизведение завершено." << std::endl;

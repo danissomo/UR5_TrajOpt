@@ -74,9 +74,9 @@ Vector3d quaternion2Euler(Matrix3d r) {
     double pitch = atan2(-r(2, 0), sqrt(pow(r(2,1), 2) + pow(r(2,2), 2)));
     double yaw = atan2(r(1,0), r(0,0));
 
-    orientation(0) = std::fmod(roll, pi);
-    orientation(1) = std::fmod(pitch, pi);
-    orientation(2) = std::fmod(yaw, pi);
+    orientation(0) = roll;
+    orientation(1) = pitch;
+    orientation(2) = yaw;
 
     return orientation;
 }
@@ -266,12 +266,12 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
 
     MatrixXd solutions(8, 6);
     solutions << theta1[0], theta2[0], theta3[0], theta4[0], theta5[0], theta6[0],
-                 theta1[0], theta2[2], theta3[2], theta4[2], theta5[1], theta6[1],
-                 theta1[1], theta2[4], theta3[4], theta4[4], theta5[2], theta6[2],
-                 theta1[1], theta2[6], theta3[6], theta4[6], theta5[3], theta6[3],
                  theta1[0], theta2[1], theta3[1], theta4[1], theta5[0], theta6[0],
+                 theta1[0], theta2[2], theta3[2], theta4[2], theta5[1], theta6[1],
                  theta1[0], theta2[3], theta3[3], theta4[3], theta5[1], theta6[1],
+                 theta1[1], theta2[4], theta3[4], theta4[4], theta5[2], theta6[2],
                  theta1[1], theta2[5], theta3[5], theta4[5], theta5[2], theta6[2],
+                 theta1[1], theta2[6], theta3[6], theta4[6], theta5[3], theta6[3],
                  theta1[1], theta2[7], theta3[7], theta4[7], theta5[3], theta6[3];
 
     if (debug_) {
