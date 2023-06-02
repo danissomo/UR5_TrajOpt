@@ -24,6 +24,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   visualization_msgs
+  robotiq_2f_gripper_control
 )
 
 ## System dependencies are found with CMake's conventions
@@ -37,6 +38,7 @@ find_package(tesseract_task_composer REQUIRED)
 find_package(tesseract_common REQUIRED)
 find_package(tesseract_support REQUIRED)
 find_package(tesseract_visualization REQUIRED)
+find_package(robotiq_2f_gripper_control REQUIRED)
 
 find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde")
 
@@ -96,6 +98,7 @@ add_service_files(
   Mesh.srv
   RobotRestart.srv
   IKSolver.srv
+  GripperService.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -144,6 +147,7 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS
+  CATKIN_DEPENDS robotiq_2f_gripper_control
 #  LIBRARIES ur5_husky_main
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
@@ -187,6 +191,11 @@ add_executable(
   src/freedrive_node.cpp
 )
 
+add_executable(
+  gripper_node
+  src/gripper_node.cpp
+)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -199,6 +208,7 @@ add_executable(
 
 add_dependencies(ur5_trajopt_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(freedrive_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(gripper_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
@@ -220,6 +230,10 @@ target_link_libraries(ur5_trajopt_node
 
 target_link_libraries(freedrive_node
    PRIVATE ur_rtde::rtde
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(gripper_node
    ${catkin_LIBRARIES}
 )
 

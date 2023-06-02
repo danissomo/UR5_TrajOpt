@@ -22,3 +22,6 @@
 [submodule "src/pkgs_husky/husky"]
 	path = src/pkgs_husky/husky
 	url = ../../husky/husky
+[submodule "src/libs/robotiq_2finger_grippers"]
+	path = src/libs/robotiq_2finger_grippers
+	url = ../../Danfoa/robotiq_2finger_grippers

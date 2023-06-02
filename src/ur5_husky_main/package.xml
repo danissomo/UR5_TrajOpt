@@ -83,6 +83,7 @@
   <depend>tesseract_rosutils</depend>
   <depend>settings_custom_lib</depend>
   <depend>urdf</depend>
+  <depend>robotiq_2f_gripper_control</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

@@ -101,3 +101,5 @@ RUN sudo apt-get install libboost-all-dev
 # RUN sudo apt-get update
 # RUN sudo apt install librtde librtde-dev
 
+RUN apt-get update && apt-get install -y iputils-ping
+
