@@ -182,7 +182,7 @@ add_executable(
   ur5_trajopt_node 
   src/ur5_trajopt_node.cpp
   trajopt/UR5Trajopt.cpp
-  ik/InverseKinematicsUR5.cpp
+  ik/KinematicsUR5.cpp
   ik/TestIK.cpp
 )
 

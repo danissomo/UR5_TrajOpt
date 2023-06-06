@@ -1,4 +1,4 @@
-#include "InverseKinematicsUR5.hpp"
+#include "KinematicsUR5.hpp"
 
 #include <eigen3/Eigen/Eigen>
 
@@ -23,24 +23,24 @@ std::vector<double> d = {0.1625, 0, 0, 0.1333, 0.0997, 0.0996};
 std::vector<double> alpha = {pi/2, 0, 0, pi/2, -pi/2, 0};
 
 
-InverseKinematicsUR5::InverseKinematicsUR5(bool debug) {
+KinematicsUR5::KinematicsUR5(bool debug) {
     debug_ = debug;
 }
 
-InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z) {
+KinematicsUR5::KinematicsUR5(double x, double y, double z) {
     posX_ = x;
     posY_ = y;
     posZ_ = z;
 }
 
-InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z, bool debug) {
+KinematicsUR5::KinematicsUR5(double x, double y, double z, bool debug) {
     posX_ = x;
     posY_ = y;
     posZ_ = z;
     debug_ = debug;
 }
 
-InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z, double roll, double pitch, double yaw) {
+KinematicsUR5::KinematicsUR5(double x, double y, double z, double roll, double pitch, double yaw) {
     posX_ = x;
     posY_ = y;
     posZ_ = z;
@@ -49,7 +49,7 @@ InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z, double 
     yaw_ = yaw;
 }
 
-InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z, double roll, double pitch, double yaw, bool debug) {
+KinematicsUR5::KinematicsUR5(double x, double y, double z, double roll, double pitch, double yaw, bool debug) {
     posX_ = x;
     posY_ = y;
     posZ_ = z;
@@ -152,7 +152,7 @@ void removeRow(Eigen::MatrixXd& matrix, unsigned int rowToRemove) {
 }
 
 
-MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
+MatrixXd KinematicsUR5::calculateIKAllSolutions() {
 
     if (debug_) {
         std::cout << "Input data for calculate: X = " << posX_ << ", Y = " << posY_ << ", Z = " << posZ_;
@@ -312,7 +312,7 @@ MatrixXd InverseKinematicsUR5::calculateAllSolutions() {
 }
 
 
-VectorXd InverseKinematicsUR5::getBestSolution(MatrixXd solutions, VectorXd currentPose) {
+VectorXd KinematicsUR5::getBestSolutionIK(MatrixXd solutions, VectorXd currentPose) {
     std::vector<int> weights = {6, 5, 4, 3, 2, 1};
     long long minDistance = std::numeric_limits<long long>::max();
     VectorXd solution(6);
@@ -335,13 +335,13 @@ VectorXd InverseKinematicsUR5::getBestSolution(MatrixXd solutions, VectorXd curr
 }
 
 
-VectorXd InverseKinematicsUR5::getBestSolution(VectorXd currentPose) {
-    MatrixXd solutions = calculateAllSolutions();
-    return getBestSolution(solutions, currentPose);
+VectorXd KinematicsUR5::getBestSolutionIK(VectorXd currentPose) {
+    MatrixXd solutions = calculateIKAllSolutions();
+    return getBestSolutionIK(solutions, currentPose);
 }
 
 
-VectorXd InverseKinematicsUR5::getForwardkinematics(VectorXd theta, bool debug = true) {
+VectorXd KinematicsUR5::getForwardkinematics(VectorXd theta, bool debug = true) {
     VectorXd fk(6); // 1=X 2=Y 3=Z 4=Roll 5=Pitch 6=Yaw
 
     Matrix4d T01 = createTransformMatrix2FK(alpha[0], a[0], d[0], theta(0));
@@ -398,7 +398,7 @@ VectorXd InverseKinematicsUR5::getForwardkinematics(VectorXd theta, bool debug =
 }
 
 
-MatrixXd InverseKinematicsUR5::getCheckIK(VectorXd testedPose) {
+MatrixXd KinematicsUR5::getCheckIK(VectorXd testedPose) {
 
     VectorXd fk(6);
     fk = getForwardkinematics(testedPose, false);

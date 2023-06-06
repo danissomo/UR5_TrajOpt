@@ -1,5 +1,5 @@
 #include "TestIK.hpp"
-#include "InverseKinematicsUR5.hpp"
+#include "KinematicsUR5.hpp"
 
 #include <ros/ros.h>
 
@@ -100,7 +100,7 @@ void TestIK::ikSolverCheck(ros::Rate& loop_rate, Eigen::VectorXd& joint_start_po
 	  std::cout << "Проверка расчета обратной кинематики" << std::endl;
 
     bool debug = true;
-    InverseKinematicsUR5 k(debug);
+    KinematicsUR5 k(debug);
     VectorXd fk = k.getForwardkinematics(joint_start_pos, debug);
     auto begin = std::chrono::steady_clock::now();
 
@@ -108,8 +108,8 @@ void TestIK::ikSolverCheck(ros::Rate& loop_rate, Eigen::VectorXd& joint_start_po
     std::cout << "===============================" << std::endl;
     std::cout << "Обратная кинематика: " << std::endl;
 
-    InverseKinematicsUR5 ik2(fk(0), fk(1), fk(2), fk(3), fk(4), fk(5), debug);
-    Eigen::MatrixXd solutions = ik2.calculateAllSolutions();
+    KinematicsUR5 ik2(fk(0), fk(1), fk(2), fk(3), fk(4), fk(5), debug);
+    Eigen::MatrixXd solutions = ik2.calculateIKAllSolutions();
 
 
     auto end = std::chrono::steady_clock::now();
@@ -171,7 +171,7 @@ void TestIK::ikSolverCheck(ros::Rate& loop_rate, Eigen::VectorXd& joint_start_po
     }
 
     if (test_robot_pose == 'y') {
-      Eigen::MatrixXd bestSolution = ik2.getBestSolution(solutions, joint_start_pos);
+      Eigen::MatrixXd bestSolution = ik2.getBestSolutionIK(solutions, joint_start_pos);
       std::cout << "===============================" << std::endl;
       std::cout << "Лучшее решение: " << std::endl;
       std::cout << bestSolution << std::endl;
