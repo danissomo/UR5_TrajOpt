@@ -13,6 +13,7 @@ using namespace Eigen;
 class InverseKinematicsUR5
 {
 public:
+  InverseKinematicsUR5(bool);
   InverseKinematicsUR5(double, double, double);
   InverseKinematicsUR5(double, double, double, bool);
   InverseKinematicsUR5(double, double, double, double, double, double);
@@ -22,7 +23,7 @@ public:
   MatrixXd calculateAllSolutions();                             // Матрица всех решений
   VectorXd getBestSolution(VectorXd);                           // Лучшее решение
   VectorXd getBestSolution(MatrixXd, VectorXd);                 // Лучшее решение
-  MatrixXd getCheckIK(VectorXd);                                // Проверка решения обратной кинематики
+  MatrixXd getCheckIK(VectorXd, VectorXd);                      // Проверка решения обратной кинематики
   VectorXd getForwardkinematics(VectorXd);                      // Расчет прямой кинематики       
 
 private:
