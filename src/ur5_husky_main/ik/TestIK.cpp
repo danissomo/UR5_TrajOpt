@@ -99,15 +99,16 @@ void robotMove(std::vector<double> &path_pose, std::string robot_ip, double ur_s
 void TestIK::ikSolverCheck(ros::Rate& loop_rate, Eigen::VectorXd& joint_start_pos) {
 	  std::cout << "Проверка расчета обратной кинематики" << std::endl;
 
-    InverseKinematicsUR5 k(true);
-    VectorXd fk = k.getForwardkinematics(joint_start_pos);
+    bool debug = true;
+    InverseKinematicsUR5 k(debug);
+    VectorXd fk = k.getForwardkinematics(joint_start_pos, debug);
     auto begin = std::chrono::steady_clock::now();
 
 
     std::cout << "===============================" << std::endl;
     std::cout << "Обратная кинематика: " << std::endl;
 
-    InverseKinematicsUR5 ik2(fk(0), fk(1), fk(2), fk(3), fk(4), fk(5), true);
+    InverseKinematicsUR5 ik2(fk(0), fk(1), fk(2), fk(3), fk(4), fk(5), debug);
     Eigen::MatrixXd solutions = ik2.calculateAllSolutions();
 
 
@@ -120,7 +121,7 @@ void TestIK::ikSolverCheck(ros::Rate& loop_rate, Eigen::VectorXd& joint_start_po
     std::cout << "Проверка каждого решения обратной кинематики: " << std::endl;
     for (int i = 0; i < solutions.rows(); i++) {
       std::cout << "Проверяемое решение №" << i+1 << ": " << solutions.row(i) << std::endl;
-      Eigen::MatrixXd fkCheck = ik2.getCheckIK(solutions.row(i), fk);
+      Eigen::MatrixXd fkCheck = ik2.getCheckIK(solutions.row(i));
       std::cout << "Ошибка по положению: " << fkCheck.row(0)  << std::endl;
       std::cout << "Ошибка по ориентации: " << fkCheck.row(1)  << std::endl;
       std::cout << "\n" << std::endl;

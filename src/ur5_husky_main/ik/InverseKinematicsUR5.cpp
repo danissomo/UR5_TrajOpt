@@ -61,15 +61,12 @@ InverseKinematicsUR5::InverseKinematicsUR5(double x, double y, double z, double 
 
 
 Matrix3d euler2Quaternion(double roll, double pitch, double yaw) {
-    AngleAxisd rollAngle(roll, Vector3d::UnitZ());
-    AngleAxisd pitchAngle(pitch, Vector3d::UnitX());
-    AngleAxisd yawAngle(yaw, Vector3d::UnitY());
+    AngleAxisd rollAngle(roll, Vector3d::UnitX());
+    AngleAxisd pitchAngle(pitch, Vector3d::UnitY());
+    AngleAxisd yawAngle(yaw, Vector3d::UnitZ());
 
-    Quaterniond q = rollAngle * yawAngle * pitchAngle;
-    Matrix3d rotationMatrix;// = q.matrix();
-    rotationMatrix << -0.985472, -0.0105306,   0.169513,
-     -0.166225,   0.264613,  -0.949921,
-    -0.0348521,  -0.964297,  -0.262519;
+    Quaterniond q = yawAngle * pitchAngle * rollAngle;
+    Matrix3d rotationMatrix = q.matrix();
     return rotationMatrix;
 }
 
@@ -78,21 +75,9 @@ Vector3d quaternion2Euler(Matrix3d r) {
 
     Vector3d orientation(3);
 
-    // double beta = atan2(sqrt(pow(r(0,0), 2) + pow(r(1,0), 2)), -r(2,0));
-    // double alpha = atan2(r(0,0)/cos(beta), r(1,0)/cos(beta));
-    // double gamma = atan2(r(2,2)/cos(beta), r(2,1)/cos(beta));
-
     double beta = atan2(-r(2,0), sqrt(pow(r(0,0), 2) + pow(r(1,0), 2)));
     double alpha = atan2(r(1,0)/cos(beta), r(0,0)/cos(beta));
     double gamma = atan2(r(2,1)/cos(beta), r(2,2)/cos(beta));
-
-    // double test = sqrt(pow(-0.98547, 2) + pow(-0.16622, 2));
-    // std::cout << "TTTT = " << test << std::endl;
-
-    // std::cout << "alpha = " << alpha << ", beta = " << beta << ", gamma = " << gamma << std::endl;
-    // std::cout << "r(0,0) = " << r(0,0) << ", r(0,1) = " << r(0,1) << ", r(0,2) = " << r(0,2) << std::endl;
-    // std::cout << "r(1,0) = " << r(1,0) << ", r(1,1) = " << r(1,1) << ", r(1,2) = " << r(1,2) << std::endl;
-    // std::cout << "r(2,0) = " << r(2,0) << ", r(2,1) = " << r(2,1) << ", r(2,2) = " << r(2,2) << std::endl;
 
     orientation(0) = alpha;
     orientation(1) = beta;
@@ -356,10 +341,8 @@ VectorXd InverseKinematicsUR5::getBestSolution(VectorXd currentPose) {
 }
 
 
-VectorXd InverseKinematicsUR5::getForwardkinematics(VectorXd theta) {
+VectorXd InverseKinematicsUR5::getForwardkinematics(VectorXd theta, bool debug = true) {
     VectorXd fk(6); // 1=X 2=Y 3=Z 4=Roll 5=Pitch 6=Yaw
-
-    std::cout << "theta = " << theta << std::endl;
 
     Matrix4d T01 = createTransformMatrix2FK(alpha[0], a[0], d[0], theta(0));
     Matrix4d T12 = createTransformMatrix2FK(alpha[1], a[1], d[1], theta(1));
@@ -374,7 +357,8 @@ VectorXd InverseKinematicsUR5::getForwardkinematics(VectorXd theta) {
     Matrix3d rotationMatrix = T06.block(0, 0, 3, 3);
     Vector3d orientation = quaternion2Euler(rotationMatrix);
 
-    if (debug_) {
+    if (debug) {
+        std::cout << "theta = " << theta << std::endl;
         std::cout << "----- rotationMatrix -----" << std::endl;
         std::cout << rotationMatrix << std::endl;
         std::cout << "----- orientation -----" << std::endl;
@@ -406,7 +390,7 @@ VectorXd InverseKinematicsUR5::getForwardkinematics(VectorXd theta) {
     fk(4) = orientation(1); // Y (P)
     fk(5) = orientation(0); // Z (Y)
 
-    if (debug_) {
+    if (debug) {
         std::cout << "Forward Kinematics = " << fk(0) << " " << fk(1) << " " << fk(2) << " " << fk(3) << " " << fk(4) << " " << fk(5) << std::endl;
     }
 
@@ -414,7 +398,10 @@ VectorXd InverseKinematicsUR5::getForwardkinematics(VectorXd theta) {
 }
 
 
-MatrixXd InverseKinematicsUR5::getCheckIK(VectorXd testedPose, VectorXd fk) {
+MatrixXd InverseKinematicsUR5::getCheckIK(VectorXd testedPose) {
+
+    VectorXd fk(6);
+    fk = getForwardkinematics(testedPose, false);
 
     MatrixXd result(2, 3);
     VectorXd positionError(3);
