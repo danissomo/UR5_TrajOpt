@@ -1,0 +1,21 @@
+<launch>
+    <machine
+        name="gripper_machine>"
+        address="192.168.131.1"
+        user="administrator"
+        password="clearpath"
+        timeout="10"
+        ssh-port="22"
+        env-loader="/usr/local/bin/remote_machine_env"
+        default="true"
+    />
+    
+    <!-- Remote Machine Running Node -->
+    <node
+        machine="gripper_machine"
+        name="gripper_node"
+        pkg="ur5_husky_main"
+        type="gripper_node"
+    />
+    
+</launch>
