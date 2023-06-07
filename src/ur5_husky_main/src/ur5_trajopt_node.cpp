@@ -5,7 +5,7 @@
 #include <ros/topic.h>
 #include <termios.h>
 
-#include <InverseKinematicsUR5.hpp>
+#include <KinematicsUR5.hpp>
 #include <TestIK.hpp>
 #include <ur5_trajopt.hpp>
 
@@ -19,6 +19,8 @@
 #include <ur5_husky_main/Mesh.h>
 #include <ur5_husky_main/Freedrive.h>
 #include <ur5_husky_main/IKSolver.h>
+#include <ur5_husky_main/GetInfo.h>
+#include <ur5_husky_main/GripperService.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -61,6 +63,10 @@
 #include <ur_rtde/rtde_io_interface.h>
 #include <ur_rtde/rtde_receive_interface.h>
 
+#include <actionlib/client/simple_action_client.h>
+#include <robotiq_2f_gripper_msgs/CommandRobotiqGripperAction.h>
+#include <robotiq_2f_gripper_control/robotiq_gripper_client.h>
+
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -87,6 +93,8 @@ using namespace tesseract_collision;
 using namespace tesseract_visualization;
 using namespace tesseract_planning;
 using tesseract_common::ManipulatorInfo;
+
+typedef robotiq_2f_gripper_control::RobotiqActionClient RobotiqActionClient;
 
 SettingsCustomLibClass settingsConfig;
 
@@ -164,15 +172,22 @@ tesseract_environment::Command::Ptr addMesh(std::string link_name,
   tesseract_common::ResourceLocator::Ptr locator = std::make_shared<tesseract_common::GeneralResourceLocator>();
   std::vector<tesseract_geometry::Mesh::Ptr> meshes =
     tesseract_geometry::createMeshFromResource<tesseract_geometry::Mesh>(
-        locator->locateResource(mesh_path), scale, true);
+        locator->locateResource(mesh_path), scale, true, false, true);
 
   Link link_sphere(link_name.c_str());
 
-  for (auto& mesh : meshes) {
+  Eigen::AngleAxisd V(3.1415926 / 4, Eigen::Vector3d(1, 0, 1).normalized());
 
+  for (auto& mesh : meshes) {
     Visual::Ptr visual = std::make_shared<Visual>();
     visual->origin = Eigen::Isometry3d::Identity();
     visual->origin.translation() = translation;
+
+    if (link_name == "cup") {
+      Eigen::AngleAxisd rot(3.1415926 / 2, Eigen::Vector3d::UnitX());
+      visual->origin.rotate(rot);
+    }
+
     visual->geometry = mesh;
     link_sphere.visual.push_back(visual);
 
@@ -562,17 +577,85 @@ bool freedriveEnable(ur5_husky_main::Freedrive::Request &req,
 }
 
 
-bool alphaIKSolver(ur5_husky_main::IKSolver::Request &req,
-                   ur5_husky_main::IKSolver::Response &res,
+bool getInfo(ur5_husky_main::GetInfo::Request &req,
+                   ur5_husky_main::GetInfo::Response &res,
                    const std::shared_ptr<tesseract_environment::Environment> &env,
                    const std::vector<std::string> &joint_names,
                    ros::Rate &loop_rate) {
 
-  // InverseKinematicsUR5 ik(req.x, req.y, req.z, req.roll, req.pitch, req.yaw);
-  // Eigen::MatrixXd joints = ik.calculate();
+  TestIK test(robot_ip, ur_speed, ur_acceleration, ur_blend, req.debug);
+  // try {
+    DashboardClient dash_board(robot_ip);
+    dash_board.connect();
+    std::cout << "--- Модель робота ---" << dash_board.getRobotModel() << std::endl;
+    // getSerialNumber() function is not supported on the dashboard server for PolyScope versions less than 5.6.0
+    // std::cout << "--- Серийный номер робота ---" << dash_board.getSerialNumber() << std::endl;
+    std::cout << "--- Программа робота: ---" << dash_board.getLoadedProgram() << std::endl;
 
-  TestIK ik(robot_ip, ur_speed, ur_acceleration, ur_blend);
-  ik.ikSolverCheck(loop_rate, joint_start_pos);
+    dash_board.stop();
+    dash_board.disconnect();
+  // } catch(...) {
+  //   ROS_ERROR(" Connect error with UR5 for connect dash_board");
+  // }
+
+  if (req.fk || req.ik) {
+    if (req.fk) {
+      // Получить данные из библиотеки ur_rtde
+      try {
+
+        RTDEControlInterface rtde_control(robot_ip);
+        if (rtde_control.isConnected()) {
+          std::vector<double> fk = rtde_control.getForwardKinematics();
+          if (req.fk) {
+            std::cout << "Прямая кинематика (ur_rtde): ";
+            for (int i = 0; i < fk.size(); i++) {
+              std::cout << fk[i] << " ";
+            }
+            std::cout << std::endl;              
+          }
+
+          if (req.ik) {
+              std::vector<double> ik = rtde_control.getInverseKinematics(fk);
+              std::cout << "Обратная кинематика (ur_rtde): ";
+              for (int i = 0; i < ik.size(); i++) {
+                std::cout << ik[i] << " ";
+              }
+              std::cout << std::endl;
+          }
+
+          rtde_control.stopScript();
+          rtde_control.disconnect();
+
+        }
+      } catch(...) {
+        ROS_ERROR(" Connect error with UR5 for get info");
+      }
+
+      test.getForwardKinematics(joint_start_pos);
+    }
+
+    if (req.ik) {
+      test.ikSolverCheck(loop_rate, joint_start_pos);
+    }
+  }
+
+  res.result = "Info got successfully";
+  return true;
+}
+
+
+bool gripperMove(ur5_husky_main::GripperService::Request &req,
+                 ur5_husky_main::GripperService::Response &res) {
+
+  std::string action_name = "/command_robotiq_action";  
+  bool wait_for_server = true;
+  RobotiqActionClient* gripper = new RobotiqActionClient(action_name, wait_for_server);
+
+  if (req.open) {
+    gripper->open();
+  } else {
+    gripper->close();
+  }
 
   return true;
 }
@@ -763,8 +846,11 @@ int main(int argc, char** argv) {
   ros::ServiceServer freedriveService = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
 
-  ros::ServiceServer ikSolverService = nh.advertiseService<ur5_husky_main::IKSolver::Request, ur5_husky_main::IKSolver::Response>
-                      ("ik_solver", boost::bind(alphaIKSolver, _1, _2, env, joint_names, loop_rate));
+  ros::ServiceServer getInfoService = nh.advertiseService<ur5_husky_main::GetInfo::Request, ur5_husky_main::GetInfo::Response>
+                      ("get_info_robot", boost::bind(getInfo, _1, _2, env, joint_names, loop_rate));
+
+  ros::ServiceServer gripperService = nh.advertiseService<ur5_husky_main::GripperService::Request, ur5_husky_main::GripperService::Response>
+                      ("gripper_move", boost::bind(gripperMove, _1, _2));
 
   ros::Publisher messagePub = nh.advertise<std_msgs::String>("chatter", 1000);
   std_msgs::String msg;
@@ -823,6 +909,25 @@ int main(int argc, char** argv) {
     } else {
       plotter->waitForInput("Hit Enter after move robot to start position.");
     }
+
+
+
+//////////////////////////////////////////////////
+  // Detach the simulated box from the world and attach to the end effector
+  tesseract_environment::Commands cmds;
+  Joint joint_cup("joint_cup");
+  joint_cup.parent_link_name = "ur5_tool0";
+  joint_cup.child_link_name = "cup";
+  joint_cup.type = JointType::FIXED;
+  joint_cup.parent_to_joint_origin_transform = Eigen::Isometry3d::Identity();
+  joint_cup.parent_to_joint_origin_transform.translation() += Eigen::Vector3d(x_correct, y_correct, z_correct);
+  cmds.push_back(std::make_shared<tesseract_environment::MoveLinkCommand>(joint_cup));
+  tesseract_common::AllowedCollisionMatrix add_ac;
+  // add_ac.addAllowedCollision("cup", "ee_link", "Never");
+  cmds.push_back(std::make_shared<tesseract_environment::ModifyAllowedCollisionsCommand>(
+      add_ac, tesseract_environment::ModifyAllowedCollisionsType::ADD));
+  env->applyCommands(cmds);
+  ///////////////////////////////////////
 
     UR5Trajopt example(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
     tesseract_common::JointTrajectory trajectory = example.run();

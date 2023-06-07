@@ -99,6 +99,7 @@ add_service_files(
   RobotRestart.srv
   IKSolver.srv
   GripperService.srv
+  GetInfo.srv
 )
 
 ## Generate actions in the 'action' folder

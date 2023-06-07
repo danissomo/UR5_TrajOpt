@@ -15,12 +15,17 @@ using namespace Eigen;
 #define errorMarker 1000000
 
 /**
+ * IK solver http://rasmusan.dk/wp-content/uploads/ur5_kinematics.pdf
+ * */
+
+/**
  * Denavit Hartenberg Parameters - DH Parameters
  * See more https://www.universal-robots.com/articles/ur/application-installation/dh-parameters-for-calculations-of-kinematics-and-dynamics
  * **/
 std::vector<double> a = {0, -0.425, -0.39225, 0, 0, 0};
-std::vector<double> d = {0.1625, 0, 0, 0.1333, 0.0997, 0.0996};
 std::vector<double> alpha = {pi/2, 0, 0, pi/2, -pi/2, 0};
+// std::vector<double> d = {0.1625, 0, 0, 0.1333, 0.0997, 0.0996}; // для UR5e
+std::vector<double> d = {0.089159, 0, 0, 0.10915, 0.09465, 0.0823}; // Для UR5
 
 
 KinematicsUR5::KinematicsUR5(bool debug) {

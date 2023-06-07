@@ -21,11 +21,12 @@
 using namespace ur_rtde;
 
 
-TestIK::TestIK(std::string robot_ip, double ur_speed, double ur_acceleration, double ur_blend) {
+TestIK::TestIK(std::string robot_ip, double ur_speed, double ur_acceleration, double ur_blend, bool debug) {
 	robot_ip_ = robot_ip;
 	ur_speed_ = ur_speed;
 	ur_acceleration_ = ur_acceleration;
 	ur_blend_ = ur_blend;
+  debug_ = debug;
 }
 
 
@@ -95,20 +96,24 @@ void robotMove(std::vector<double> &path_pose, std::string robot_ip, double ur_s
     }
 }
 
+void TestIK::getForwardKinematics(Eigen::VectorXd& joint_start_pos) {
+  KinematicsUR5 k(debug_);
+  k.getForwardkinematics(joint_start_pos, debug_);
+}
+
 
 void TestIK::ikSolverCheck(ros::Rate& loop_rate, Eigen::VectorXd& joint_start_pos) {
 	  std::cout << "Проверка расчета обратной кинематики" << std::endl;
 
-    bool debug = true;
-    KinematicsUR5 k(debug);
-    VectorXd fk = k.getForwardkinematics(joint_start_pos, debug);
+    KinematicsUR5 k(debug_);
+    VectorXd fk = k.getForwardkinematics(joint_start_pos, debug_);
     auto begin = std::chrono::steady_clock::now();
 
 
     std::cout << "===============================" << std::endl;
     std::cout << "Обратная кинематика: " << std::endl;
 
-    KinematicsUR5 ik2(fk(0), fk(1), fk(2), fk(3), fk(4), fk(5), debug);
+    KinematicsUR5 ik2(fk(0), fk(1), fk(2), fk(3), fk(4), fk(5), debug_);
     Eigen::MatrixXd solutions = ik2.calculateIKAllSolutions();
 
 

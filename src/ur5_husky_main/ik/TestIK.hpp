@@ -15,14 +15,16 @@ using namespace Eigen;
 class TestIK
 {
   public:
-    TestIK(std::string, double, double, double);
+    TestIK(std::string, double, double, double, bool);
     ~TestIK() = default;
 
     void ikSolverCheck(ros::Rate&, Eigen::VectorXd&);
+    void getForwardKinematics(Eigen::VectorXd&);
 
   private:
     std::string robot_ip_;
     double ur_speed_, ur_acceleration_, ur_blend_;
+    bool debug_;
 };
 
 #endif
