@@ -44,6 +44,8 @@ The end user should not need to use this class direcly since an instance of it i
 controlling a given gripper, and commanded by the user commands puubished by an action client instance.  
 """
 
+from importlib.machinery import SourceFileLoader
+robotiq_2f_gripper = SourceFileLoader("robotiq_2f_gripper","/workspace/src/libs/robotiq_2finger_grippers/robotiq_2f_gripper_control/src/robotiq_2f_gripper_control/robotiq_2f_gripper.py").load_module()
 from robotiq_2f_gripper import Robotiq2FingerGripper
 from robotiq_2f_gripper_msgs.msg import RobotiqGripperCommand, RobotiqGripperStatus, CommandRobotiqGripperGoal
 from sensor_msgs.msg import JointState

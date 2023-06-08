@@ -1,7 +1,7 @@
 import serial
 from serial.serialutil import SerialException
 
-from pymodbus.client.sync import ModbusSerialClient
+from pymodbus.client import ModbusSerialClient
 import robotiq_modbus_rtu.comModbusRtu
 
 from math import ceil

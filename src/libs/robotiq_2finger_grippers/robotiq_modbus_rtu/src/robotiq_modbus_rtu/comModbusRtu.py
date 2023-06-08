@@ -43,7 +43,7 @@ Module comModbusRtu: defines a class which communicates with Robotiq Grippers us
 The module depends on pymodbus (http://code.google.com/p/pymodbus/) for the Modbus RTU client.
 """
 
-from pymodbus.client.sync import ModbusSerialClient
+from pymodbus.client import ModbusSerialClient
 from math import ceil
 
 class communication:	
@@ -55,7 +55,7 @@ class communication:
       """Connection to the client - the method takes the IP address (as a string, e.g. '192.168.1.11') as an argument."""
       self.client = ModbusSerialClient(method='rtu',port=device,stopbits=1, bytesize=8, baudrate=115200, timeout=0.2)
       if not self.client.connect():
-          print "Unable to connect to %s" % device
+          print("Unable to connect to %s" % device)
           return False
       return True
 
