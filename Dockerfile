@@ -75,6 +75,15 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main"
     echo "source /opt/ros/noetic/setup.bash"  >> ~/.bashrc && \
     echo "source /workspace/devel/setup.bash"  >> ~/.bashrc
 
+RUN sudo apt install ros-noetic-rqt-joint-trajectory-controller
+RUN sudo apt-get install -y ros-noetic-industrial-robot-status-interface \
+        ros-noetic-scaled-controllers \
+        ros-noetic-pass-through-controllers \
+        ros-noetic-ur-client-library \
+        ros-noetic-velocity-controllers \
+        ros-noetic-force-torque-sensor-controller
+RUN sudo apt-get install socat 
+
 RUN apt-get install -y python3-pip
 RUN pip install pathlib statistics scipy
 RUN apt install python3-pip python3-numpy
@@ -93,13 +102,12 @@ RUN apt install -y libignition-common4-dev
 
 RUN apt-get install ros-noetic-joint-state-publisher-gui
 RUN apt-get install ros-noetic-franka-description
-RUN apt-get install ros-noetic*joint-trajectory-controller*
+RUN apt-get install ros-noetic-joint-trajectory-controller
 
 # URTD lib
 RUN sudo apt-get install libboost-all-dev
-# RUN sudo add-apt-repository ppa:sdurobotics/ur-rtde
-# RUN sudo apt-get update
-# RUN sudo apt install librtde librtde-dev
 
 RUN apt-get update && apt-get install -y iputils-ping
+RUN apt-get install socat -y
 
+RUN pip install pymodbus

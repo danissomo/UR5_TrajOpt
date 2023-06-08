@@ -22,3 +22,9 @@
 [submodule "src/pkgs_husky/husky"]
 	path = src/pkgs_husky/husky
 	url = ../../husky/husky
+[submodule "src/pkgs_ur5/Universal_Robots_ROS_Driver"]
+	path = src/pkgs_ur5/Universal_Robots_ROS_Driver
+	url = ../../UniversalRobots/Universal_Robots_ROS_Driver
+[submodule "src/pkgs_ur5/ur_msgs"]
+	path = src/pkgs_ur5/ur_msgs
+	url = ../../ros-industrial/ur_msgs
