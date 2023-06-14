@@ -16,9 +16,6 @@
 [submodule "src/libs/ifopt"]
 	path = src/libs/ifopt
 	url = ../../ethz-adrl/ifopt.git
-[submodule "src/libs/tesseract_qt"]
-	path = src/libs/tesseract_qt
-	url = ../../tesseract-robotics/tesseract_qt
 [submodule "src/pkgs_husky/husky"]
 	path = src/pkgs_husky/husky
 	url = ../../husky/husky
