@@ -65,17 +65,19 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <tesseract_command_language/utils.h>
 #include <tesseract_support/tesseract_support_resource_locator.h>
 
+#include <tesseract_geometry/impl/box.h>
+
 using namespace tesseract_scene_graph;
 using namespace tesseract_collision;
 using namespace tesseract_environment;
 using namespace tesseract_geometry;
 using namespace tesseract_kinematics;
 using namespace tesseract_planning;
-using namespace tesseract_planning::profile_ns;
 
 const static int SEED = 1;
 const static std::vector<double> start_state = { -0.5, 0.5, 0.0, -1.3348, 0.0, 1.4959, 0.0 };
 const static std::vector<double> end_state = { 0.5, 0.5, 0.0, -1.3348, 0.0, 1.4959, 0.0 };
+static const std::string OMPL_DEFAULT_NAMESPACE = "OMPLMotionPlannerTask";
 
 static void addBox(tesseract_environment::Environment& env)
 {
@@ -107,7 +109,7 @@ public:
   OMPLTestFixture() : configurator(std::make_shared<Configurator>()) {}
   using ::testing::Test::Test;
   std::shared_ptr<Configurator> configurator;
-  OMPLMotionPlanner ompl_planner;
+  OMPLMotionPlanner ompl_planner{ OMPL_DEFAULT_NAMESPACE };
 };
 
 using Implementations = ::testing::Types<tesseract_planning::SBLConfigurator,
@@ -161,7 +163,7 @@ TYPED_TEST(OMPLTestFixture, OMPLFreespacePlannerUnit)  // NOLINT
       Eigen::Map<const Eigen::VectorXd>(end_state.data(), static_cast<long>(end_state.size()))) };
 
   // Define Start Instruction
-  MoveInstruction start_instruction(wp1, MoveInstructionType::START, "TEST_PROFILE");
+  MoveInstruction start_instruction(wp1, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Define Plan Instructions
   MoveInstruction plan_f1(wp2, MoveInstructionType::FREESPACE, "TEST_PROFILE");
@@ -169,8 +171,8 @@ TYPED_TEST(OMPLTestFixture, OMPLFreespacePlannerUnit)  // NOLINT
 
   // Create a program
   CompositeInstruction program;
-  program.setStartInstruction(start_instruction);
   program.setManipulatorInfo(manip);
+  program.appendMoveInstruction(start_instruction);
   program.appendMoveInstruction(plan_f1);
   program.appendMoveInstruction(plan_f2);
 
@@ -202,7 +204,7 @@ TYPED_TEST(OMPLTestFixture, OMPLFreespacePlannerUnit)  // NOLINT
   request.profiles = profiles;
 
   // Create Planner and solve
-  OMPLMotionPlanner ompl_planner;
+  OMPLMotionPlanner ompl_planner(OMPL_DEFAULT_NAMESPACE);
   PlannerResponse planner_response = ompl_planner.solve(request);
 
   if (!planner_response)
@@ -211,9 +213,8 @@ TYPED_TEST(OMPLTestFixture, OMPLFreespacePlannerUnit)  // NOLINT
   }
 
   EXPECT_TRUE(&planner_response);
-  EXPECT_TRUE(planner_response.results.hasStartInstruction());
   EXPECT_EQ(planner_response.results.getMoveInstructionCount(), 21);  // 10 per segment + start a instruction
-  EXPECT_EQ(planner_response.results.size(), 20);
+  EXPECT_EQ(planner_response.results.size(), 21);
   EXPECT_TRUE(wp1.getPosition().isApprox(
       getJointPosition(planner_response.results.getFirstMoveInstruction()->getWaypoint()), 1e-5));
 
@@ -237,12 +238,12 @@ TYPED_TEST(OMPLTestFixture, OMPLFreespacePlannerUnit)  // NOLINT
   wp1.setPosition(Eigen::Map<const Eigen::VectorXd>(swp.data(), static_cast<long>(swp.size())));
   wp1.setNames(joint_group->getJointNames());
 
-  start_instruction = MoveInstruction(wp1, MoveInstructionType::START, "TEST_PROFILE");
+  start_instruction = MoveInstruction(wp1, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Create a new program
   program = CompositeInstruction();
-  program.setStartInstruction(start_instruction);
   program.setManipulatorInfo(manip);
+  program.appendMoveInstruction(start_instruction);
   program.appendMoveInstruction(plan_f1);
 
   // Create a new seed
@@ -267,15 +268,15 @@ TYPED_TEST(OMPLTestFixture, OMPLFreespacePlannerUnit)  // NOLINT
   wp2.setNames(joint_group->getJointNames());
 
   // Define Start Instruction
-  start_instruction = MoveInstruction(wp1, MoveInstructionType::START, "TEST_PROFILE");
+  start_instruction = MoveInstruction(wp1, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Define Plan Instructions
   plan_f1 = MoveInstruction(wp2, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Create a new program
   program = CompositeInstruction();
-  program.setStartInstruction(start_instruction);
   program.setManipulatorInfo(manip);
+  program.appendMoveInstruction(start_instruction);
   program.appendMoveInstruction(plan_f1);
 
   // Create a new seed
@@ -326,15 +327,15 @@ TYPED_TEST(OMPLTestFixture, OMPLFreespaceCartesianGoalPlannerUnit)  // NOLINT
   CartesianWaypointPoly wp2{ CartesianWaypoint(goal) };
 
   // Define Start Instruction
-  MoveInstruction start_instruction(wp1, MoveInstructionType::START, "TEST_PROFILE");
+  MoveInstruction start_instruction(wp1, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Define Plan Instructions
   MoveInstruction plan_f1(wp2, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Create a program
   CompositeInstruction program;
-  program.setStartInstruction(start_instruction);
   program.setManipulatorInfo(manip);
+  program.appendMoveInstruction(start_instruction);
   program.appendMoveInstruction(plan_f1);
 
   // Create a seed
@@ -365,7 +366,7 @@ TYPED_TEST(OMPLTestFixture, OMPLFreespaceCartesianGoalPlannerUnit)  // NOLINT
   request.profiles = profiles;
 
   // Create Planner and solve
-  OMPLMotionPlanner ompl_planner;
+  OMPLMotionPlanner ompl_planner(OMPL_DEFAULT_NAMESPACE);
   PlannerResponse planner_response = ompl_planner.solve(request);
 
   if (!planner_response)
@@ -373,7 +374,6 @@ TYPED_TEST(OMPLTestFixture, OMPLFreespaceCartesianGoalPlannerUnit)  // NOLINT
     CONSOLE_BRIDGE_logError("CI Error: %s", planner_response.message.c_str());
   }
   EXPECT_TRUE(&planner_response);
-  EXPECT_TRUE(planner_response.results.hasStartInstruction());
   EXPECT_EQ(planner_response.results.getMoveInstructionCount(), 11);
   EXPECT_TRUE(wp1.getPosition().isApprox(
       getJointPosition(planner_response.results.getFirstMoveInstruction()->getWaypoint()), 1e-5));
@@ -420,15 +420,15 @@ TYPED_TEST(OMPLTestFixture, OMPLFreespaceCartesianStartPlannerUnit)  // NOLINT
       Eigen::Map<const Eigen::VectorXd>(end_state.data(), static_cast<long>(end_state.size()))) };
 
   // Define Start Instruction
-  MoveInstruction start_instruction(wp1, MoveInstructionType::START, "TEST_PROFILE");
+  MoveInstruction start_instruction(wp1, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Define Plan Instructions
   MoveInstruction plan_f1(wp2, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Create a program
   CompositeInstruction program;
-  program.setStartInstruction(start_instruction);
   program.setManipulatorInfo(manip);
+  program.appendMoveInstruction(start_instruction);
   program.appendMoveInstruction(plan_f1);
 
   // Create a seed
@@ -459,7 +459,7 @@ TYPED_TEST(OMPLTestFixture, OMPLFreespaceCartesianStartPlannerUnit)  // NOLINT
   request.profiles = profiles;
 
   // Create Planner and solve
-  OMPLMotionPlanner ompl_planner;
+  OMPLMotionPlanner ompl_planner(OMPL_DEFAULT_NAMESPACE);
   PlannerResponse planner_response = ompl_planner.solve(request);
 
   if (!planner_response)
@@ -468,7 +468,6 @@ TYPED_TEST(OMPLTestFixture, OMPLFreespaceCartesianStartPlannerUnit)  // NOLINT
   }
 
   EXPECT_TRUE(&planner_response);
-  EXPECT_TRUE(planner_response.results.hasStartInstruction());
   EXPECT_EQ(planner_response.results.getMoveInstructionCount(), 11);
   EXPECT_TRUE(wp2.getPosition().isApprox(
       getJointPosition(planner_response.results.getLastMoveInstruction()->getWaypoint()), 1e-5));

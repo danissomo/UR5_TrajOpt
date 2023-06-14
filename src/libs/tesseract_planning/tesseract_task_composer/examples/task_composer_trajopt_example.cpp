@@ -5,10 +5,10 @@ TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
 #include <numeric>
 TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
-#include <tesseract_task_composer/task_composer_graph.h>
-#include <tesseract_task_composer/task_composer_data_storage.h>
-#include <tesseract_task_composer/nodes/trajopt_motion_pipeline_task.h>
-#include <tesseract_task_composer/taskflow/taskflow_task_composer_executor.h>
+#include <tesseract_task_composer/core/task_composer_graph.h>
+#include <tesseract_task_composer/core/task_composer_data_storage.h>
+#include <tesseract_task_composer/core/task_composer_plugin_factory.h>
+#include <tesseract_task_composer/planning/planning_task_composer_problem.h>
 
 #include <tesseract_common/types.h>
 #include <tesseract_environment/environment.h>
@@ -41,6 +41,15 @@ int main()
     if (plotter->isConnected())
       plotter->plotEnvironment(*env);
   }
+  // Get plugin factory
+  const std::string share_dir(TESSERACT_TASK_COMPOSER_DIR);
+  tesseract_common::fs::path config_path(share_dir + "/config/task_composer_plugins.yaml");
+  TaskComposerPluginFactory factory(config_path);
+
+  // Create trajopt pipeline
+  TaskComposerNode::UPtr task = factory.createTaskComposerNode("TrajOptPipeline");
+  const std::string input_key = task->getInputKeys().front();
+  const std::string output_key = task->getOutputKeys().front();
 
   // Define profiles
   auto profiles = std::make_shared<ProfileDictionary>();
@@ -50,27 +59,26 @@ int main()
   program.print();
 
   TaskComposerDataStorage task_data;
-  task_data.setData("input_program", program);
+  task_data.setData(input_key, program);
 
   // Create problem
-  TaskComposerProblem task_problem(env, task_data);
+  auto task_problem = std::make_unique<PlanningTaskComposerProblem>(env, task_data, profiles);
 
   // Create task input
-  auto task_input = std::make_shared<TaskComposerInput>(task_problem, profiles);
+  auto task_input = std::make_shared<TaskComposerInput>(std::move(task_problem));
 
-  TaskComposerGraph::UPtr task_graph = std::make_unique<TrajOptMotionPipelineTask>("input_program", "output_program");
-
-  std::ofstream tc_out_data;
-  tc_out_data.open(tesseract_common::getTempPath() + "task_composer_trajopt_graph_example.dot");
-  task_graph->dump(tc_out_data);  // dump the graph including dynamic tasks
-  tc_out_data.close();
-
-  auto task_executor = std::make_shared<TaskflowTaskComposerExecutor>();
-  TaskComposerFuture::UPtr future = task_executor->run(*task_graph, *task_input);
+  auto task_executor = factory.createTaskComposerExecutor("TaskflowExecutor");
+  TaskComposerFuture::UPtr future = task_executor->run(*task, *task_input);
   future->wait();
 
+  // Save dot graph
+  std::ofstream tc_out_data;
+  tc_out_data.open(tesseract_common::getTempPath() + "task_composer_trajopt_graph_example.dot");
+  task->dump(tc_out_data, nullptr, task_input->task_infos.getInfoMap());
+  tc_out_data.close();
+
   // Plot Process Trajectory
-  auto output_program = task_input->data_storage.getData("output_program").as<CompositeInstruction>();
+  auto output_program = task_input->data_storage.getData(output_key).as<CompositeInstruction>();
   if (plotter != nullptr && plotter->isConnected())
   {
     plotter->waitForInput();

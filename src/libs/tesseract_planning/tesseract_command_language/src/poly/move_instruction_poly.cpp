@@ -136,6 +136,8 @@ tesseract_planning::MoveInstructionPoly tesseract_planning::MoveInstructionPoly:
   MoveInstructionPoly child(*this);
   child.setParentUUID(getUUID());
   child.regenerateUUID();
+  if (!getInterface().getWaypoint().getName().empty())
+    child.getWaypoint().setName(getInterface().getWaypoint().getName() + " (child)");
   return child;
 }
 
@@ -152,11 +154,6 @@ bool tesseract_planning::MoveInstructionPoly::isFreespace() const
 bool tesseract_planning::MoveInstructionPoly::isCircular() const
 {
   return (getInterface().getMoveType() == MoveInstructionType::CIRCULAR);
-}
-
-bool tesseract_planning::MoveInstructionPoly::isStart() const
-{
-  return (getInterface().getMoveType() == MoveInstructionType::START);
 }
 
 bool tesseract_planning::MoveInstructionPoly::isChild() const { return (!getInterface().getParentUUID().is_nil()); }

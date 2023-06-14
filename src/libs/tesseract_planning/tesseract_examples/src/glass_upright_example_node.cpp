@@ -44,5 +44,5 @@ int main(int /*argc*/, char** /*argv*/)
 
   GlassUprightExample example(env, nullptr);
   if (!example.run())
-    exit(1); 
+    exit(1);
 }

@@ -5,9 +5,10 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
 #include <tesseract_common/types.h>
 #include <tesseract_environment/environment.h>
-#include <tesseract_task_composer/profiles/fix_state_bounds_profile.h>
-#include <tesseract_task_composer/nodes/fix_state_bounds_task.h>
-#include <tesseract_task_composer/task_composer_input.h>
+#include <tesseract_task_composer/planning/profiles/fix_state_bounds_profile.h>
+#include <tesseract_task_composer/planning/nodes/fix_state_bounds_task.h>
+#include <tesseract_task_composer/planning/planning_task_composer_problem.h>
+#include <tesseract_task_composer/core/task_composer_input.h>
 #include <tesseract_command_language/utils.h>
 #include <tesseract_command_language/joint_waypoint.h>
 #include <tesseract_command_language/cartesian_waypoint.h>
@@ -17,6 +18,8 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 using namespace tesseract_planning;
 using namespace tesseract_environment;
 using tesseract_common::ManipulatorInfo;
+
+static const std::string FIX_STATE_BOUNDS_TASK_NAME = "FixStateBoundsTask";
 
 class FixStateBoundsTaskUnit : public ::testing::Test
 {
@@ -49,8 +52,9 @@ CompositeInstruction createProgram(const Eigen::VectorXd& start_state,
   std::vector<std::string> joint_names = { "joint_1", "joint_2", "joint_3", "joint_4", "joint_5", "joint_6" };
 
   JointWaypointPoly wp1{ JointWaypoint(joint_names, start_state) };
-  MoveInstruction start_instruction(wp1, MoveInstructionType::START);
-  program.setStartInstruction(start_instruction);
+  MoveInstruction start_instruction(wp1, MoveInstructionType::FREESPACE);
+  start_instruction.setDescription("Start Instruction");
+  program.appendMoveInstruction(start_instruction);
 
   JointWaypointPoly wp2{ JointWaypoint(joint_names, start_state + ((goal_state - start_state) / 2)) };
   MoveInstruction plan_f0(wp2, MoveInstructionType::FREESPACE);
@@ -81,13 +85,13 @@ void checkProgram(const Environment::Ptr& env,
   task_data.setData("input_program", program);
 
   // Create problem
-  TaskComposerProblem task_problem(env, task_data);
+  auto task_problem = std::make_unique<PlanningTaskComposerProblem>(env, task_data, profiles);
 
   // Create input
-  auto task_input = std::make_shared<TaskComposerInput>(task_problem, profiles);
+  auto task_input = std::make_shared<TaskComposerInput>(std::move(task_problem));
 
   // Create task
-  FixStateBoundsTask task("input_program", "output_program");
+  FixStateBoundsTask task(FIX_STATE_BOUNDS_TASK_NAME, "input_program", "output_program");
 
   // Manual Check of program
   auto flattened = program.flatten(moveFilter);
@@ -142,8 +146,7 @@ TEST_F(FixStateBoundsTaskUnit, stateInBounds)  // NOLINT
   state_bounds_profile->upper_bounds_reduction = 1e-3;
 
   auto profiles = std::make_shared<ProfileDictionary>();
-  profiles->addProfile<FixStateBoundsProfile>(
-      tesseract_planning::node_names::FIX_STATE_BOUNDS_TASK_NAME, DEFAULT_PROFILE_KEY, state_bounds_profile);
+  profiles->addProfile<FixStateBoundsProfile>(FIX_STATE_BOUNDS_TASK_NAME, DEFAULT_PROFILE_KEY, state_bounds_profile);
 
   Eigen::VectorXd mid_state = joint_limits.col(0) + (joint_limits.col(1) - joint_limits.col(0)) / 2.;
   {  // All are valid

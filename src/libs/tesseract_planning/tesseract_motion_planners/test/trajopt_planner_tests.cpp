@@ -51,7 +51,8 @@ using namespace tesseract_environment;
 using namespace tesseract_scene_graph;
 using namespace tesseract_collision;
 using namespace tesseract_planning;
-using namespace tesseract_planning::profile_ns;
+
+static const std::string TRAJOPT_DEFAULT_NAMESPACE = "TrajOptMotionPlannerTask";
 
 class TesseractPlanningTrajoptUnit : public ::testing::Test
 {
@@ -117,15 +118,15 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptPlannerBooleanFlagsJointJoint)  // N
   wp2.getPosition() << 0, 0, 0, 1.57, 0, 0, 0;
 
   // Define Start Instruction
-  MoveInstruction start_instruction(wp1, MoveInstructionType::START, "TEST_PROFILE");
+  MoveInstruction start_instruction(wp1, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Define Plan Instructions
   MoveInstruction plan_f1(wp2, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Create a program
   CompositeInstruction program("TEST_PROFILE");
-  program.setStartInstruction(start_instruction);
   program.setManipulatorInfo(manip);
+  program.appendMoveInstruction(start_instruction);
   program.appendMoveInstruction(plan_f1);
 
   // Create a seed
@@ -142,7 +143,7 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptPlannerBooleanFlagsJointJoint)  // N
   profiles->addProfile<TrajOptCompositeProfile>(TRAJOPT_DEFAULT_NAMESPACE, "TEST_PROFILE", composite_profile);
 
   // Create Planner
-  TrajOptMotionPlanner test_planner;
+  TrajOptMotionPlanner test_planner(TRAJOPT_DEFAULT_NAMESPACE);
 
   // Create Planning Request
   PlannerRequest request;
@@ -192,15 +193,15 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptFreespaceJointJoint)  // NOLINT
   wp2.getPosition() << 0, 0, 0, 1.57, 0, 0, 0;
 
   // Define Start Instruction
-  MoveInstruction start_instruction(wp1, MoveInstructionType::START, "TEST_PROFILE");
+  MoveInstruction start_instruction(wp1, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Define Plan Instructions
   MoveInstruction plan_f1(wp2, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Create a program
   CompositeInstruction program("TEST_PROFILE");
-  program.setStartInstruction(start_instruction);
   program.setManipulatorInfo(manip);
+  program.appendMoveInstruction(start_instruction);
   program.appendMoveInstruction(plan_f1);
 
   // Create a seed
@@ -217,7 +218,7 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptFreespaceJointJoint)  // NOLINT
   profiles->addProfile<TrajOptCompositeProfile>(TRAJOPT_DEFAULT_NAMESPACE, "TEST_PROFILE", composite_profile);
 
   // Create Planner
-  TrajOptMotionPlanner test_planner;
+  TrajOptMotionPlanner test_planner(TRAJOPT_DEFAULT_NAMESPACE);
 
   // Create Planning Request
   PlannerRequest request;
@@ -272,15 +273,15 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptFreespaceJointCart)  // NOLINT
                                                Eigen::Quaterniond(0, 0, 1.0, 0)) };
 
   // Define Start Instruction
-  MoveInstruction start_instruction(wp1, MoveInstructionType::START, "TEST_PROFILE");
+  MoveInstruction start_instruction(wp1, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Define Plan Instructions
   MoveInstruction plan_f1(wp2, MoveInstructionType::FREESPACE, "TEST_PROFILE");
 
   // Create a program
   CompositeInstruction program("TEST_PROFILE");
-  program.setStartInstruction(start_instruction);
   program.setManipulatorInfo(manip);
+  program.appendMoveInstruction(start_instruction);
   program.appendMoveInstruction(plan_f1);
 
   // Create a seed
@@ -297,7 +298,7 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptFreespaceJointCart)  // NOLINT
   profiles->addProfile<TrajOptCompositeProfile>(TRAJOPT_DEFAULT_NAMESPACE, "TEST_PROFILE", composite_profile);
 
   // Create Planner
-  TrajOptMotionPlanner test_planner;
+  TrajOptMotionPlanner test_planner(TRAJOPT_DEFAULT_NAMESPACE);
 
   // Create Planning Request
   PlannerRequest request;
@@ -355,7 +356,7 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptFreespaceCartJoint)  // NOLINT
   wp2.getPosition() << 0, 0, 0, -1.57, 0, 0, 0;
 
   // Define Start Instruction
-  MoveInstruction start_instruction(wp1, MoveInstructionType::START, "TEST_PROFILE");
+  MoveInstruction start_instruction(wp1, MoveInstructionType::FREESPACE, "TEST_PROFILE");
   start_instruction.getManipulatorInfo().working_frame = "base_link";
 
   // Define Plan Instructions
@@ -363,8 +364,8 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptFreespaceCartJoint)  // NOLINT
 
   // Create a program
   CompositeInstruction program("TEST_PROFILE");
-  program.setStartInstruction(start_instruction);
   program.setManipulatorInfo(manip);
+  program.appendMoveInstruction(start_instruction);
   program.appendMoveInstruction(plan_f1);
 
   // Create a seed
@@ -381,7 +382,7 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptFreespaceCartJoint)  // NOLINT
   profiles->addProfile<TrajOptCompositeProfile>(TRAJOPT_DEFAULT_NAMESPACE, "TEST_PROFILE", composite_profile);
 
   // Create Planner
-  TrajOptMotionPlanner test_planner;
+  TrajOptMotionPlanner test_planner(TRAJOPT_DEFAULT_NAMESPACE);
 
   // Create Planning Request
   PlannerRequest request;
@@ -438,7 +439,7 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptFreespaceCartCart)  // NOLINT
                                                Eigen::Quaterniond(0, 0, 1.0, 0)) };
 
   // Define Start Instruction
-  MoveInstruction start_instruction(wp1, MoveInstructionType::START, "TEST_PROFILE");
+  MoveInstruction start_instruction(wp1, MoveInstructionType::FREESPACE, "TEST_PROFILE");
   start_instruction.getManipulatorInfo().working_frame = "base_link";
 
   // Define Plan Instructions
@@ -447,8 +448,8 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptFreespaceCartCart)  // NOLINT
 
   // Create a program
   CompositeInstruction program("TEST_PROFILE");
-  program.setStartInstruction(start_instruction);
   program.setManipulatorInfo(manip);
+  program.appendMoveInstruction(start_instruction);
   program.appendMoveInstruction(plan_f1);
 
   // Create a seed
@@ -465,7 +466,7 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptFreespaceCartCart)  // NOLINT
   profiles->addProfile<TrajOptCompositeProfile>(TRAJOPT_DEFAULT_NAMESPACE, "TEST_PROFILE", composite_profile);
 
   // Create Planner
-  TrajOptMotionPlanner test_planner;
+  TrajOptMotionPlanner test_planner(TRAJOPT_DEFAULT_NAMESPACE);
 
   // Create Planning Request
   PlannerRequest request;
@@ -522,7 +523,7 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptPlannerBooleanFlagsCartCart)  // NOL
                                                Eigen::Quaterniond(0, 0, 1.0, 0)) };
 
   // Define Start Instruction
-  MoveInstruction start_instruction(wp1, MoveInstructionType::START, "TEST_PROFILE");
+  MoveInstruction start_instruction(wp1, MoveInstructionType::LINEAR, "TEST_PROFILE");
   start_instruction.getManipulatorInfo().working_frame = "base_link";
 
   // Define Plan Instructions
@@ -531,8 +532,8 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptPlannerBooleanFlagsCartCart)  // NOL
 
   // Create a program
   CompositeInstruction program("TEST_PROFILE");
-  program.setStartInstruction(start_instruction);
   program.setManipulatorInfo(manip);
+  program.appendMoveInstruction(start_instruction);
   program.appendMoveInstruction(plan_f1);
 
   // Create a seed
@@ -549,7 +550,7 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptPlannerBooleanFlagsCartCart)  // NOL
   profiles->addProfile<TrajOptCompositeProfile>(TRAJOPT_DEFAULT_NAMESPACE, "TEST_PROFILE", composite_profile);
 
   // Create Planner
-  TrajOptMotionPlanner test_planner;
+  TrajOptMotionPlanner test_planner(TRAJOPT_DEFAULT_NAMESPACE);
 
   // Create Planning Request
   PlannerRequest request;
@@ -613,18 +614,8 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptArrayJointConstraint)  // NOLINT
     // Specify a Joint Waypoint as the finish
     JointWaypointPoly wp{ JointWaypoint(joint_names, Eigen::VectorXd::Zero(7)) };
     wp.getPosition() << 0, 0, 0, -1.57 + ind * 0.1, 0, 0, 0;
-    if (ind == 0)
-    {
-      // Define Start Instruction
-      MoveInstruction start_instruction(wp, MoveInstructionType::START, "TEST_PROFILE");
-      program.setStartInstruction(start_instruction);
-    }
-    else
-    {
-      wp.setNames(joint_names);
-      MoveInstruction plan_f(wp, MoveInstructionType::FREESPACE, "TEST_PROFILE");
-      program.appendMoveInstruction(plan_f);
-    }
+    MoveInstruction plan_f(wp, MoveInstructionType::FREESPACE, "TEST_PROFILE");
+    program.appendMoveInstruction(plan_f);
   }
 
   // Create a seed
@@ -641,7 +632,7 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptArrayJointConstraint)  // NOLINT
   profiles->addProfile<TrajOptCompositeProfile>(TRAJOPT_DEFAULT_NAMESPACE, "TEST_PROFILE", composite_profile);
 
   // Create Planner
-  TrajOptMotionPlanner test_planner;
+  TrajOptMotionPlanner test_planner(TRAJOPT_DEFAULT_NAMESPACE);
 
   // Create Planning Request
   PlannerRequest request;
@@ -683,17 +674,8 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptArrayJointCost)  // NOLINT
     // Specify a Joint Waypoint as the finish
     JointWaypointPoly wp{ JointWaypoint(joint_names, Eigen::VectorXd::Zero(7)) };
     wp.getPosition() << 0, 0, 0, -1.57 + ind * 0.1, 0, 0, 0;
-    if (ind == 0)
-    {
-      // Define Start Instruction
-      MoveInstruction start_instruction(wp, MoveInstructionType::START, "TEST_PROFILE");
-      program.setStartInstruction(start_instruction);
-    }
-    else
-    {
-      MoveInstruction plan_f(wp, MoveInstructionType::FREESPACE, "TEST_PROFILE");
-      program.appendMoveInstruction(plan_f);
-    }
+    MoveInstruction plan_f(wp, MoveInstructionType::FREESPACE, "TEST_PROFILE");
+    program.appendMoveInstruction(plan_f);
   }
 
   // Create a seed
@@ -712,7 +694,7 @@ TEST_F(TesseractPlanningTrajoptUnit, TrajoptArrayJointCost)  // NOLINT
   profiles->addProfile<TrajOptCompositeProfile>(TRAJOPT_DEFAULT_NAMESPACE, "TEST_PROFILE", composite_profile);
 
   // Create Planner
-  TrajOptMotionPlanner test_planner;
+  TrajOptMotionPlanner test_planner(TRAJOPT_DEFAULT_NAMESPACE);
 
   // Create Planning Request
   PlannerRequest request;

@@ -25,3 +25,9 @@
 [submodule "src/pkgs_ur5/ur_msgs"]
 	path = src/pkgs_ur5/ur_msgs
 	url = ../../ros-industrial/ur_msgs
+[submodule "src/libs/tesseract_qt"]
+	path = src/libs/tesseract_qt
+	url = ../../tesseract-robotics/tesseract_qt
+[submodule "src/libs/tesseract"]
+	path = src/libs/tesseract
+	url = ../../tesseract-robotics/tesseract

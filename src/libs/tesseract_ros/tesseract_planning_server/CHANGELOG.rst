@@ -2,6 +2,30 @@
 Changelog for package tesseract_planning_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.17.0 (2023-06-07)
+-------------------
+
+0.16.2 (2023-04-28)
+-------------------
+
+0.16.1 (2023-04-11)
+-------------------
+
+0.16.0 (2023-04-10)
+-------------------
+
+0.15.2 (2023-03-14)
+-------------------
+
+0.15.1 (2023-03-05)
+-------------------
+
+0.15.0 (2023-03-04)
+-------------------
+* Update to leverage tesseract_qt event filters (`#199 <https://github.com/tesseract-robotics/tesseract_ros/issues/199>`_)
+* Update planner server to leverage task composer plugins
+* Contributors: Levi Armstrong
+
 0.14.0 (2022-10-23)
 -------------------
 * Remove planning archive plugin

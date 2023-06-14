@@ -2,6 +2,62 @@
 Changelog for package tesseract_motion_planners
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.17.0 (2023-06-06)
+-------------------
+* Fix serialization typo of CollisionCostConfig.safetymargin to BufferMargin (`#323 <https://github.com/tesseract-robotics/tesseract_planning/issues/323>`_)
+* Contributors: Roelof
+
+0.16.3 (2023-05-03)
+-------------------
+
+0.16.2 (2023-04-28)
+-------------------
+
+0.16.1 (2023-04-11)
+-------------------
+
+0.16.0 (2023-04-09)
+-------------------
+* Update contactCheckProgram and copy unit tests from tesseract_environment
+* Update to leverage CollisionCheckProgramType in collision config
+* Fix clang-tidy errors
+* Update to support new contact results class (`#297 <https://github.com/tesseract-robotics/tesseract_planning/issues/297>`_)
+* This fixes crash in ompl::geometric::SimpleSetup::simplifySolution() (`#298 <https://github.com/tesseract-robotics/tesseract_planning/issues/298>`_)
+* Contributors: Levi Armstrong, afrixs
+
+0.15.5 (2023-03-22)
+-------------------
+
+0.15.4 (2023-03-16)
+-------------------
+* Update example to include geometry headers
+* Contributors: Levi Armstrong
+
+0.15.3 (2023-03-15)
+-------------------
+* Add support for cartesian waypoint type in getJointPosition and getJointNames
+* Contributors: Levi Armstrong
+
+0.15.2 (2023-03-14)
+-------------------
+
+0.15.1 (2023-03-09)
+-------------------
+* Add assert checks to simple planner
+* Remove old unused simple_planner_utils.cpp
+* Contributors: Levi Armstrong
+
+0.15.0 (2023-03-03)
+-------------------
+* Update task composer to leverage plugins (`#282 <https://github.com/tesseract-robotics/tesseract_planning/issues/282>`_)
+* Fix TrajOpt IFOPT code coverage build
+* remove commented code from ompl motion planner
+* Fix descartes default plan profile
+* Fix descartes motion planner handling of unconstrained joint waypoints
+* Remove composite start instruction
+* Fix descartes collision edge evaluator
+* Contributors: Levi Armstrong, Michael Ripperger
+
 0.14.0 (2022-10-23)
 -------------------
 * Fix trajopt ifopt planner

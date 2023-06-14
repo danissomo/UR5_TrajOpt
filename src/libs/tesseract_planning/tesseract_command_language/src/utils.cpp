@@ -37,19 +37,21 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 namespace tesseract_planning
 {
 static const tesseract_planning::locateFilterFn toJointTrajectoryInstructionFilter =
-    [](const tesseract_planning::InstructionPoly& i,
-       const tesseract_planning::CompositeInstruction& /*composite*/,
-       bool parent_is_first_composite) {
-      if (i.isMoveInstruction())
-      {
-        if (i.as<MoveInstructionPoly>().isStart())
-          return (parent_is_first_composite);
-
-        return true;
-      }
-
-      return false;
+    [](const tesseract_planning::InstructionPoly& i, const tesseract_planning::CompositeInstruction& /*composite*/) {
+      return i.isMoveInstruction();
     };
+
+tesseract_common::JointTrajectory toJointTrajectory(const InstructionPoly& instruction)
+{
+  using namespace tesseract_planning;
+  if (instruction.isCompositeInstruction())
+  {
+    const auto& ci = instruction.as<CompositeInstruction>();
+    return toJointTrajectory(ci);
+  }
+
+  throw std::runtime_error("toJointTrajectory: Unsupported Instruction Type!");
+}
 
 tesseract_common::JointTrajectory toJointTrajectory(const CompositeInstruction& composite_instructions)
 {
@@ -103,6 +105,20 @@ tesseract_common::JointTrajectory toJointTrajectory(const CompositeInstruction& 
         last_time = current_time;
         trajectory.push_back(joint_state);
       }
+      else if (pi.getWaypoint().isCartesianWaypoint())
+      {
+        const auto& cwp = pi.getWaypoint().as<CartesianWaypointPoly>();
+        if (cwp.hasSeed())
+        {
+          tesseract_common::JointState joint_state = cwp.getSeed();
+          double dt = 1;
+          current_time = current_time + dt;
+          total_time += dt;
+          joint_state.time = total_time;
+          last_time = current_time;
+          trajectory.push_back(joint_state);
+        }
+      }
     }
   }
   return trajectory;
@@ -116,6 +132,15 @@ const Eigen::VectorXd& getJointPosition(const WaypointPoly& waypoint)
   if (waypoint.isStateWaypoint())
     return waypoint.as<StateWaypointPoly>().getPosition();
 
+  if (waypoint.isCartesianWaypoint())
+  {
+    const auto& cwp = waypoint.as<CartesianWaypointPoly>();
+    if (cwp.hasSeed())
+      return cwp.getSeed().position;
+
+    throw std::runtime_error("CartesianWaypoint does not have a seed.");
+  }
+
   throw std::runtime_error("Unsupported waypoint type.");
 }
 
@@ -126,6 +151,15 @@ const std::vector<std::string>& getJointNames(const WaypointPoly& waypoint)
 
   if (waypoint.isStateWaypoint())
     return waypoint.as<StateWaypointPoly>().getNames();
+
+  if (waypoint.isCartesianWaypoint())
+  {
+    const auto& cwp = waypoint.as<CartesianWaypointPoly>();
+    if (cwp.hasSeed())
+      return cwp.getSeed().joint_names;
+
+    throw std::runtime_error("CartesianWaypoint does not have a seed.");
+  }
 
   throw std::runtime_error("Unsupported waypoint type.");
 }
@@ -145,6 +179,15 @@ Eigen::VectorXd getJointPosition(const std::vector<std::string>& joint_names, co
     const auto& swp = waypoint.as<StateWaypointPoly>();
     jv = swp.getPosition();
     jn = swp.getNames();
+  }
+  else if (waypoint.isCartesianWaypoint())
+  {
+    const auto& cwp = waypoint.as<CartesianWaypointPoly>();
+    if (!cwp.hasSeed())
+      throw std::runtime_error("Cartesian waypoint does not have a seed.");
+
+    jv = cwp.getSeed().position;
+    jn = cwp.getSeed().joint_names;
   }
   else
   {

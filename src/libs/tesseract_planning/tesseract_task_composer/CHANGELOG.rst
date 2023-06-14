@@ -2,6 +2,78 @@
 Changelog for package tesseract_task_composer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.17.0 (2023-06-06)
+-------------------
+* Fix Key Naming Scheme in Raster Motion Task  (`#324 <https://github.com/tesseract-robotics/tesseract_planning/issues/324>`_)
+  @marrts Great find and thanks for the fix.
+* Fix task composer cmake plugins variable
+* Update task nodes to on failure store input in output location to better support error branching
+* Fix some typos
+* Contributors: Levi Armstrong, Roelof Oomen, Tyler Marr
+
+0.16.3 (2023-05-03)
+-------------------
+* Fix FormatAsInputTask to store results
+* Contributors: Levi Armstrong
+
+0.16.2 (2023-04-28)
+-------------------
+
+0.16.1 (2023-04-11)
+-------------------
+
+0.16.0 (2023-04-09)
+-------------------
+* Add FormatAsInputTask
+* Update to leverage CollisionCheckProgramType in collision config
+* Fix clang-tidy errors
+* Update to support new contact results class (`#297 <https://github.com/tesseract-robotics/tesseract_planning/issues/297>`_)
+* Fixing OMPL freespace example and a typo (`#299 <https://github.com/tesseract-robotics/tesseract_planning/issues/299>`_)
+  * Fix freespace OMPL example (was hybrid)
+  * Fix typo in iterative_spline_parameterization_profile file name
+* Add TOTG Node Info class
+* Contributors: Levi Armstrong, Roelof
+
+0.15.5 (2023-03-22)
+-------------------
+* Fix TOTG assignData
+* Add fix_state_collision clone method and serialize contact results
+* Build fixes for Focal/Foxy and Jammy/Humble
+* Contributors: Levi Armstrong, Roelof Oomen
+
+0.15.4 (2023-03-16)
+-------------------
+
+0.15.3 (2023-03-15)
+-------------------
+
+0.15.2 (2023-03-14)
+-------------------
+* Clean up task composer serialization
+* Contributors: Levi Armstrong
+
+0.15.1 (2023-03-09)
+-------------------
+* Add method for retrieving task from TaskComposerServer
+* Use try catch in TaskComposerTask run because exceptions are not propagated in multi threaded runs.
+* Update fix state bounds task to ignore cartesian waypoint types
+* Contributors: Levi Armstrong
+
+0.15.0 (2023-03-03)
+-------------------
+* Update task composer to leverage plugins (`#282 <https://github.com/tesseract-robotics/tesseract_planning/issues/282>`_)
+* Use templates for raster task to reduce code duplications (`#279 <https://github.com/tesseract-robotics/tesseract_planning/issues/279>`_)
+* Add descartes no post check motion pipeline task
+* clean up update end state task
+* Fix descartes global motion pipeline task
+* Merge pull request `#269 <https://github.com/tesseract-robotics/tesseract_planning/issues/269>`_ from marip8/update/time-param-org
+  Added optional builds of time parameterization implementations
+* Created separate targets for each time parameterization implementation
+* Updated task composer package
+* Remove composite start instruction
+* Add uuid and parent_uuid to InstructionPoly (`#261 <https://github.com/tesseract-robotics/tesseract_planning/issues/261>`_)
+* Contributors: Levi Armstrong, Michael Ripperger
+
 0.14.0 (2022-10-23)
 -------------------
 * Add ompl to default tasks utility function
