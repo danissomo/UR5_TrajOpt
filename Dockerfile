@@ -111,3 +111,4 @@ RUN apt-get update && apt-get install -y iputils-ping
 RUN apt-get install socat -y
 
 RUN pip install pymodbus
+RUN sudo apt-get install ros-noetic-rviz-visual-tools

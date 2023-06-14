@@ -25,6 +25,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   visualization_msgs
   robotiq_2f_gripper_control
+  #rviz_visual_tools
 )
 
 ## System dependencies are found with CMake's conventions

@@ -1,4 +1,10 @@
 // ROS headers
+#include <tesseract_common/macros.h>
+TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
+#include <jsoncpp/json/json.h>
+#include <console_bridge/console.h>
+TESSERACT_COMMON_IGNORE_WARNINGS_POP
+
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
@@ -41,6 +47,12 @@
 #include <tesseract_task_composer/nodes/trajopt_motion_pipeline_task.h>
 #include <tesseract_task_composer/taskflow/taskflow_task_composer_executor.h>
 #include <tesseract_visualization/markers/toolpath_marker.h>
+
+#include <tesseract_msgs/EnvironmentState.h>
+#include <tesseract_msgs/ModifyEnvironment.h>
+#include <tesseract_msgs/EnvironmentCommand.h>
+#include <tesseract_msgs/GetEnvironmentChanges.h>
+#include <ros/service.h>
 
 #include <tesseract_geometry/impl/mesh_material.h>
 #include <tesseract_geometry/geometries.h>
@@ -264,18 +276,22 @@ bool moveMesh(ur5_husky_main::Mesh::Request &req,
   return true;
 }
 
-tesseract_environment::Command::Ptr renderRemoveLink(std::string link_name) {
+tesseract_environment::Command::ConstPtr renderRemoveLink(std::string link_name) {
   return std::make_shared<tesseract_environment::RemoveLinkCommand>(link_name);
 }
 
-tesseract_environment::Command::Ptr renderHideLink(std::string link_name) {
+tesseract_environment::Command::ConstPtr renderRemoveJoint(std::string joints_name) {
+  return std::make_shared<tesseract_environment::RemoveJointCommand>(joints_name);
+}
+
+tesseract_environment::Command::ConstPtr renderHideLink(std::string link_name) {
   return std::make_shared<tesseract_environment::ChangeLinkVisibilityCommand>(link_name, false);
 }
 
 bool removeBox(ur5_husky_main::Box::Request &req,
              ur5_husky_main::Box::Response &res,
              const std::shared_ptr<tesseract_environment::Environment> &env) {
-  Command::Ptr boxLink = renderRemoveLink(req.name);
+  Command::ConstPtr boxLink = renderRemoveLink(req.name);
   if (!env->applyCommand(boxLink)) {
     res.result = "ERROR - remove link box";
     return false;
@@ -289,14 +305,18 @@ bool removeBox(ur5_husky_main::Box::Request &req,
 
 bool removeMesh(ur5_husky_main::Mesh::Request &req,
              ur5_husky_main::Mesh::Response &res,
-             const std::shared_ptr<tesseract_environment::Environment> &env) {
-  Command::Ptr meshLink = renderRemoveLink(req.name);
+             const std::shared_ptr<tesseract_environment::Environment> &env,
+             const std::shared_ptr<tesseract_monitoring::ROSEnvironmentMonitor> &monitor) {
+
+  std::cout<<"UR5" << std::endl;
+
+  Command::ConstPtr meshLink = renderHideLink(req.name);
   if (!env->applyCommand(meshLink)) {
-    res.result = "ERROR - remove link box";
+    res.result = "ERROR - remove link mesh";
     return false;
   }
 
-  res.result = "Remove Box end...";
+  res.result = "Remove Mesh end...";
 
   return true;
 }
@@ -869,7 +889,7 @@ int main(int argc, char** argv) {
                       ("remove_box", boost::bind(removeBox, _1, _2, env));
 
   ros::ServiceServer removeMeshService = nh.advertiseService<ur5_husky_main::Mesh::Request, ur5_husky_main::Mesh::Response>
-                      ("remove_mesh", boost::bind(removeMesh, _1, _2, env));
+                      ("remove_mesh", boost::bind(removeMesh, _1, _2, env, monitor));
 
   ros::ServiceServer freedriveService = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
