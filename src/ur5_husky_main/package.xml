@@ -85,6 +85,17 @@
   <depend>urdf</depend>
   <depend>robotiq_2f_gripper_control</depend>
 
+
+  <depend>libconsole-bridge-dev</depend>
+  <depend>tesseract_collision</depend>
+  <depend>tesseract_command_language</depend>
+  <depend>tesseract_motion_planners</depend>
+  <depend>tesseract_task_composer</depend>
+  <depend>tesseract_kinematics</depend>
+  <depend>tesseract_scene_graph</depend>
+  <depend>tesseract_support</depend>
+  <depend>trajopt_sqp</depend>
+
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->

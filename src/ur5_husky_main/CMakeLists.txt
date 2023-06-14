@@ -38,7 +38,9 @@ find_package(tesseract_command_language REQUIRED)
 find_package(tesseract_task_composer REQUIRED)
 find_package(tesseract_common REQUIRED)
 find_package(tesseract_support REQUIRED)
+find_package(trajopt_sqp REQUIRED)
 find_package(tesseract_visualization REQUIRED)
+find_package(tesseract_motion_planners REQUIRED)
 find_package(robotiq_2f_gripper_control REQUIRED)
 
 find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde")
@@ -226,6 +228,11 @@ target_link_libraries(ur5_trajopt_node
    PRIVATE tesseract::tesseract_common
    PRIVATE tesseract::tesseract_support
    PRIVATE tesseract::tesseract_visualization
+   PRIVATE tesseract::tesseract_motion_planners_trajopt
+   PRIVATE tesseract::tesseract_motion_planners_core
+   PRIVATE trajopt::trajopt_sqp
+   PRIVATE tesseract::tesseract_task_composer
+   PRIVATE tesseract::tesseract_task_composer_planning
    ${catkin_LIBRARIES}
 )
 

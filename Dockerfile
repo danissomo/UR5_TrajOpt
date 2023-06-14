@@ -112,3 +112,10 @@ RUN apt-get install socat -y
 
 RUN pip install pymodbus
 RUN sudo apt-get install ros-noetic-rviz-visual-tools
+
+# for tesseract-qt
+RUN sudo apt-get update && apt-get -y install wget lsb-release gnupg
+RUN sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
+RUN wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
+RUN sudo apt-get update && apt-get install -y libignition-rendering7-dev
+RUN sudo apt install -y libignition-common5-dev

@@ -41,10 +41,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <tesseract_command_language/joint_waypoint.h>
 #include <tesseract_command_language/move_instruction.h>
 #include <tesseract_command_language/utils.h>
-#include <tesseract_task_composer/task_composer_problem.h>
-#include <tesseract_task_composer/task_composer_input.h>
-#include <tesseract_task_composer/task_composer_node_names.h>
-#include <tesseract_task_composer/nodes/trajopt_motion_pipeline_task.h>
+#include <tesseract_task_composer/planning/planning_task_composer_problem.h>
 #include <tesseract_task_composer/taskflow/taskflow_task_composer_executor.h>
 #include <tesseract_visualization/markers/toolpath_marker.h>
 
@@ -61,7 +58,6 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <tesseract_collision/bullet/convex_hull_utils.h>
 
 #include <tesseract_motion_planners/core/utils.h>
-#include <tesseract_motion_planners/default_planner_namespaces.h>
 #include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
 
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
@@ -310,7 +306,7 @@ bool removeMesh(ur5_husky_main::Mesh::Request &req,
 
   std::cout<<"UR5" << std::endl;
 
-  Command::ConstPtr meshLink = renderHideLink(req.name);
+  Command::ConstPtr meshLink = renderRemoveLink(req.name);
   if (!env->applyCommand(meshLink)) {
     res.result = "ERROR - remove link mesh";
     return false;
