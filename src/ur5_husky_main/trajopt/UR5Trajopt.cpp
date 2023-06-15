@@ -76,7 +76,6 @@ UR5Trajopt::UR5Trajopt (tesseract_environment::Environment::Ptr env,
 }
 
 
-
 UR5TrajoptResponce UR5Trajopt::run() {
   // Solve Trajectory
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
@@ -211,7 +210,7 @@ UR5TrajoptResponce UR5Trajopt::run() {
     plotter_->plotTrajectory(trajectory, *state_solver);
   }
 
-  UR5TrajoptResponce responce(trajectory, input.isSuccessful());
+  UR5TrajoptResponce responce(trajectory, input.isSuccessful(), stopwatch.elapsedSeconds());
 
   return responce;
 }
