@@ -13,7 +13,8 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
 #include <KinematicsUR5.hpp>
 #include <TestIK.hpp>
-#include <ur5_trajopt.hpp>
+#include <UR5Trajopt.hpp>
+#include <UR5TrajoptResponce.hpp>
 
 #include <ur5_husky_main/SetStartJointState.h>
 #include <ur5_husky_main/SetFinishJointState.h>
@@ -973,8 +974,18 @@ int main(int argc, char** argv) {
   env->applyCommands(cmds);
   ///////////////////////////////////////
 
-    UR5Trajopt example(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
-    tesseract_common::JointTrajectory trajectory = example.run();
+    UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
+    UR5TrajoptResponce responce = calculate.run();
+    bool success = responce.isSuccessful();
+
+    if (!success) {
+      ROS_ERROR("Planning ended with errors!");
+      // TODO Реализоывать обработку ситуации, когда не получилось рассчитать траекторию
+      // вернуть флаг ошибки в UI
+      // запретить выполнять траекторию
+    }
+
+    tesseract_common::JointTrajectory trajectory = responce.getTrajectory();
 
     msg.data = "plan_finish";
     ROS_INFO("Sent message to UI: %s", msg.data.c_str());

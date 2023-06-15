@@ -4,7 +4,8 @@ TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
 #include <console_bridge/console.h>
 TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
-#include "ur5_trajopt.hpp"
+#include "UR5Trajopt.hpp"
+#include "UR5TrajoptResponce.hpp"
 
 #include <ros/ros.h>
 
@@ -76,7 +77,7 @@ UR5Trajopt::UR5Trajopt (tesseract_environment::Environment::Ptr env,
 
 
 
-tesseract_common::JointTrajectory UR5Trajopt::run() {
+UR5TrajoptResponce UR5Trajopt::run() {
   // Solve Trajectory
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
 
@@ -203,9 +204,14 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
     auto state_solver = env_->getStateSolver();
     auto scene_state = env_->getState();
 
-    plotter_->plotMarker(ToolpathMarker(toolpath));
+    auto marker = ToolpathMarker(toolpath);
+    marker.scale = Eigen::Vector3d::Constant(0.07);
+
+    plotter_->plotMarker(marker);
     plotter_->plotTrajectory(trajectory, *state_solver);
   }
 
-  return trajectory;
+  UR5TrajoptResponce responce(trajectory, input.isSuccessful());
+
+  return responce;
 }
