@@ -1,6 +1,6 @@
 # Перемещение робота-манипулятора UR5 при помощи алгоритма TrajOpt
 
-1. Склонировать репозиторий <code>git clone https://github.com/allicen/trajopt_ur5</code>.
+1. Склонировать репозиторий <code>git clone --recurse-submodules https://github.com/allicen/trajopt_ur5</code>.
 
 2. Перейти в папку проекта <code>cd trajopt_ur5</code>.
 

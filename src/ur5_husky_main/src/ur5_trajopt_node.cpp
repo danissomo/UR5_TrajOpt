@@ -481,7 +481,7 @@ bool robotRestartMethod(ur5_husky_main::RobotRestart::Request &req, ur5_husky_ma
   robotPlanTrajectory = false;
   robotExecuteTrajectory = false;
   setRobotNotConnectErrorMes = false;
-  res.result = "Start Plan Trajectory";
+  res.result = "Robot restart Trajectory";
   return true;
 }
 
@@ -918,6 +918,9 @@ int main(int argc, char** argv) {
 
   while(ros::ok()) {
 
+    bool goToStart = false;
+    robotRestart = true;
+
     // Ждем команды для старта
     if (ui_control) {
       std::cout << "Waiting for the command to start ... \n";
@@ -959,8 +962,17 @@ int main(int argc, char** argv) {
         if (robotPlanTrajectory) {
           break;
         }
+
+        if (robotRestart) {
+          goToStart = true;
+          break;
+        }
       }
-    } else {
+
+      if (goToStart) {
+        continue;
+      }
+    } else if (!ui_control) {
       plotter->waitForInput("Hit Enter after move robot to start position.");
     }
 
@@ -1033,7 +1045,16 @@ int main(int argc, char** argv) {
         if (robotExecuteTrajectory) {
           break;
         }
+
+        if (robotRestart) {
+          goToStart = true;
+          break;
+        }
       }
+    }
+
+    if (goToStart) {
+      continue;
     }
     
     if (robotExecuteTrajectory || input_simbol == 'y') {
@@ -1045,9 +1066,6 @@ int main(int argc, char** argv) {
       std::vector<tesseract_common::JointState> j_states;
           
       ROS_INFO("Added intermediate joints: ");
-
-      // Проверка связи с роботом или с ursim
-      RTDEControlInterface rtde_control(robot_ip);
 
       // Список доступных положений робота
       std::vector<std::vector<double>> jointsPath;
@@ -1092,8 +1110,14 @@ int main(int argc, char** argv) {
       jointsPath.push_back(path_pose);
 
       // Отправить на робота
-      rtde_control.moveJ(jointsPath);
-      rtde_control.stopScript();
+      try {
+        RTDEControlInterface rtde_control(robot_ip);
+        rtde_control.moveJ(jointsPath);
+        rtde_control.stopScript();
+
+      } catch (...) {
+        ROS_ERROR("Can`t connect with UR5.");
+      }
 
       // Установить состояние для tesseract
       env->setState(joint_names, joint_end_pos);
@@ -1114,6 +1138,10 @@ int main(int argc, char** argv) {
     msg.data = "execute_finish";
     ROS_INFO("Sent message to UI: %s", msg.data.c_str());
     messagePub.publish(msg);
+
+    robotPlanTrajectory = false;
+    robotExecuteTrajectory = false;
+    setRobotNotConnectErrorMes = false;
 
     ros::spinOnce();
     loop_rate.sleep();
