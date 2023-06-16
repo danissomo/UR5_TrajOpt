@@ -8,5 +8,6 @@ float64 z
 float64 offsetX
 float64 offsetY
 float64 offsetZ
+bool fileUpload
 ---
 string result
