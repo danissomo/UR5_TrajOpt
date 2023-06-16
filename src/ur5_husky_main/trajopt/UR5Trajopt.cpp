@@ -195,7 +195,7 @@ UR5TrajoptResponce UR5Trajopt::run() {
   std::vector<tesseract_planning::InstructionPoly> points = ci.getInstructions();
 
   // Plot Process Trajectory
-  if (plotter_ != nullptr && plotter_->isConnected()) {
+  if (plotter_ != nullptr && plotter_->isConnected() && input.isSuccessful()) {
     if (!ui_control_) {
       plotter_->waitForInput();
     }
