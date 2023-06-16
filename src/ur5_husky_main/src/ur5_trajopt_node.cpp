@@ -304,8 +304,6 @@ bool removeMesh(ur5_husky_main::Mesh::Request &req,
              const std::shared_ptr<tesseract_environment::Environment> &env,
              const std::shared_ptr<tesseract_monitoring::ROSEnvironmentMonitor> &monitor) {
 
-  std::cout<<"UR5" << std::endl;
-
   Command::ConstPtr meshLink = renderRemoveLink(req.name);
   if (!env->applyCommand(meshLink)) {
     res.result = "ERROR - remove link mesh";

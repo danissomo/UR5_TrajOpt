@@ -10,9 +10,6 @@
 [submodule "src/libs/descartes_light"]
 	path = src/libs/descartes_light
 	url = ../../swri-robotics/descartes_light.git
-[submodule "src/libs/tesseract_planning"]
-	path = src/libs/tesseract_planning
-	url = ../../tesseract-robotics/tesseract_planning
 [submodule "src/libs/ifopt"]
 	path = src/libs/ifopt
 	url = ../../ethz-adrl/ifopt.git
@@ -28,9 +25,6 @@
 [submodule "src/libs/tesseract_qt"]
 	path = src/libs/tesseract_qt
 	url = ../../tesseract-robotics/tesseract_qt
-[submodule "src/libs/tesseract_ros"]
-	path = src/libs/tesseract_ros
-	url = ../../tesseract-robotics/tesseract_ros
 [submodule "src/libs/tesseract"]
 	path = src/libs/tesseract
 	url = ../../tesseract-robotics/tesseract
