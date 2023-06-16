@@ -192,15 +192,6 @@ tesseract_environment::Command::Ptr addMesh(std::string link_name,
   for (auto& mesh : meshes) {
     Visual::Ptr visual = std::make_shared<Visual>();
     visual->origin = Eigen::Isometry3d::Identity();
-    visual->origin.translation() = translation;
-
-    Eigen::AngleAxisd rotX(rotation(0), Eigen::Vector3d::UnitX());
-    Eigen::AngleAxisd rotY(rotation(1), Eigen::Vector3d::UnitY());
-    Eigen::AngleAxisd rotZ(rotation(2), Eigen::Vector3d::UnitZ());
-    visual->origin.rotate(rotX);
-    visual->origin.rotate(rotY);
-    visual->origin.rotate(rotZ);
-
     visual->geometry = mesh;
     link_sphere.visual.push_back(visual);
 
@@ -535,8 +526,16 @@ bool createMesh(ur5_husky_main::Mesh::Request &req,
                       Eigen::Vector3d(req.x, req.y, req.z), 
                       Eigen::Vector3d(req.rotateX, req.rotateY, req.rotateZ));
 
+  // Создать меш
   if (!env->applyCommand(mesh)) {
     res.result = "ERROR - create mesh";
+    return false;
+  }
+
+  // Сдвинуть меш
+  Command::Ptr move = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ, req.rotateX, req.rotateY, req.rotateZ);
+  if (!env->applyCommand(move)) {
+    res.result = "ERROR - move new mesh";
     return false;
   }
 
@@ -969,22 +968,28 @@ int main(int argc, char** argv) {
 
 
 
-//////////////////////////////////////////////////
-  // Detach the simulated box from the world and attach to the end effector
-  tesseract_environment::Commands cmds;
-  Joint joint_cup("joint_cup");
-  joint_cup.parent_link_name = "ur5_tool0";
-  joint_cup.child_link_name = "cup";
-  joint_cup.type = JointType::FIXED;
-  joint_cup.parent_to_joint_origin_transform = Eigen::Isometry3d::Identity();
-  joint_cup.parent_to_joint_origin_transform.translation() += Eigen::Vector3d(0, 0, 0);
-  cmds.push_back(std::make_shared<tesseract_environment::MoveLinkCommand>(joint_cup));
-  tesseract_common::AllowedCollisionMatrix add_ac;
-  // add_ac.addAllowedCollision("cup", "ee_link", "Never");
-  cmds.push_back(std::make_shared<tesseract_environment::ModifyAllowedCollisionsCommand>(
-      add_ac, tesseract_environment::ModifyAllowedCollisionsType::ADD));
-  env->applyCommands(cmds);
-  ///////////////////////////////////////
+    //////////////////////////////////////////////////
+    //////////////////////////////////////////////////
+    // Detach the simulated cup from the world and attach to the end effector
+    tesseract_environment::Commands cmds;
+    Joint joint_cup("joint_cup");
+    joint_cup.parent_link_name = "ur5_tool0";
+    joint_cup.child_link_name = "cup";
+    joint_cup.type = JointType::FIXED;
+    joint_cup.parent_to_joint_origin_transform = Eigen::Isometry3d::Identity();
+    joint_cup.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(0, 0, 0.15);
+    Eigen::AngleAxisd rotX(-1.57, Eigen::Vector3d::UnitX());
+    Eigen::AngleAxisd rotY(2.0, Eigen::Vector3d::UnitY());
+    joint_cup.parent_to_joint_origin_transform.rotate(rotX);
+    joint_cup.parent_to_joint_origin_transform.rotate(rotY);
+
+    cmds.push_back(std::make_shared<tesseract_environment::MoveLinkCommand>(joint_cup));
+    tesseract_common::AllowedCollisionMatrix add_ac;
+    add_ac.addAllowedCollision("cup", "ur5_tool0", "Never");
+    cmds.push_back(std::make_shared<tesseract_environment::ModifyAllowedCollisionsCommand>(
+        add_ac, tesseract_environment::ModifyAllowedCollisionsType::ADD));
+    env->applyCommands(cmds);
+    ////////////////////////////////////////////////////
 
     UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
     UR5TrajoptResponce responce = calculate.run();
