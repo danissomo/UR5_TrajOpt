@@ -177,7 +177,8 @@ tesseract_environment::Command::Ptr addMesh(std::string link_name,
                                             std::string joint_name,
                                             std::string mesh_name,
                                             Eigen::Vector3d scale,
-                                            Eigen::Vector3d translation) {
+                                            Eigen::Vector3d translation,
+                                            Eigen::Vector3d rotation) {
 
   std::string mesh_path = "package://ur5_husky_main/urdf/objects/" + mesh_name;
 
@@ -188,17 +189,17 @@ tesseract_environment::Command::Ptr addMesh(std::string link_name,
 
   Link link_sphere(link_name.c_str());
 
-  Eigen::AngleAxisd V(3.1415926 / 4, Eigen::Vector3d(1, 0, 1).normalized());
-
   for (auto& mesh : meshes) {
     Visual::Ptr visual = std::make_shared<Visual>();
     visual->origin = Eigen::Isometry3d::Identity();
     visual->origin.translation() = translation;
 
-    if (link_name == "cup") {
-      Eigen::AngleAxisd rot(3.1415926 / 2, Eigen::Vector3d::UnitX());
-      visual->origin.rotate(rot);
-    }
+    Eigen::AngleAxisd rotX(rotation(0), Eigen::Vector3d::UnitX());
+    Eigen::AngleAxisd rotY(rotation(1), Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd rotZ(rotation(2), Eigen::Vector3d::UnitZ());
+    visual->origin.rotate(rotX);
+    visual->origin.rotate(rotY);
+    visual->origin.rotate(rotZ);
 
     visual->geometry = mesh;
     link_sphere.visual.push_back(visual);
@@ -218,21 +219,28 @@ tesseract_environment::Command::Ptr addMesh(std::string link_name,
 }
 
 
-
 tesseract_environment::Command::Ptr renderMove(std::string link_name, std::string joint_name,
-                                           float pos_x, float pos_y, float pos_z) {
+                                           float pos_x, float pos_y, float pos_z,
+                                           float rotateX = 0, float rotateY = 0, float rotateZ = 0) {
 
   auto joint_limits =  std::make_shared<tesseract_scene_graph::JointLimits>();
   joint_limits->lower = 1.0;
   joint_limits->upper = 2.0;
 
+  Eigen::AngleAxisd rotX(rotateX, Eigen::Vector3d::UnitX());
+  Eigen::AngleAxisd rotY(rotateY, Eigen::Vector3d::UnitY());
+  Eigen::AngleAxisd rotZ(rotateZ, Eigen::Vector3d::UnitZ());
+
   Joint joint_sphere(joint_name.c_str());
   joint_sphere.limits = joint_limits;
   joint_sphere.parent_link_name = "world";
   joint_sphere.child_link_name = link_name;
-  joint_sphere.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(pos_x, pos_y, pos_z);
   joint_sphere.type = JointType::FIXED;
 
+  joint_sphere.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(pos_x, pos_y, pos_z);
+  joint_sphere.parent_to_joint_origin_transform.rotate(rotX);
+  joint_sphere.parent_to_joint_origin_transform.rotate(rotY);
+  joint_sphere.parent_to_joint_origin_transform.rotate(rotZ);
 
   return std::make_shared<tesseract_environment::MoveLinkCommand>(joint_sphere);
 }
@@ -262,7 +270,7 @@ bool moveMesh(ur5_husky_main::Mesh::Request &req,
 
   std::string joint_name = std::string(req.name) + "_joints";
 
-  Command::Ptr mesh = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
+  Command::Ptr mesh = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ, req.rotateX, req.rotateY, req.rotateZ);
   if (!env->applyCommand(mesh)) {
     res.result = "ERROR - move mesh";
     return false;
@@ -523,7 +531,9 @@ bool createMesh(ur5_husky_main::Mesh::Request &req,
   std::string joint_name = std::string(req.name) + "_joints";
 
   Command::Ptr mesh = addMesh(req.name, joint_name.c_str(), req.fileName,
-                      Eigen::Vector3d(req.scale, req.scale, req.scale), Eigen::Vector3d(req.x, req.y, req.z));
+                      Eigen::Vector3d(req.scale, req.scale, req.scale), 
+                      Eigen::Vector3d(req.x, req.y, req.z), 
+                      Eigen::Vector3d(req.rotateX, req.rotateY, req.rotateZ));
 
   if (!env->applyCommand(mesh)) {
     res.result = "ERROR - create mesh";
@@ -769,13 +779,15 @@ int main(int argc, char** argv) {
     }
 
     // Создать стол из mesh
-    Command::Ptr table_mesh = addMesh("table", "table-js", "table-noise-2.obj", Eigen::Vector3d(0.015, 0.015, 0.015), Eigen::Vector3d(1.7, 0.0, -0.14869));
+    Command::Ptr table_mesh = addMesh("table", "table-js", "table-noise-2.obj", Eigen::Vector3d(0.015, 0.015, 0.015), 
+      Eigen::Vector3d(1.7, 0.0, -0.14869), Eigen::Vector3d(0.0, 0.0, 0.0));
     if (!env->applyCommand(table_mesh)) {
       return false;
     }
 
     // Создать горелку из mesh
-    Command::Ptr burner_mesh = addMesh("burner", "burner-js", "burner.obj", Eigen::Vector3d(0.03, 0.03, 0.03), Eigen::Vector3d(1.0, 0.0, 0.57));
+    Command::Ptr burner_mesh = addMesh("burner", "burner-js", "burner.obj", Eigen::Vector3d(0.03, 0.03, 0.03), 
+      Eigen::Vector3d(1.0, 0.0, 0.57), Eigen::Vector3d(0.0, 0.0, 0.0));
     if (!env->applyCommand(burner_mesh)) {
       return false;
     }
