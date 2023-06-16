@@ -1,22 +1,20 @@
 
 #include <tesseract_common/macros.h>
 TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
-#include <taskflow/taskflow.hpp>
 #include <fstream>
 TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
 #include "raster_example_program.h"
 
-#include <tesseract_task_composer/task_composer_graph.h>
-#include <tesseract_task_composer/task_composer_data_storage.h>
-#include <tesseract_task_composer/nodes/raster_ft_motion_task.h>
-#include <tesseract_task_composer/taskflow/taskflow_task_composer_executor.h>
+#include <tesseract_task_composer/core/task_composer_graph.h>
+#include <tesseract_task_composer/core/task_composer_data_storage.h>
+#include <tesseract_task_composer/core/task_composer_plugin_factory.h>
+#include <tesseract_task_composer/planning/planning_task_composer_problem.h>
 
 #include <tesseract_common/types.h>
 #include <tesseract_environment/environment.h>
 #include <tesseract_command_language/utils.h>
 #include <tesseract_visualization/visualization_loader.h>
-//#include <tesseract_process_managers/utils/task_info_statistics.h>
 #include <tesseract_support/tesseract_support_resource_locator.h>
 
 using namespace tesseract_planning;
@@ -42,6 +40,15 @@ int main()
     if (plotter->isConnected())
       plotter->plotEnvironment(*env);
   }
+  // Get plugin factory
+  const std::string share_dir(TESSERACT_TASK_COMPOSER_DIR);
+  tesseract_common::fs::path config_path(share_dir + "/config/task_composer_plugins.yaml");
+  TaskComposerPluginFactory factory(config_path);
+
+  // Create raster task
+  TaskComposerNode::UPtr task = factory.createTaskComposerNode("RasterFtPipeline");
+  const std::string input_key = task->getInputKeys().front();
+  const std::string output_key = task->getOutputKeys().front();
 
   // Define profiles
   auto profiles = std::make_shared<ProfileDictionary>();
@@ -52,30 +59,28 @@ int main()
 
   // Create data storage
   TaskComposerDataStorage task_data;
-  task_data.setData("input_program", program);
+  task_data.setData(input_key, program);
 
   // Create problem
-  TaskComposerProblem task_problem(env, task_data);
+  auto task_problem = std::make_unique<PlanningTaskComposerProblem>(env, task_data, profiles);
 
   // Create task input
-  auto task_input = std::make_shared<TaskComposerInput>(task_problem, profiles);
+  auto task_input = std::make_shared<TaskComposerInput>(std::move(task_problem));
+  task_input->dotgraph = true;
 
-  // Create raster task
-  TaskComposerTask::UPtr task = std::make_unique<RasterFtMotionTask>("input_program", "output_program");
+  // Solve raster plan
+  auto task_executor = factory.createTaskComposerExecutor("TaskflowExecutor");
+  TaskComposerFuture::UPtr future = task_executor->run(*task, *task_input);
+  future->wait();
 
   // Save dot graph
   std::ofstream tc_out_data;
   tc_out_data.open(tesseract_common::getTempPath() + "task_composer_raster_example.dot");
-  task->dump(tc_out_data);  // dump the graph including dynamic tasks
+  task->dump(tc_out_data, nullptr, task_input->task_infos.getInfoMap());
   tc_out_data.close();
 
-  // Solve raster plan
-  auto task_executor = std::make_shared<TaskflowTaskComposerExecutor>();
-  TaskComposerFuture::UPtr future = task_executor->run(*task, *task_input);
-  future->wait();
-
   // Plot Process Trajectory
-  auto output_program = task_input->data_storage.getData("output_program").as<CompositeInstruction>();
+  auto output_program = task_input->data_storage.getData(output_key).as<CompositeInstruction>();
   if (plotter != nullptr && plotter->isConnected())
   {
     plotter->waitForInput();

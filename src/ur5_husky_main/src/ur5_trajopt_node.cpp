@@ -1,11 +1,21 @@
 // ROS headers
+#include <tesseract_common/macros.h>
+TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
+#include <jsoncpp/json/json.h>
+#include <console_bridge/console.h>
+TESSERACT_COMMON_IGNORE_WARNINGS_POP
+
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
 #include <control_msgs/FollowJointTrajectoryAction.h>
 #include <ros/topic.h>
+#include <termios.h>
 
+#include <KinematicsUR5.hpp>
+#include <TestIK.hpp>
+#include <UR5Trajopt.hpp>
+#include <UR5TrajoptResponce.hpp>
 
-#include <ur5_trajopt.hpp>
 #include <ur5_husky_main/SetStartJointState.h>
 #include <ur5_husky_main/SetFinishJointState.h>
 #include <ur5_husky_main/GetJointState.h>
@@ -15,6 +25,9 @@
 #include <ur5_husky_main/Box.h>
 #include <ur5_husky_main/Mesh.h>
 #include <ur5_husky_main/Freedrive.h>
+#include <ur5_husky_main/IKSolver.h>
+#include <ur5_husky_main/GetInfo.h>
+#include <ur5_husky_main/GripperService.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -29,12 +42,15 @@
 #include <tesseract_command_language/joint_waypoint.h>
 #include <tesseract_command_language/move_instruction.h>
 #include <tesseract_command_language/utils.h>
-#include <tesseract_task_composer/task_composer_problem.h>
-#include <tesseract_task_composer/task_composer_input.h>
-#include <tesseract_task_composer/task_composer_node_names.h>
-#include <tesseract_task_composer/nodes/trajopt_motion_pipeline_task.h>
+#include <tesseract_task_composer/planning/planning_task_composer_problem.h>
 #include <tesseract_task_composer/taskflow/taskflow_task_composer_executor.h>
 #include <tesseract_visualization/markers/toolpath_marker.h>
+
+#include <tesseract_msgs/EnvironmentState.h>
+#include <tesseract_msgs/ModifyEnvironment.h>
+#include <tesseract_msgs/EnvironmentCommand.h>
+#include <tesseract_msgs/GetEnvironmentChanges.h>
+#include <ros/service.h>
 
 #include <tesseract_geometry/impl/mesh_material.h>
 #include <tesseract_geometry/geometries.h>
@@ -43,7 +59,6 @@
 #include <tesseract_collision/bullet/convex_hull_utils.h>
 
 #include <tesseract_motion_planners/core/utils.h>
-#include <tesseract_motion_planners/default_planner_namespaces.h>
 #include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
 
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
@@ -56,6 +71,12 @@
 #include <ur_rtde/rtde_control_interface.h>
 #include <ur_rtde/rtde_io_interface.h>
 #include <ur_rtde/rtde_receive_interface.h>
+
+#include <ur_rtde/robotiq_gripper.h>
+
+#include <actionlib/client/simple_action_client.h>
+#include <robotiq_2f_gripper_msgs/CommandRobotiqGripperAction.h>
+#include <robotiq_2f_gripper_control/robotiq_gripper_client.h>
 
 #include <iostream>
 #include <thread>
@@ -71,6 +92,7 @@
 #include "ColorInfo.hpp"
 
 using namespace ur_rtde;
+using namespace std;
 
 using namespace ur5_husky_main;
 using namespace tesseract_rosutils;
@@ -83,6 +105,8 @@ using namespace tesseract_collision;
 using namespace tesseract_visualization;
 using namespace tesseract_planning;
 using tesseract_common::ManipulatorInfo;
+
+typedef robotiq_2f_gripper_control::RobotiqActionClient RobotiqActionClient;
 
 SettingsCustomLibClass settingsConfig;
 
@@ -153,22 +177,21 @@ tesseract_environment::Command::Ptr addMesh(std::string link_name,
                                             std::string joint_name,
                                             std::string mesh_name,
                                             Eigen::Vector3d scale,
-                                            Eigen::Vector3d translation) {
+                                            Eigen::Vector3d translation,
+                                            Eigen::Vector3d rotation) {
 
   std::string mesh_path = "package://ur5_husky_main/urdf/objects/" + mesh_name;
 
   tesseract_common::ResourceLocator::Ptr locator = std::make_shared<tesseract_common::GeneralResourceLocator>();
   std::vector<tesseract_geometry::Mesh::Ptr> meshes =
     tesseract_geometry::createMeshFromResource<tesseract_geometry::Mesh>(
-        locator->locateResource(mesh_path), scale, true);
+        locator->locateResource(mesh_path), scale, true, false, true);
 
   Link link_sphere(link_name.c_str());
 
   for (auto& mesh : meshes) {
-
     Visual::Ptr visual = std::make_shared<Visual>();
     visual->origin = Eigen::Isometry3d::Identity();
-    visual->origin.translation() = translation;
     visual->geometry = mesh;
     link_sphere.visual.push_back(visual);
 
@@ -187,21 +210,28 @@ tesseract_environment::Command::Ptr addMesh(std::string link_name,
 }
 
 
-
 tesseract_environment::Command::Ptr renderMove(std::string link_name, std::string joint_name,
-                                           float pos_x, float pos_y, float pos_z) {
+                                           float pos_x, float pos_y, float pos_z,
+                                           float rotateX = 0, float rotateY = 0, float rotateZ = 0) {
 
   auto joint_limits =  std::make_shared<tesseract_scene_graph::JointLimits>();
   joint_limits->lower = 1.0;
   joint_limits->upper = 2.0;
 
+  Eigen::AngleAxisd rotX(rotateX, Eigen::Vector3d::UnitX());
+  Eigen::AngleAxisd rotY(rotateY, Eigen::Vector3d::UnitY());
+  Eigen::AngleAxisd rotZ(rotateZ, Eigen::Vector3d::UnitZ());
+
   Joint joint_sphere(joint_name.c_str());
   joint_sphere.limits = joint_limits;
   joint_sphere.parent_link_name = "world";
   joint_sphere.child_link_name = link_name;
-  joint_sphere.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(pos_x, pos_y, pos_z);
   joint_sphere.type = JointType::FIXED;
 
+  joint_sphere.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(pos_x, pos_y, pos_z);
+  joint_sphere.parent_to_joint_origin_transform.rotate(rotX);
+  joint_sphere.parent_to_joint_origin_transform.rotate(rotY);
+  joint_sphere.parent_to_joint_origin_transform.rotate(rotZ);
 
   return std::make_shared<tesseract_environment::MoveLinkCommand>(joint_sphere);
 }
@@ -231,7 +261,7 @@ bool moveMesh(ur5_husky_main::Mesh::Request &req,
 
   std::string joint_name = std::string(req.name) + "_joints";
 
-  Command::Ptr mesh = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
+  Command::Ptr mesh = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ, req.rotateX, req.rotateY, req.rotateZ);
   if (!env->applyCommand(mesh)) {
     res.result = "ERROR - move mesh";
     return false;
@@ -242,18 +272,22 @@ bool moveMesh(ur5_husky_main::Mesh::Request &req,
   return true;
 }
 
-tesseract_environment::Command::Ptr renderRemoveLink(std::string link_name) {
+tesseract_environment::Command::ConstPtr renderRemoveLink(std::string link_name) {
   return std::make_shared<tesseract_environment::RemoveLinkCommand>(link_name);
 }
 
-tesseract_environment::Command::Ptr renderHideLink(std::string link_name) {
+tesseract_environment::Command::ConstPtr renderRemoveJoint(std::string joints_name) {
+  return std::make_shared<tesseract_environment::RemoveJointCommand>(joints_name);
+}
+
+tesseract_environment::Command::ConstPtr renderHideLink(std::string link_name) {
   return std::make_shared<tesseract_environment::ChangeLinkVisibilityCommand>(link_name, false);
 }
 
 bool removeBox(ur5_husky_main::Box::Request &req,
              ur5_husky_main::Box::Response &res,
              const std::shared_ptr<tesseract_environment::Environment> &env) {
-  Command::Ptr boxLink = renderRemoveLink(req.name);
+  Command::ConstPtr boxLink = renderRemoveLink(req.name);
   if (!env->applyCommand(boxLink)) {
     res.result = "ERROR - remove link box";
     return false;
@@ -267,16 +301,44 @@ bool removeBox(ur5_husky_main::Box::Request &req,
 
 bool removeMesh(ur5_husky_main::Mesh::Request &req,
              ur5_husky_main::Mesh::Response &res,
-             const std::shared_ptr<tesseract_environment::Environment> &env) {
-  Command::Ptr meshLink = renderRemoveLink(req.name);
+             const std::shared_ptr<tesseract_environment::Environment> &env,
+             const std::shared_ptr<tesseract_monitoring::ROSEnvironmentMonitor> &monitor) {
+
+  std::cout<<"UR5" << std::endl;
+
+  Command::ConstPtr meshLink = renderRemoveLink(req.name);
   if (!env->applyCommand(meshLink)) {
-    res.result = "ERROR - remove link box";
+    res.result = "ERROR - remove link mesh";
     return false;
   }
 
-  res.result = "Remove Box end...";
+  res.result = "Remove Mesh end...";
 
   return true;
+}
+
+
+void robotMove(std::vector<double> &path_pose) {
+    try {
+
+        RTDEControlInterface rtde_control(robot_ip);
+        path_pose.push_back(ur_speed);
+        path_pose.push_back(ur_acceleration);
+        path_pose.push_back(ur_blend);
+
+        std::vector<std::vector<double>> jointsPath;
+        jointsPath.push_back(path_pose);
+        rtde_control.moveJ(jointsPath);
+        rtde_control.stopScript();
+        rtde_control.disconnect();
+    
+    } catch (...) {
+        if (!setRobotNotConnectErrorMes) {
+          // 1 сообщения хватит
+          setRobotNotConnectErrorMes = true;
+          ROS_ERROR("I can't connect with UR5.");
+        }
+    }
 }
 
 
@@ -309,17 +371,7 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
     Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
 
     if (connect_robot) {
-        try {
-            RTDEControlInterface rtde_control(robot_ip);
-            rtde_control.moveJ(position_vector);
-            rtde_control.stopScript();
-        } catch (...) {
-          if (!setRobotNotConnectErrorMes) {
-            // 1 сообщения хватит
-            setRobotNotConnectErrorMes = true;
-            ROS_ERROR("I can't connect with UR5.");
-          }
-        }
+        robotMove(position_vector);
     }
 
     env->setState(joint_names, joint_start_pos);
@@ -470,10 +522,20 @@ bool createMesh(ur5_husky_main::Mesh::Request &req,
   std::string joint_name = std::string(req.name) + "_joints";
 
   Command::Ptr mesh = addMesh(req.name, joint_name.c_str(), req.fileName,
-                      Eigen::Vector3d(req.scale, req.scale, req.scale), Eigen::Vector3d(req.x, req.y, req.z));
+                      Eigen::Vector3d(req.scale, req.scale, req.scale), 
+                      Eigen::Vector3d(req.x, req.y, req.z), 
+                      Eigen::Vector3d(req.rotateX, req.rotateY, req.rotateZ));
 
+  // Создать меш
   if (!env->applyCommand(mesh)) {
     res.result = "ERROR - create mesh";
+    return false;
+  }
+
+  // Сдвинуть меш
+  Command::Ptr move = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ, req.rotateX, req.rotateY, req.rotateZ);
+  if (!env->applyCommand(move)) {
+    res.result = "ERROR - move new mesh";
     return false;
   }
 
@@ -544,6 +606,115 @@ bool freedriveEnable(ur5_husky_main::Freedrive::Request &req,
 }
 
 
+bool getInfo(ur5_husky_main::GetInfo::Request &req,
+                   ur5_husky_main::GetInfo::Response &res,
+                   const std::shared_ptr<tesseract_environment::Environment> &env,
+                   const std::vector<std::string> &joint_names,
+                   ros::Rate &loop_rate) {
+
+  TestIK test(robot_ip, ur_speed, ur_acceleration, ur_blend, req.debug);
+  // try {
+    DashboardClient dash_board(robot_ip);
+    dash_board.connect();
+    std::cout << "--- Модель робота ---" << dash_board.getRobotModel() << std::endl;
+    // getSerialNumber() function is not supported on the dashboard server for PolyScope versions less than 5.6.0
+    // std::cout << "--- Серийный номер робота ---" << dash_board.getSerialNumber() << std::endl;
+    std::cout << "--- Программа робота: ---" << dash_board.getLoadedProgram() << std::endl;
+
+    dash_board.stop();
+    dash_board.disconnect();
+  // } catch(...) {
+  //   ROS_ERROR(" Connect error with UR5 for connect dash_board");
+  // }
+
+  if (req.fk || req.ik) {
+    if (req.fk) {
+      // Получить данные из библиотеки ur_rtde
+      try {
+
+        RTDEControlInterface rtde_control(robot_ip);
+        if (rtde_control.isConnected()) {
+          std::vector<double> fk = rtde_control.getForwardKinematics();
+          if (req.fk) {
+            std::cout << "Прямая кинематика (ur_rtde): ";
+            for (int i = 0; i < fk.size(); i++) {
+              std::cout << fk[i] << " ";
+            }
+            std::cout << std::endl;              
+          }
+
+          if (req.ik) {
+              std::vector<double> ik = rtde_control.getInverseKinematics(fk);
+              std::cout << "Обратная кинематика (ur_rtde): ";
+              for (int i = 0; i < ik.size(); i++) {
+                std::cout << ik[i] << " ";
+              }
+              std::cout << std::endl;
+          }
+
+          rtde_control.stopScript();
+          rtde_control.disconnect();
+
+        }
+      } catch(...) {
+        ROS_ERROR(" Connect error with UR5 for get info");
+      }
+
+      test.getForwardKinematics(joint_start_pos);
+    }
+
+    if (req.ik) {
+      test.ikSolverCheck(loop_rate, joint_start_pos);
+    }
+  }
+
+  res.result = "Info got successfully";
+  return true;
+}
+
+
+/**
+ * Print object detection status of gripper
+ */
+void printStatus(int Status)
+{
+  switch (Status)
+  {
+    case RobotiqGripper::MOVING:
+      std::cout << "moving";
+      break;
+    case RobotiqGripper::STOPPED_OUTER_OBJECT:
+      std::cout << "outer object detected";
+      break;
+    case RobotiqGripper::STOPPED_INNER_OBJECT:
+      std::cout << "inner object detected";
+      break;
+    case RobotiqGripper::AT_DEST:
+      std::cout << "at destination";
+      break;
+  }
+
+  std::cout << std::endl;
+}
+
+
+bool gripperMove(ur5_husky_main::GripperService::Request &req,
+                 ur5_husky_main::GripperService::Response &res) {
+
+  std::string action_name = "/command_robotiq_action";  
+  bool wait_for_server = true;
+  RobotiqActionClient* gripper = new RobotiqActionClient(action_name, wait_for_server);
+
+  if (req.open) {
+    gripper->open();
+  } else {
+    gripper->close();
+  }
+
+  return true;
+}
+
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
   ros::NodeHandle pnh("~");
@@ -607,13 +778,15 @@ int main(int argc, char** argv) {
     }
 
     // Создать стол из mesh
-    Command::Ptr table_mesh = addMesh("table", "table-js", "table-noise-2.obj", Eigen::Vector3d(0.015, 0.015, 0.015), Eigen::Vector3d(1.7, 0.0, -0.14869));
+    Command::Ptr table_mesh = addMesh("table", "table-js", "table-noise-2.obj", Eigen::Vector3d(0.015, 0.015, 0.015), 
+      Eigen::Vector3d(1.7, 0.0, -0.14869), Eigen::Vector3d(0.0, 0.0, 0.0));
     if (!env->applyCommand(table_mesh)) {
       return false;
     }
 
     // Создать горелку из mesh
-    Command::Ptr burner_mesh = addMesh("burner", "burner-js", "burner.obj", Eigen::Vector3d(0.03, 0.03, 0.03), Eigen::Vector3d(1.0, 0.0, 0.57));
+    Command::Ptr burner_mesh = addMesh("burner", "burner-js", "burner.obj", Eigen::Vector3d(0.03, 0.03, 0.03), 
+      Eigen::Vector3d(1.0, 0.0, 0.57), Eigen::Vector3d(0.0, 0.0, 0.0));
     if (!env->applyCommand(burner_mesh)) {
       return false;
     }
@@ -724,10 +897,16 @@ int main(int argc, char** argv) {
                       ("remove_box", boost::bind(removeBox, _1, _2, env));
 
   ros::ServiceServer removeMeshService = nh.advertiseService<ur5_husky_main::Mesh::Request, ur5_husky_main::Mesh::Response>
-                      ("remove_mesh", boost::bind(removeMesh, _1, _2, env));
+                      ("remove_mesh", boost::bind(removeMesh, _1, _2, env, monitor));
 
-  ros::ServiceServer freedrive = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
+  ros::ServiceServer freedriveService = nh.advertiseService<ur5_husky_main::Freedrive::Request, ur5_husky_main::Freedrive::Response>
                       ("freedrive_change", boost::bind(freedriveEnable, _1, _2));
+
+  ros::ServiceServer getInfoService = nh.advertiseService<ur5_husky_main::GetInfo::Request, ur5_husky_main::GetInfo::Response>
+                      ("get_info_robot", boost::bind(getInfo, _1, _2, env, joint_names, loop_rate));
+
+  ros::ServiceServer gripperService = nh.advertiseService<ur5_husky_main::GripperService::Request, ur5_husky_main::GripperService::Response>
+                      ("gripper_move", boost::bind(gripperMove, _1, _2));
 
   ros::Publisher messagePub = nh.advertise<std_msgs::String>("chatter", 1000);
   std_msgs::String msg;
@@ -787,8 +966,43 @@ int main(int argc, char** argv) {
       plotter->waitForInput("Hit Enter after move robot to start position.");
     }
 
-    UR5Trajopt example(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
-    tesseract_common::JointTrajectory trajectory = example.run();
+
+
+    //////////////////////////////////////////////////
+    //////////////////////////////////////////////////
+    // Detach the simulated cup from the world and attach to the end effector
+    tesseract_environment::Commands cmds;
+    Joint joint_cup("joint_cup");
+    joint_cup.parent_link_name = "ur5_tool0";
+    joint_cup.child_link_name = "cup";
+    joint_cup.type = JointType::FIXED;
+    joint_cup.parent_to_joint_origin_transform = Eigen::Isometry3d::Identity();
+    joint_cup.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(0, 0, 0.15);
+    Eigen::AngleAxisd rotX(-1.57, Eigen::Vector3d::UnitX());
+    Eigen::AngleAxisd rotY(2.0, Eigen::Vector3d::UnitY());
+    joint_cup.parent_to_joint_origin_transform.rotate(rotX);
+    joint_cup.parent_to_joint_origin_transform.rotate(rotY);
+
+    cmds.push_back(std::make_shared<tesseract_environment::MoveLinkCommand>(joint_cup));
+    tesseract_common::AllowedCollisionMatrix add_ac;
+    add_ac.addAllowedCollision("cup", "ur5_tool0", "Never");
+    cmds.push_back(std::make_shared<tesseract_environment::ModifyAllowedCollisionsCommand>(
+        add_ac, tesseract_environment::ModifyAllowedCollisionsType::ADD));
+    env->applyCommands(cmds);
+    ////////////////////////////////////////////////////
+
+    UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
+    UR5TrajoptResponce responce = calculate.run();
+    bool success = responce.isSuccessful();
+
+    if (!success) {
+      ROS_ERROR("Planning ended with errors!");
+      // TODO Реализоывать обработку ситуации, когда не получилось рассчитать траекторию
+      // вернуть флаг ошибки в UI
+      // запретить выполнять траекторию
+    }
+
+    tesseract_common::JointTrajectory trajectory = responce.getTrajectory();
 
     msg.data = "plan_finish";
     ROS_INFO("Sent message to UI: %s", msg.data.c_str());

@@ -11,16 +11,10 @@ find_package(catkin REQUIRED COMPONENTS
   std_srvs
   tesseract_monitoring
   tesseract_rosutils
-  settings_custom_lib
-  urdf
-  std_msgs
-  message_generation
-  visualization_msgs
 )
 
 find_package(tesseract_environment REQUIRED)
 find_package(tesseract_examples REQUIRED)
-find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde")
 
 catkin_package()
 
@@ -32,7 +26,6 @@ macro(add_example test_name test_file)
   target_link_libraries(${test_name}
     tesseract::tesseract_examples
     tesseract::tesseract_environment
-    ur_rtde::rtde
     ${catkin_LIBRARIES})
   target_compile_options(${test_name} PRIVATE ${TESSERACT_COMPILE_OPTIONS})
   target_clang_tidy(${test_name} ARGUMENTS ${TESSERACT_CLANG_TIDY_ARGS} ENABLE ${TESSERACT_ENABLE_CLANG_TIDY})

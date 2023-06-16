@@ -40,6 +40,8 @@ float joint_end_pos_4 = 0.0;
 float joint_end_pos_5 = 0.0;
 
 std::string robot_ip = "127.0.0.1";
+std::string gripper_ip = "127.0.0.1";
+int gripper_port = 63352;
 
 float joint_test_pos_0 = 0.0;
 float joint_test_pos_1 = 0.0;
@@ -183,6 +185,14 @@ inline void SettingsCustomLibClass::update() {
             } else if (token == "robot_ip") {
                 robot_ip = line;
                 ROS_INFO("Setting updated. New value robot_ip = %s", robot_ip.c_str());
+
+            } else if (token == "gripper_ip") {
+                gripper_ip = line;
+                ROS_INFO("Setting updated. New value gripper_ip = %s", gripper_ip.c_str());
+
+            } else if (token == "gripper_port") {
+                gripper_port = atoi(line.c_str());
+                ROS_INFO("Setting updated. New value gripper_port = %d", gripper_port);
 
             } else if (strcmp("joint_test_pos_0", token.c_str()) == 0) {
                 joint_test_pos_0 = stof(line);

@@ -2,6 +2,53 @@
 Changelog for package tesseract_command_language
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.17.0 (2023-06-06)
+-------------------
+* Fix composite instruction iterator construction to call default constructor
+* Contributors: Levi Armstrong
+
+0.16.3 (2023-05-03)
+-------------------
+
+0.16.2 (2023-04-28)
+-------------------
+* Add name to waypoints
+* Contributors: Levi Armstrong
+
+0.16.1 (2023-04-11)
+-------------------
+
+0.16.0 (2023-04-09)
+-------------------
+
+0.15.5 (2023-03-22)
+-------------------
+* Update toJointTrajectory to include cartesian waypoint if seed exists
+* Contributors: Levi Armstrong
+
+0.15.4 (2023-03-16)
+-------------------
+
+0.15.3 (2023-03-15)
+-------------------
+* Add support for cartesian waypoint type in getJointPosition and getJointNames
+* Contributors: Levi Armstrong
+
+0.15.2 (2023-03-14)
+-------------------
+
+0.15.1 (2023-03-09)
+-------------------
+* Make MoveInstruction constructors explict and add one for WaypointPoly
+* Contributors: Levi Armstrong
+
+0.15.0 (2023-03-03)
+-------------------
+* Remove composite start instruction
+* Add toJointTrajectory overload for InstructionPoly
+* Add uuid and parent_uuid to InstructionPoly (`#261 <https://github.com/tesseract-robotics/tesseract_planning/issues/261>`_)
+* Contributors: Levi Armstrong
+
 0.14.0 (2022-10-23)
 -------------------
 * Remove references to tesseract process managers package

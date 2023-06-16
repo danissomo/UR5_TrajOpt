@@ -16,12 +16,21 @@
 [submodule "src/libs/ifopt"]
 	path = src/libs/ifopt
 	url = ../../ethz-adrl/ifopt.git
-[submodule "src/libs/tesseract_qt"]
-	path = src/libs/tesseract_qt
-	url = ../../tesseract-robotics/tesseract_qt
-[submodule "src/ur_rtde"]
-	path = src/ur_rtde
-	url = https://gitlab.com/sdurobotics/ur_rtde.git
 [submodule "src/pkgs_husky/husky"]
 	path = src/pkgs_husky/husky
 	url = ../../husky/husky
+[submodule "src/pkgs_ur5/Universal_Robots_ROS_Driver"]
+	path = src/pkgs_ur5/Universal_Robots_ROS_Driver
+	url = ../../UniversalRobots/Universal_Robots_ROS_Driver
+[submodule "src/pkgs_ur5/ur_msgs"]
+	path = src/pkgs_ur5/ur_msgs
+	url = ../../ros-industrial/ur_msgs
+[submodule "src/libs/tesseract_qt"]
+	path = src/libs/tesseract_qt
+	url = ../../tesseract-robotics/tesseract_qt
+[submodule "src/libs/tesseract_ros"]
+	path = src/libs/tesseract_ros
+	url = ../../tesseract-robotics/tesseract_ros
+[submodule "src/libs/tesseract"]
+	path = src/libs/tesseract
+	url = ../../tesseract-robotics/tesseract

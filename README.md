@@ -40,8 +40,9 @@
 Запустить Freedrive <code>roslaunch ur5_husky_main freedrive_node.launch</code>
 
 #### Собрать ur_rtde
-<pre><code>cd /workspace/src/ur_rtde
+<pre><code>cd /workspace/src/ur_rtde-v1.5.0
 git submodule update --init --recursive
+mkdir build
 cd build
 cmake ..
 make

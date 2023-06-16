@@ -24,6 +24,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   visualization_msgs
+  robotiq_2f_gripper_control
+  #rviz_visual_tools
 )
 
 ## System dependencies are found with CMake's conventions
@@ -36,7 +38,10 @@ find_package(tesseract_command_language REQUIRED)
 find_package(tesseract_task_composer REQUIRED)
 find_package(tesseract_common REQUIRED)
 find_package(tesseract_support REQUIRED)
+find_package(trajopt_sqp REQUIRED)
 find_package(tesseract_visualization REQUIRED)
+find_package(tesseract_motion_planners REQUIRED)
+find_package(robotiq_2f_gripper_control REQUIRED)
 
 find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde")
 
@@ -95,6 +100,9 @@ add_service_files(
   Freedrive.srv
   Mesh.srv
   RobotRestart.srv
+  IKSolver.srv
+  GripperService.srv
+  GetInfo.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -143,6 +151,7 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS
+  CATKIN_DEPENDS robotiq_2f_gripper_control
 #  LIBRARIES ur5_husky_main
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
@@ -155,7 +164,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include ${catkin_INCLUDE_DIRS} trajopt
+  include ${catkin_INCLUDE_DIRS} trajopt ik
 )
 
 ## Declare a C++ library
@@ -177,11 +186,18 @@ add_executable(
   ur5_trajopt_node 
   src/ur5_trajopt_node.cpp
   trajopt/UR5Trajopt.cpp
+  ik/KinematicsUR5.cpp
+  ik/TestIK.cpp
 )
 
 add_executable(
   freedrive_node
   src/freedrive_node.cpp
+)
+
+add_executable(
+  gripper_node
+  src/gripper_node.cpp
 )
 
 ## Rename C++ executable without prefix
@@ -196,6 +212,7 @@ add_executable(
 
 add_dependencies(ur5_trajopt_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(freedrive_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(gripper_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
@@ -211,12 +228,21 @@ target_link_libraries(ur5_trajopt_node
    PRIVATE tesseract::tesseract_common
    PRIVATE tesseract::tesseract_support
    PRIVATE tesseract::tesseract_visualization
+   PRIVATE tesseract::tesseract_motion_planners_trajopt
+   PRIVATE tesseract::tesseract_motion_planners_core
+   PRIVATE trajopt::trajopt_sqp
+   PRIVATE tesseract::tesseract_task_composer
+   PRIVATE tesseract::tesseract_task_composer_planning
    ${catkin_LIBRARIES}
 )
 
 
 target_link_libraries(freedrive_node
    PRIVATE ur_rtde::rtde
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(gripper_node
    ${catkin_LIBRARIES}
 )
 

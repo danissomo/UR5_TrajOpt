@@ -2,6 +2,31 @@
 Changelog for package tesseract_rosutils
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.17.0 (2023-06-07)
+-------------------
+
+0.16.2 (2023-04-28)
+-------------------
+
+0.16.1 (2023-04-11)
+-------------------
+
+0.16.0 (2023-04-10)
+-------------------
+* Add support for AddTrajectoryLinkCommand
+* Contributors: Levi Armstrong
+
+0.15.2 (2023-03-14)
+-------------------
+
+0.15.1 (2023-03-05)
+-------------------
+
+0.15.0 (2023-03-04)
+-------------------
+* Fix toMsg and fromMsg for capsule (`#194 <https://github.com/tesseract-robotics/tesseract_ros/issues/194>`_)
+* Contributors: Matthew Powelson
+
 0.14.0 (2022-10-23)
 -------------------
 * Update to use modify allowed collisions command

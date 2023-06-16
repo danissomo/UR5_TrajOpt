@@ -2,6 +2,54 @@
 Changelog for package tesseract_time_parameterization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.17.0 (2023-06-06)
+-------------------
+* Fix incorrect include path in tesseract_common_trajectory.h
+* Contributors: Levi Armstrong
+
+0.16.3 (2023-05-03)
+-------------------
+
+0.16.2 (2023-04-28)
+-------------------
+
+0.16.1 (2023-04-11)
+-------------------
+
+0.16.0 (2023-04-09)
+-------------------
+* Update to support new contact results class (`#297 <https://github.com/tesseract-robotics/tesseract_planning/issues/297>`_)
+* Contributors: Levi Armstrong
+
+0.15.5 (2023-03-22)
+-------------------
+* Fix numerical issue in totg
+* Fix TOTG assignData
+* Contributors: Levi Armstrong
+
+0.15.4 (2023-03-16)
+-------------------
+
+0.15.3 (2023-03-15)
+-------------------
+
+0.15.2 (2023-03-14)
+-------------------
+
+0.15.1 (2023-03-09)
+-------------------
+
+0.15.0 (2023-03-03)
+-------------------
+* Merge pull request `#269 <https://github.com/tesseract-robotics/tesseract_planning/issues/269>`_ from marip8/update/time-param-org
+  Added optional builds of time parameterization implementations
+* Created separate targets for each time parameterization implementation
+* Moved core into own subdirectory; moved headers into specific sub-directories; updated unit tests
+* Update tesseract_time_parameterization-config.cmake.in
+* Added optional builds of time parameterization implementations
+* Remove composite start instruction
+* Contributors: Levi Armstrong, Michael Ripperger
+
 0.14.0 (2022-10-23)
 -------------------
 

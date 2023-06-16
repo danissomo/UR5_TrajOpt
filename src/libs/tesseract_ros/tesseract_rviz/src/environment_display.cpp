@@ -1,9 +1,13 @@
 #include <tesseract_rviz/environment_display.h>
-#include <tesseract_rviz/ros_environment_widget.h>
 #include <tesseract_rviz/environment_monitor_properties.h>
 #include <tesseract_rviz/set_theme_tool.h>
 
+#include <tesseract_qt/common/component_info.h>
+#include <tesseract_qt/common/component_info_manager.h>
 #include <tesseract_qt/common/icon_utils.h>
+#include <tesseract_qt/common/events/render_events.h>
+
+#include <tesseract_qt/environment/widgets/environment_widget.h>
 
 #include <OgreSceneNode.h>
 
@@ -14,9 +18,9 @@
 
 namespace tesseract_rviz
 {
-struct EnvironmentDisplayPrivate
+struct EnvironmentDisplay::Implementation
 {
-  EnvironmentDisplayPrivate()
+  Implementation()
   {
     environment_display_counter++;
     environment_display_id = environment_display_counter;
@@ -25,7 +29,7 @@ struct EnvironmentDisplayPrivate
 
   std::shared_ptr<SetThemeTool> theme_tool;
 
-  ROSEnvironmentWidget* widget{ nullptr };
+  tesseract_gui::EnvironmentWidget* widget{ nullptr };
 
   std::unique_ptr<EnvironmentMonitorProperties> monitor_properties{ nullptr };
 
@@ -38,9 +42,9 @@ struct EnvironmentDisplayPrivate
   std::string environment_display_ns;
 };
 
-int EnvironmentDisplayPrivate::environment_display_counter = -1;
+int EnvironmentDisplay::Implementation::environment_display_counter = -1;
 
-EnvironmentDisplay::EnvironmentDisplay() : data_(std::make_unique<EnvironmentDisplayPrivate>())
+EnvironmentDisplay::EnvironmentDisplay() : data_(std::make_unique<Implementation>())
 {
   auto monitor_property =
       new rviz::Property("Environment Properties", "", "Tesseract environment properties", this, nullptr, this);
@@ -59,7 +63,8 @@ void EnvironmentDisplay::onInitialize()
 {
   Display::onInitialize();
   setIcon(tesseract_gui::icons::getTesseractIcon());
-  data_->widget = new tesseract_rviz::ROSEnvironmentWidget(scene_manager_, scene_node_);
+  data_->widget = new tesseract_gui::EnvironmentWidget(data_->monitor_properties->getComponentInfo());
+
   setAssociatedWidget(data_->widget);
 
   getAssociatedWidget()->layout()->setSizeConstraint(QLayout::SetNoConstraint);
@@ -71,7 +76,12 @@ void EnvironmentDisplay::onInitialize()
   disconnect(
       getAssociatedWidgetPanel(), SIGNAL(visibilityChanged(bool)), this, SLOT(associatedPanelVisibilityChange(bool)));
 
-  data_->monitor_properties->onInitialize(data_->widget);
+  connect(data_->monitor_properties.get(),
+          SIGNAL(componentInfoChanged(std::shared_ptr<const tesseract_gui::ComponentInfo>)),
+          this,
+          SLOT(onComponentInfoChanged(std::shared_ptr<const tesseract_gui::ComponentInfo>)));
+
+  data_->monitor_properties->onInitialize(scene_manager_, scene_node_);
 
   data_->theme_tool = SetThemeTool::instance();
   if (!data_->theme_tool->isInitialized())
@@ -84,7 +94,9 @@ void EnvironmentDisplay::update(float wall_dt, float ros_dt)
 {
   Display::update(wall_dt, ros_dt);
 
-  data_->widget->onRender(wall_dt);
+  if (data_->widget != nullptr)
+    QApplication::sendEvent(qApp,
+                            new tesseract_gui::events::PreRender(data_->widget->getComponentInfo()->getSceneName()));
 }
 
 void EnvironmentDisplay::load(const rviz::Config& config)
@@ -102,7 +114,7 @@ void EnvironmentDisplay::save(rviz::Config config) const
 void EnvironmentDisplay::onEnable()
 {
   Display::onEnable();
-  data_->widget->onEnable();
+  //  data_->widget->setEnable(true);
 }
 
 void EnvironmentDisplay::onDisable() { Display::onDisable(); }
@@ -151,6 +163,11 @@ void EnvironmentDisplay::onEnableChanged()
     scene_node_->setVisible(false);
   }
   QApplication::restoreOverrideCursor();
+}
+
+void EnvironmentDisplay::onComponentInfoChanged(std::shared_ptr<const tesseract_gui::ComponentInfo> component_info)
+{
+  data_->widget->setComponentInfo(component_info);
 }
 
 }  // namespace tesseract_rviz

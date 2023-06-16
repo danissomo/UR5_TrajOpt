@@ -42,8 +42,8 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
 #include <tesseract_command_language/move_instruction.h>
 #include <tesseract_command_language/state_waypoint.h>
-#include <tesseract_time_parameterization/iterative_spline_parameterization.h>
-#include <tesseract_time_parameterization/instructions_trajectory.h>
+#include <tesseract_time_parameterization/isp/iterative_spline_parameterization.h>
+#include <tesseract_time_parameterization/core/instructions_trajectory.h>
 
 using namespace tesseract_planning;
 
@@ -58,10 +58,7 @@ CompositeInstruction createRepeatedPointTrajectory()
   {
     StateWaypointPoly swp{ StateWaypoint(joint_names, Eigen::VectorXd::Zero(6)) };
     swp.getPosition()[0] = 1;
-    if (i == 0)
-      program.setStartInstruction(MoveInstruction(swp, MoveInstructionType::START));
-    else
-      program.appendMoveInstruction(MoveInstruction(swp, MoveInstructionType::FREESPACE));
+    program.appendMoveInstruction(MoveInstruction(swp, MoveInstructionType::FREESPACE));
   }
 
   return program;
@@ -80,10 +77,7 @@ CompositeInstruction createStraightTrajectory()
   {
     StateWaypointPoly swp{ StateWaypoint(joint_names, Eigen::VectorXd::Zero(6)) };
     swp.getPosition()[0] = i * max / num;
-    if (i == 0)
-      program.setStartInstruction(MoveInstruction(swp, MoveInstructionType::START));
-    else
-      program.appendMoveInstruction(MoveInstruction(swp, MoveInstructionType::FREESPACE));
+    program.appendMoveInstruction(MoveInstruction(swp, MoveInstructionType::FREESPACE));
   }
 
   // leave final velocity/acceleration unset
@@ -129,11 +123,10 @@ TEST(TestTimeParameterization, TestIterativeSplineDynamicParams)  // NOLINT
   max_velocity << 2.088, 2.082, 3.27, 3.6, 3.3, 3.078;
   Eigen::VectorXd max_acceleration(6);
   max_acceleration << 1, 1, 1, 1, 1, 1;
-  Eigen::VectorXd max_velocity_scaling_factors = Eigen::VectorXd::Ones(static_cast<Eigen::Index>(program.size() + 1));
+  Eigen::VectorXd max_velocity_scaling_factors = Eigen::VectorXd::Ones(static_cast<Eigen::Index>(program.size()));
 
   // +1 for start instruction
-  Eigen::VectorXd max_acceleration_scaling_factors =
-      Eigen::VectorXd::Ones(static_cast<Eigen::Index>(program.size() + 1));
+  Eigen::VectorXd max_acceleration_scaling_factors = Eigen::VectorXd::Ones(static_cast<Eigen::Index>(program.size()));
 
   TrajectoryContainer::Ptr trajectory = std::make_shared<InstructionsTrajectory>(program);
   EXPECT_TRUE(time_parameterization.compute(

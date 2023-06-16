@@ -2,6 +2,49 @@
 Changelog for package tesseract_examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.17.0 (2023-06-06)
+-------------------
+
+0.16.3 (2023-05-03)
+-------------------
+
+0.16.2 (2023-04-28)
+-------------------
+
+0.16.1 (2023-04-11)
+-------------------
+
+0.16.0 (2023-04-09)
+-------------------
+* Fix clang-tidy errors
+* Fixing OMPL freespace example and a typo (`#299 <https://github.com/tesseract-robotics/tesseract_planning/issues/299>`_)
+  * Fix freespace OMPL example (was hybrid)
+  * Fix typo in iterative_spline_parameterization_profile file name
+* Contributors: Levi Armstrong, Roelof
+
+0.15.5 (2023-03-22)
+-------------------
+
+0.15.4 (2023-03-16)
+-------------------
+* Update example to include geometry headers
+* Contributors: Levi Armstrong
+
+0.15.3 (2023-03-15)
+-------------------
+
+0.15.2 (2023-03-14)
+-------------------
+
+0.15.1 (2023-03-09)
+-------------------
+
+0.15.0 (2023-03-03)
+-------------------
+* Update task composer to leverage plugins (`#282 <https://github.com/tesseract-robotics/tesseract_planning/issues/282>`_)
+* Remove composite start instruction
+* Contributors: Levi Armstrong
+
 0.14.0 (2022-10-23)
 -------------------
 * Update to use ModifyAllowedCollisionCommand

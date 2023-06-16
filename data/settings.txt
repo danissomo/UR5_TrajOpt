@@ -149,3 +149,10 @@ collision_constraint_config_type = DISCRETE_CONTINUOUS
 ur_speed = 0.1
 ur_acceleration = 10.0
 ur_blend = 0.0
+
+
+# коррекция положения после attach объекта
+x_correct = -1.71
+y_correct = 0.0
+z_correct = 0.15
+ang_correct = 0

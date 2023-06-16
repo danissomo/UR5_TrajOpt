@@ -1,4 +1,11 @@
-#include "ur5_trajopt.hpp"
+#include <tesseract_common/macros.h>
+TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
+#include <jsoncpp/json/json.h>
+#include <console_bridge/console.h>
+TESSERACT_COMMON_IGNORE_WARNINGS_POP
+
+#include "UR5Trajopt.hpp"
+#include "UR5TrajoptResponce.hpp"
 
 #include <ros/ros.h>
 
@@ -15,24 +22,24 @@
 #include <tesseract_command_language/joint_waypoint.h>
 #include <tesseract_command_language/move_instruction.h>
 #include <tesseract_command_language/utils.h>
-#include <tesseract_task_composer/task_composer_problem.h>
-#include <tesseract_task_composer/task_composer_input.h>
-#include <tesseract_task_composer/task_composer_node_names.h>
-#include <tesseract_task_composer/nodes/trajopt_motion_pipeline_task.h>
+#include <tesseract_task_composer/planning/planning_task_composer_problem.h>
+#include <tesseract_task_composer/core/task_composer_input.h>
+#include <tesseract_task_composer/core/task_composer_plugin_factory.h>
 #include <tesseract_task_composer/taskflow/taskflow_task_composer_executor.h>
 #include <tesseract_visualization/markers/toolpath_marker.h>
 
 #include <tesseract_motion_planners/core/utils.h>
-#include <tesseract_motion_planners/default_planner_namespaces.h>
 #include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
 
+#include <tesseract_motion_planners/trajopt_ifopt/profile/trajopt_ifopt_default_composite_profile.h>
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_composite_profile.h>
+
+#include <tesseract_motion_planners/trajopt_ifopt/profile/trajopt_ifopt_default_plan_profile.h>
+
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_plan_profile.h>
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_solver_profile.h>
 
 #include <tesseract_visualization/trajectory_player.h>
-
-#include <trajopt_sco/osqp_interface.hpp>
 
 #include <iostream>
 #include <thread>
@@ -50,6 +57,7 @@ using namespace tesseract_visualization;
 using namespace tesseract_planning;
 using tesseract_common::ManipulatorInfo;
 
+static const std::string TRAJOPT_DEFAULT_NAMESPACE = "TrajOptMotionPlannerTask";
 
 UR5Trajopt::UR5Trajopt (tesseract_environment::Environment::Ptr env,
                         ROSPlottingPtr plotter,
@@ -67,10 +75,15 @@ UR5Trajopt::UR5Trajopt (tesseract_environment::Environment::Ptr env,
   joint_middle_pos_list_ = joint_middle_pos_list;
 }
 
-tesseract_common::JointTrajectory UR5Trajopt::run() {
 
-   // Solve Trajectory
+UR5TrajoptResponce UR5Trajopt::run() {
+  // Solve Trajectory
   CONSOLE_BRIDGE_logInform("UR5 trajopt plan");
+
+  // Create Task Composer Plugin Factory
+  const std::string share_dir(TESSERACT_TASK_COMPOSER_DIR);
+  tesseract_common::fs::path config_path(share_dir + "/config/task_composer_plugins.yaml");
+  TaskComposerPluginFactory factory(config_path);
 
   // Create Program
   CompositeInstruction program("UR5", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "ur5_tool0"));
@@ -79,8 +92,9 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
   StateWaypointPoly wp0{ StateWaypoint(joint_names_, joint_start_pos_) };
   StateWaypointPoly wp1{ StateWaypoint(joint_names_, joint_end_pos_) };
 
-  MoveInstruction start_instruction(wp0, MoveInstructionType::START);
-  program.setStartInstruction(start_instruction);
+  MoveInstruction start_instruction(wp0, MoveInstructionType::FREESPACE, "UR5");
+  start_instruction.setDescription("Start Instruction");
+  program.appendMoveInstruction(start_instruction);
 
   // Additional provisions
   for (int i = 0; i < joint_middle_pos_list_.size(); i++) {
@@ -100,7 +114,7 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
   program.print("Program: ");
 
   // Create Executor
-  auto executor = std::make_unique<TaskflowTaskComposerExecutor>(5);
+  auto executor = factory.createTaskComposerExecutor("TaskflowExecutor");
 
   // Create profile dictionary
   auto profiles = std::make_shared<ProfileDictionary>();
@@ -137,7 +151,7 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
   composite_profile->smooth_accelerations = false;
   composite_profile->smooth_jerks = false;
   composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
-  profiles->addProfile<TrajOptCompositeProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", composite_profile);
+  profiles->addProfile<TrajOptCompositeProfile>(TRAJOPT_DEFAULT_NAMESPACE, "UR5", composite_profile);
 
   auto plan_profile = std::make_shared<TrajOptDefaultPlanProfile>();
   plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
@@ -145,22 +159,21 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
   plan_profile->cartesian_coeff(1) = 0;
   plan_profile->cartesian_coeff(2) = 0;
 
-  auto trajopt_solver_profile = std::make_shared<TrajOptDefaultSolverProfile>();
-  trajopt_solver_profile->convex_solver = sco::ModelType::OSQP;
-  trajopt_solver_profile->opt_info.max_iter = 200;
-  trajopt_solver_profile->opt_info.min_approx_improve = 1e-3;
-  trajopt_solver_profile->opt_info.min_trust_box_size = 1e-3;
-
   // Add profile to Dictionary
-  profiles->addProfile<TrajOptPlanProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", plan_profile);
-  profiles->addProfile<TrajOptSolverProfile>(profile_ns::TRAJOPT_DEFAULT_NAMESPACE, "UR5", trajopt_solver_profile);
+  profiles->addProfile<TrajOptPlanProfile>(TRAJOPT_DEFAULT_NAMESPACE, "UR5", plan_profile);
+ 
+  // Create task
+  const std::string task_name = "TrajOptPipeline";
+  TaskComposerNode::UPtr task = factory.createTaskComposerNode(task_name);
+  const std::string input_key = task->getInputKeys().front();
+  const std::string output_key = task->getOutputKeys().front();
 
   // Create Task Input Data
   TaskComposerDataStorage input_data;
-  input_data.setData("input_program", program);
+  input_data.setData(input_key, program);
 
   // Create Task Composer Problem
-  TaskComposerProblem problem(env_, input_data);
+  auto problem = std::make_unique<PlanningTaskComposerProblem>(env_, input_data, profiles);
 
   // Задержка, чтобы показать сцену, потом строить траекторию
   if (!ui_control_ && plotter_ != nullptr && plotter_->isConnected()) {
@@ -170,15 +183,14 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
   // Solve process plan
   tesseract_common::Timer stopwatch;
   stopwatch.start();
-  TaskComposerInput input(problem, profiles);
-  TrajOptMotionPipelineTask task("input_program", "output_program");
-  TaskComposerFuture::UPtr future = executor->run(task, input);
+  TaskComposerInput input(std::move(problem));
+  TaskComposerFuture::UPtr future = executor->run(*task, input);
   future->wait();
   stopwatch.stop();
   CONSOLE_BRIDGE_logInform("Planning took %f seconds.", stopwatch.elapsedSeconds());
 
 
-  auto ci = input.data_storage.getData("output_program").as<CompositeInstruction>();
+  auto ci = input.data_storage.getData(output_key).as<CompositeInstruction>();
   tesseract_common::JointTrajectory trajectory = toJointTrajectory(ci);
   std::vector<tesseract_planning::InstructionPoly> points = ci.getInstructions();
 
@@ -191,9 +203,14 @@ tesseract_common::JointTrajectory UR5Trajopt::run() {
     auto state_solver = env_->getStateSolver();
     auto scene_state = env_->getState();
 
-    plotter_->plotMarker(ToolpathMarker(toolpath));
+    auto marker = ToolpathMarker(toolpath);
+    marker.scale = Eigen::Vector3d::Constant(0.07);
+
+    plotter_->plotMarker(marker);
     plotter_->plotTrajectory(trajectory, *state_solver);
   }
 
-  return trajectory;
+  UR5TrajoptResponce responce(trajectory, input.isSuccessful(), stopwatch.elapsedSeconds());
+
+  return responce;
 }
