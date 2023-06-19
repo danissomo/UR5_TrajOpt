@@ -713,6 +713,16 @@ bool gripperMove(ur5_husky_main::GripperService::Request &req,
 }
 
 
+void sendMessageToUI(std::string message, ros::Publisher &messagePub, ros::Rate &loop_rate) {
+  std_msgs::String msg;
+  msg.data = message;
+  ROS_INFO("Sent message to UI: %s", msg.data.c_str());
+  messagePub.publish(msg);
+  ros::spinOnce();
+  loop_rate.sleep();
+}
+
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "ur5_trajopt_node");
   ros::NodeHandle pnh("~");
@@ -915,7 +925,6 @@ int main(int argc, char** argv) {
   }
 
 
-
   while(ros::ok()) {
 
     bool goToStart = false;
@@ -937,7 +946,6 @@ int main(int argc, char** argv) {
 
     robotRestart = false;
     plotter->clear();
-
 
     // Ждем команды на планирование траектории
     if (ui_control && !robotPlanTrajectory) {
@@ -1007,18 +1015,16 @@ int main(int argc, char** argv) {
 
     if (!success) {
       ROS_ERROR("Planning ended with errors!");
-      // TODO Реализоывать обработку ситуации, когда не получилось рассчитать траекторию
-      // вернуть флаг ошибки в UI
-      // запретить выполнять траекторию
+      sendMessageToUI("error_trajopt", messagePub, loop_rate);
+      robotPlanTrajectory = false;
+      robotExecuteTrajectory = false;
+      setRobotNotConnectErrorMes = false;
+      continue;
     }
 
     tesseract_common::JointTrajectory trajectory = responce.getTrajectory();
 
-    msg.data = "plan_finish";
-    ROS_INFO("Sent message to UI: %s", msg.data.c_str());
-    messagePub.publish(msg);
-    ros::spinOnce();
-    loop_rate.sleep();
+    sendMessageToUI("plan_finish", messagePub, loop_rate);
 
 
     /////////////////////////////////////////////////
@@ -1135,9 +1141,7 @@ int main(int argc, char** argv) {
       std::cout << "The trajectory in the simulator will not be executed. \n";
     }
 
-    msg.data = "execute_finish";
-    ROS_INFO("Sent message to UI: %s", msg.data.c_str());
-    messagePub.publish(msg);
+    sendMessageToUI("execute_finish", messagePub, loop_rate);
 
     robotPlanTrajectory = false;
     robotExecuteTrajectory = false;
