@@ -84,6 +84,7 @@ add_message_files(
     FILES
     Color.msg
     MiddlePose.msg
+    InfoUI.msg
 #   Message1.msg
 #   Message2.msg
 )

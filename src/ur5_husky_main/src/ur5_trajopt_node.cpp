@@ -28,6 +28,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <ur5_husky_main/IKSolver.h>
 #include <ur5_husky_main/GetInfo.h>
 #include <ur5_husky_main/GripperService.h>
+#include <ur5_husky_main/InfoUI.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -713,11 +714,12 @@ bool gripperMove(ur5_husky_main::GripperService::Request &req,
 }
 
 
-void sendMessageToUI(std::string message, ros::Publisher &messagePub, ros::Rate &loop_rate) {
-  std_msgs::String msg;
-  msg.data = message;
-  ROS_INFO("Sent message to UI: %s", msg.data.c_str());
-  messagePub.publish(msg);
+void sendMessageToUI(std::string message, ros::Publisher &messageUIPub, ros::Rate &loop_rate, double time = 0.0) {
+  ur5_husky_main::InfoUI msg;
+  msg.code = message;
+  msg.time = time;
+  ROS_INFO("Sent message to UI: %s", msg.code.c_str());
+  messageUIPub.publish(msg);
   ros::spinOnce();
   loop_rate.sleep();
 }
@@ -917,6 +919,7 @@ int main(int argc, char** argv) {
                       ("gripper_move", boost::bind(gripperMove, _1, _2));
 
   ros::Publisher messagePub = nh.advertise<std_msgs::String>("chatter", 1000);
+  ros::Publisher messageUIPub = nh.advertise<ur5_husky_main::InfoUI>("chatter_ui", 1000);
   std_msgs::String msg;
 
 
@@ -1015,7 +1018,7 @@ int main(int argc, char** argv) {
 
     if (!success) {
       ROS_ERROR("Planning ended with errors!");
-      sendMessageToUI("error_trajopt", messagePub, loop_rate);
+      sendMessageToUI("error_trajopt", messageUIPub, loop_rate, responce.getTime());
       robotPlanTrajectory = false;
       robotExecuteTrajectory = false;
       setRobotNotConnectErrorMes = false;
@@ -1024,7 +1027,7 @@ int main(int argc, char** argv) {
 
     tesseract_common::JointTrajectory trajectory = responce.getTrajectory();
 
-    sendMessageToUI("plan_finish", messagePub, loop_rate);
+    sendMessageToUI("plan_finish", messageUIPub, loop_rate, responce.getTime());
 
 
     /////////////////////////////////////////////////
@@ -1141,7 +1144,7 @@ int main(int argc, char** argv) {
       std::cout << "The trajectory in the simulator will not be executed. \n";
     }
 
-    sendMessageToUI("execute_finish", messagePub, loop_rate);
+    sendMessageToUI("execute_finish", messageUIPub, loop_rate);
 
     robotPlanTrajectory = false;
     robotExecuteTrajectory = false;
