@@ -346,7 +346,8 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
                       const std::shared_ptr<tesseract_environment::Environment> &env,
                       const ros::Publisher &joint_pub_state,
                       const std::vector<std::string> &joint_names,
-                      const bool connect_robot) {
+                      const bool connect_robot,
+                      ros::Rate &loop_rate) {
 
     std::vector<double> position_vector;
     std::vector<double> velocity;
@@ -374,6 +375,9 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
     }
 
     env->setState(joint_names, joint_start_pos);
+
+    ros::spinOnce();
+    loop_rate.sleep();
 
     res.result = "End publish";
     return true;
@@ -449,6 +453,8 @@ bool getJointValue(ur5_husky_main::GetJointState::Request &req,
   joint_positions.resize(joint_start_pos.size());
   Eigen::VectorXd::Map(&joint_positions[0], joint_start_pos.size()) = joint_start_pos;
 
+  // Это надо перенести отсюда 
+  // не выставляем здесь значения!!!
   sensor_msgs::JointState joint_state_msg;
   joint_state_msg.name = joint_names;
   joint_state_msg.position = joint_positions;
@@ -874,7 +880,7 @@ int main(int argc, char** argv) {
   Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
 
   ros::ServiceServer setStartJointsService = nh.advertiseService<ur5_husky_main::SetStartJointState::Request, ur5_husky_main::SetStartJointState::Response>
-                      ("set_joint_start_value", boost::bind(updateStartJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
+                      ("set_joint_start_value", boost::bind(updateStartJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot, loop_rate));
 
   ros::ServiceServer setFinishJointsService = nh.advertiseService<ur5_husky_main::SetFinishJointState::Request, ur5_husky_main::SetFinishJointState::Response>
                       ("set_joint_finish_value", boost::bind(updateFinishJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));

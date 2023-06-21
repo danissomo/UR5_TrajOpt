@@ -6,7 +6,7 @@
   <arg name="paused" default="true" />
   <arg name="use_sim_time" default="true"/>
   <arg name="debug" default="true"/> <!-- Включить для вывода результатов расчетов -->
-  <arg name="connect_robot" default="true"/> <!-- Подключение к роботу (в симулции или к реальному роботу) -->
+  <arg name="connect_robot" default="true"/> <!-- Подключение к роботу (в симуляции или к реальному роботу) -->
   <arg name="ui_control" default="true"/> <!-- Управление роботом из UI, если true, false - управление из командной строки-->
   <arg name="delay" default="2.0" />  <!-- Задержка для запуска ноды -->
   <arg name="prefix" default="ur5_"/>
@@ -15,6 +15,7 @@
 
   <!-- Load controller configuration -->
   <rosparam command="load" file="$(find husky_control)/config/control.yaml" />
+  <rosparam command="load" file="$(find ur5_husky_main)/urdf/robot/arm_controller_ur5.yaml" />
   <rosparam command="load" file="$(find ur5_husky_main)/config/vx300s_trajectory_controllers.yaml"/>
 
   <!-- Load robot description -->
@@ -31,10 +32,6 @@
     <param name="ui_control" type="bool" value="$(arg ui_control)"/>
   </node>
 
-  <!-- Spawn controllers -->
-  <node name="controller_spawner" pkg="controller_manager" type="controller_manager" respawn="false" output="screen"
-        args="spawn arm_controller gripper_controller joint_state_controller"/>
-
   <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" ns="vx300s" />
 
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
@@ -44,5 +41,25 @@
 
   <!-- Подключение Webserver rosbridge -->
   <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+
+  <!-- Проба для Gazebo -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find ur5_husky_main)/worlds/scene.world"/>
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot -z 0.2" respawn="false" output="screen"/>
+
+  <!-- Start joint state controller -->
+  <node name="controller_spawner" pkg="controller_manager" type="controller_manager" respawn="false" output="screen" args="spawn ur5_controller" />
+
+
+  <!-- GAZEBO finish -->
+
 
 </launch>
