@@ -152,7 +152,7 @@ ur_blend = 0.0
 
 
 # коррекция положения после attach объекта
-x_pos_correct = 0.005
+x_pos_correct = 0.002
 y_pos_correct = 0.0
 z_pos_correct = 0.16
 x_orient_correct = -1.57

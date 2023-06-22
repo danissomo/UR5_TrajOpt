@@ -349,10 +349,6 @@ inline void SettingsCustomLibClass::update() {
                 ROS_INFO("Setting updated. New value joint_middle_include = %f", joint_middle_include);
 
             } else if (strcmp("x_pos_correct", token.c_str()) == 0) {
-                joint_middle2_pos_5 = stof(line);
-                ROS_INFO("Setting updated. New value joint_middle2_pos_5 = %f", joint_middle2_pos_5);
-
-            } else if (strcmp("x_pos_correct", token.c_str()) == 0) {
                 x_pos_correct = stof(line);
                 ROS_INFO("Setting updated. New value x_pos_correct = %f", x_pos_correct);
 
