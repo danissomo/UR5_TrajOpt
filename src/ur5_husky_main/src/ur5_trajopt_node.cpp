@@ -507,12 +507,11 @@ bool createBox(ur5_husky_main::Box::Request &req,
     return false;
   }
 
-  if (req.offsetX > 0 || req.offsetY > 0 || req.offsetZ > 0) {
-    Command::Ptr boxMove = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
-    if (!env->applyCommand(boxMove)) {
-      res.result = "ERROR - move create box";
-      return false;
-    }
+  // Сдвинуть box
+  Command::Ptr move = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ, req.rotateX, req.rotateY, req.rotateZ);
+  if (!env->applyCommand(move)) {
+    res.result = "ERROR - move new box";
+    return false;
   }
 
   res.result = "Create box success";
