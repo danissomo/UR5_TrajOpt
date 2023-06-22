@@ -244,7 +244,7 @@ bool moveBox(ur5_husky_main::Box::Request &req,
 
   std::string joint_name = std::string(req.name) + "_joints";
 
-  Command::Ptr box = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ);
+  Command::Ptr box = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ, req.rotateX, req.rotateY, req.rotateZ);
   if (!env->applyCommand(box)) {
     res.result = "ERROR - create box";
     return false;
