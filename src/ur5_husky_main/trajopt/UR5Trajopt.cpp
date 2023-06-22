@@ -38,6 +38,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_plan_profile.h>
 #include <tesseract_motion_planners/trajopt/profile/trajopt_default_solver_profile.h>
+#include <tesseract_task_composer/planning/profiles/contact_check_profile.h>
 
 #include <tesseract_visualization/trajectory_player.h>
 
@@ -137,30 +138,41 @@ UR5TrajoptResponce UR5Trajopt::run() {
 
   auto composite_profile = std::make_shared<TrajOptDefaultCompositeProfile>();
   // composite_profile->longest_valid_segment_length = 0.05;
-  composite_profile->collision_cost_config.enabled = true;
+  // composite_profile->collision_cost_config.enabled = true;
   composite_profile->collision_cost_config.type = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
-  composite_profile->collision_cost_config.safety_margin = 0.01;
+  composite_profile->collision_cost_config.safety_margin = 0.005;
   composite_profile->collision_cost_config.safety_margin_buffer = 0.01;
-  composite_profile->collision_cost_config.coeff = 1;
-  composite_profile->collision_constraint_config.enabled = true;
+  composite_profile->collision_cost_config.coeff = 50;
+
+  // composite_profile->collision_constraint_config.enabled = true;
   composite_profile->collision_constraint_config.type = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
-  composite_profile->collision_constraint_config.safety_margin = 0.01;
-  composite_profile->collision_constraint_config.safety_margin_buffer = 0.01;
-  composite_profile->collision_constraint_config.coeff = 1;
-  composite_profile->smooth_velocities = true;
-  composite_profile->smooth_accelerations = false;
-  composite_profile->smooth_jerks = false;
-  composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
+  composite_profile->collision_constraint_config.safety_margin = 0.0;
+  composite_profile->collision_constraint_config.safety_margin_buffer = 0.005;
+  composite_profile->collision_constraint_config.coeff = 10;
+  // composite_profile->smooth_velocities = true;
+  // composite_profile->smooth_accelerations = false;
+  // composite_profile->smooth_jerks = false;
+  // composite_profile->velocity_coeff = Eigen::VectorXd::Ones(1);
   profiles->addProfile<TrajOptCompositeProfile>(TRAJOPT_DEFAULT_NAMESPACE, "UR5", composite_profile);
 
   auto plan_profile = std::make_shared<TrajOptDefaultPlanProfile>();
-  plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 5);
-  plan_profile->cartesian_coeff(0) = 0;
-  plan_profile->cartesian_coeff(1) = 0;
-  plan_profile->cartesian_coeff(2) = 0;
+  plan_profile->cartesian_coeff = Eigen::VectorXd::Constant(6, 1, 10);
+  // plan_profile->cartesian_coeff(0) = 0;
+  // plan_profile->cartesian_coeff(1) = 0;
+  // plan_profile->cartesian_coeff(2) = 0;
 
   // Add profile to Dictionary
   profiles->addProfile<TrajOptPlanProfile>(TRAJOPT_DEFAULT_NAMESPACE, "UR5", plan_profile);
+
+
+  auto trajopt_solver_profile = std::make_shared<TrajOptDefaultSolverProfile>();
+  trajopt_solver_profile->opt_info.max_iter = 100;
+
+  profiles->addProfile<TrajOptSolverProfile>(TRAJOPT_DEFAULT_NAMESPACE, "UR5", trajopt_solver_profile);
+
+  auto post_check_profile = std::make_shared<ContactCheckProfile>();
+  profiles->addProfile<ContactCheckProfile>(TRAJOPT_DEFAULT_NAMESPACE, "UR5", post_check_profile);
+
  
   // Create task
   const std::string task_name = "TrajOptPipeline";
@@ -194,8 +206,20 @@ UR5TrajoptResponce UR5Trajopt::run() {
   tesseract_common::JointTrajectory trajectory = toJointTrajectory(ci);
   std::vector<tesseract_planning::InstructionPoly> points = ci.getInstructions();
 
+  // Смог ли спланировать
+  // Create Planning Request
+  PlannerRequest request;
+  request.instructions = ci;
+  request.env = env_;
+  request.env_state = env_->getState();
+  request.profiles = profiles;
+
+  // Solve TrajOpt Plan
+  TrajOptMotionPlanner planner(TRAJOPT_DEFAULT_NAMESPACE);
+  PlannerResponse planResponse = planner.solve(request);
+
   // Plot Process Trajectory
-  if (plotter_ != nullptr && plotter_->isConnected() && input.isSuccessful()) {
+  if (plotter_ != nullptr && plotter_->isConnected() && planResponse.isSuccessful()) {
     if (!ui_control_) {
       plotter_->waitForInput();
     }
@@ -210,7 +234,7 @@ UR5TrajoptResponce UR5Trajopt::run() {
     plotter_->plotTrajectory(trajectory, *state_solver);
   }
 
-  UR5TrajoptResponce responce(trajectory, input.isSuccessful(), stopwatch.elapsedSeconds());
+  UR5TrajoptResponce responce(trajectory, planResponse.isSuccessful(), planResponse.getMessage(), stopwatch.elapsedSeconds());
 
   return responce;
 }

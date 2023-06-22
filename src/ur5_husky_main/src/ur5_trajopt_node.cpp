@@ -1004,15 +1004,15 @@ int main(int argc, char** argv) {
     joint_cup.child_link_name = "cup";
     joint_cup.type = JointType::FIXED;
     joint_cup.parent_to_joint_origin_transform = Eigen::Isometry3d::Identity();
-    joint_cup.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(0, 0, 0.15);
+    joint_cup.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(0.005, 0, 0.16);
     Eigen::AngleAxisd rotX(-1.57, Eigen::Vector3d::UnitX());
-    Eigen::AngleAxisd rotY(2.0, Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd rotY(-1.6, Eigen::Vector3d::UnitY());
     joint_cup.parent_to_joint_origin_transform.rotate(rotX);
     joint_cup.parent_to_joint_origin_transform.rotate(rotY);
 
     cmds.push_back(std::make_shared<tesseract_environment::MoveLinkCommand>(joint_cup));
     tesseract_common::AllowedCollisionMatrix add_ac;
-    add_ac.addAllowedCollision("cup", "ur5_tool0", "Never");
+    // add_ac.addAllowedCollision("cup", "ur5_tool0", "Never");
     cmds.push_back(std::make_shared<tesseract_environment::ModifyAllowedCollisionsCommand>(
         add_ac, tesseract_environment::ModifyAllowedCollisionsType::ADD));
     env->applyCommands(cmds);
