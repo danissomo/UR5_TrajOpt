@@ -999,16 +999,18 @@ int main(int argc, char** argv) {
     //////////////////////////////////////////////////
     // Detach the simulated cup from the world and attach to the end effector
     tesseract_environment::Commands cmds;
-    Joint joint_cup("joint_cup");
+    Joint joint_cup("joint_attach");
     joint_cup.parent_link_name = "ur5_tool0";
-    joint_cup.child_link_name = "cup";
+    joint_cup.child_link_name = "attach";
     joint_cup.type = JointType::FIXED;
     joint_cup.parent_to_joint_origin_transform = Eigen::Isometry3d::Identity();
-    joint_cup.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(0.005, 0, 0.16);
-    Eigen::AngleAxisd rotX(-1.57, Eigen::Vector3d::UnitX());
-    Eigen::AngleAxisd rotY(-1.6, Eigen::Vector3d::UnitY());
+    joint_cup.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(x_pos_correct, y_pos_correct, z_pos_correct);
+    Eigen::AngleAxisd rotX(x_orient_correct, Eigen::Vector3d::UnitX());
+    Eigen::AngleAxisd rotY(y_orient_correct, Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd rotZ(z_orient_correct, Eigen::Vector3d::UnitZ());
     joint_cup.parent_to_joint_origin_transform.rotate(rotX);
     joint_cup.parent_to_joint_origin_transform.rotate(rotY);
+    joint_cup.parent_to_joint_origin_transform.rotate(rotZ);
 
     cmds.push_back(std::make_shared<tesseract_environment::MoveLinkCommand>(joint_cup));
     tesseract_common::AllowedCollisionMatrix add_ac;
