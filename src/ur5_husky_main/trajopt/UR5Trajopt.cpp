@@ -219,7 +219,7 @@ UR5TrajoptResponce UR5Trajopt::run() {
   PlannerResponse planResponse = planner.solve(request);
 
   // Plot Process Trajectory
-  if (plotter_ != nullptr && plotter_->isConnected() && planResponse.isSuccessful()) {
+  if (plotter_ != nullptr && plotter_->isConnected() && planResponse.successful) {
     if (!ui_control_) {
       plotter_->waitForInput();
     }
@@ -234,7 +234,7 @@ UR5TrajoptResponce UR5Trajopt::run() {
     plotter_->plotTrajectory(trajectory, *state_solver);
   }
 
-  UR5TrajoptResponce responce(trajectory, planResponse.isSuccessful(), planResponse.getMessage(), stopwatch.elapsedSeconds());
+  UR5TrajoptResponce responce(trajectory, planResponse.successful, planResponse.message, stopwatch.elapsedSeconds());
 
   return responce;
 }
