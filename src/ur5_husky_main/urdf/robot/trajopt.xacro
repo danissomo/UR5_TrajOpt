@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="robot" >
+
+  <xacro:arg name="kinematics_parameters_file" default="$(find ur5_husky_main)/config/robot_calibration.yaml"/>
+
   <xacro:property name="prefix" value="ur5_"/>
   <xacro:property name="wheel_radius" value="0.1651" />
   <xacro:property name="wheel_vertical_offset" value="0.03282" />
@@ -36,10 +39,10 @@
   <xacro:include filename="$(find ur_description)/urdf/common.gazebo.xacro" />
 
   <!-- ur5 -->
-  <xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro" />
+  <xacro:include filename="$(find ur5_husky_main)/urdf/robot/ur5.xacro" />
 
   <!-- arm -->
-  <xacro:ur5_robot prefix="${prefix}" joint_limited="false"/>
+  <xacro:ur5_robot prefix="${prefix}" joint_limited="false" kinematics_parameters_file="$(arg kinematics_parameters_file)"/>
 
   <!-- robotiq 85 -->
   <xacro:include filename="$(find robotiq_85_description)/urdf/robotiq_85_gripper.urdf.xacro" />

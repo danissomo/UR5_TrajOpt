@@ -7,7 +7,7 @@
   <arg name="kinematics_config" default="$(find ur5_husky_main)/config/robot_calibration.yaml"/>
 
   <!-- Load universal robot description format (URDF) -->
-  <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find ur5_husky_main)/urdf/robot/trajopt.xacro'"/>
+  <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find ur5_husky_main)/urdf/robot/trajopt.xacro' kinematics_parameters_file:=$(arg kinematics_config)"/>
 
   <!-- The semantic description that corresponds to the URDF -->
   <param name="robot_description_semantic" command="$(find xacro)/xacro --inorder '$(find ur5_husky_main)/urdf/robot/ur5.srdf'" />

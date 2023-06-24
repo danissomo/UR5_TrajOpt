@@ -16,7 +16,7 @@
 
   <!-- Load controller configuration -->
   <rosparam command="load" file="$(find husky_control)/config/control.yaml" />
-  <rosparam command="load" file="$(find ur5_husky_main)/urdf/robot/arm_controller_ur5.yaml" />
+  <rosparam command="load" file="$(find ur5_husky_main)/config/arm_controller_ur5.yaml" />
   <rosparam command="load" file="$(find ur5_husky_main)/config/vx300s_trajectory_controllers.yaml"/>
 
   <!-- Load robot description -->
