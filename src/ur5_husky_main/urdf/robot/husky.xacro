@@ -28,6 +28,7 @@
     <xacro:include filename="$(find husky_description)/urdf/wheel.urdf.xacro" />
 
     <xacro:include filename="$(find husky_description)/urdf/accessories/intel_realsense.urdf.xacro"/>
+    <xacro:include filename="$(find husky_description)/urdf/accessories/sensor_arch.urdf.xacro"/>
 
     <xacro:property name="M_PI" value="3.14159"/>
 
@@ -44,6 +45,20 @@
     <!-- Wheel Properties -->
     <xacro:property name="wheel_length" value="0.1143" />
     <xacro:property name="wheel_radius" value="0.1651" />
+
+
+    <!--
+      Add the main sensor arch if the user has specifically enabled it, or if a sensor
+      requires it for mounting
+    -->
+    <xacro:property name="sensorbar_user_enabled"     value="$(arg sensor_arch)" />
+    <xacro:property name="sensorbar_needed_realsense" value="$(arg realsense_enabled)" />
+    <xacro:property name="sensorbar_needed_lidar"     value="$(arg laser_3d_enabled)" />
+    <!-- <xacro:if value="${sensorbar_needed_realsense or sensorbar_user_enabled or sensorbar_needed_lidar}"> -->
+      <xacro:sensor_arch prefix="" parent="top_plate_link" size="$(arg sensor_arch_height)">
+          <origin xyz="$(optenv HUSKY_SENSOR_ARCH_OFFSET -0.32 0 0.51)" rpy="$(optenv HUSKY_SENSOR_ARCH_RPY 0 0 ${M_PI})"/>
+        </xacro:sensor_arch>
+    <!-- </xacro:if> -->
 
     <!-- Base link is the center of the robot's bottom plate -->
     <link name="base_link">
