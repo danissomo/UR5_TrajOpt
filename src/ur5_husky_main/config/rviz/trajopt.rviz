@@ -96,6 +96,21 @@ Visualization Manager:
       tesseract::EnvMonitorMode: Monitor
       tesseract::EnvMonitorTopic: /tesseract_ros_examples/tesseract_published_environment
       tesseract::EnvMonitorURDFDescription: robot_description
+    # - Alpha: 1
+    #   Class: rviz/RobotModel
+    #   Collision Enabled: false
+    #   Enabled: true
+    #   Links:
+    #     All Links Enabled: true
+    #     Expand Joint Details: false
+    #     Expand Link Details: false
+    #     Expand Tree: false
+    #   Name: RobotModel
+    #   Robot Description: robot_description
+    #   TF Prefix: ""
+    #   Update Interval: 0
+    #   Value: true
+    #   Visual Enabled: true
   Enabled: true
   Global Options:
     Background Color: 0; 176; 240
