@@ -5,16 +5,6 @@
   <xacro:include filename="$(find ur_description)/urdf/ur.gazebo.xacro" />
   <xacro:include filename="$(find ur5_husky_main)/urdf/robot/ur5_common.xacro" />
 
-<!--   <xacro:macro name="cylinder_inertial" params="radius length mass *origin">
-    <inertial>
-      <mass value="${mass}" />
-      <xacro:insert_block name="origin" />
-      <inertia ixx="${0.0833333 * mass * (3 * radius * radius + length * length)}" ixy="0.0" ixz="0.0"
-        iyy="${0.0833333 * mass * (3 * radius * radius + length * length)}" iyz="0.0"
-        izz="${0.5 * mass * radius * radius}" />
-    </inertial>
-  </xacro:macro> -->
-
   <xacro:macro name="ur5_robot" params="
     prefix 
     joint_limits_parameters_file
@@ -32,129 +22,6 @@
       kinematics_parameters_file="${kinematics_parameters_file}"
       physical_parameters_file="${physical_parameters_file}"
       visual_parameters_file="${visual_parameters_file}"/>
-
-    <!-- Load calibration params -->
-<!--     <xacro:property name="config_kinematics_parameters" value="${load_yaml(kinematics_parameters_file)}"/>
-    <xacro:property name="sec_kinematics" value="${config_kinematics_parameters['kinematics']}" /> -->
-
-    <!-- Inertia parameters -->
-<!--     <xacro:property name="base_mass" value="4.0" />  --> <!-- This mass might be incorrect -->
-<!--     <xacro:property name="shoulder_mass" value="3.7000" />
-    <xacro:property name="upper_arm_mass" value="8.3930" />
-    <xacro:property name="forearm_mass" value="2.2750" />
-    <xacro:property name="wrist_1_mass" value="1.2190" />
-    <xacro:property name="wrist_2_mass" value="1.2190" />
-    <xacro:property name="wrist_3_mass" value="0.1879" />
-
-    <xacro:property name="shoulder_cog" value="0.0 0.00193 -0.02561" />
-    <xacro:property name="upper_arm_cog" value="0.0 -0.024201 0.2125" />
-    <xacro:property name="forearm_cog" value="0.0 0.0265 0.11993" />
-    <xacro:property name="wrist_1_cog" value="0.0 0.110949 0.01634" />
-    <xacro:property name="wrist_2_cog" value="0.0 0.0018 0.11099" />
-    <xacro:property name="wrist_3_cog" value="0.0 0.001159 0.0" /> -->
-
-    <!-- Kinematic model -->
-    <!-- Properties from urcontrol.conf -->
-    <!--
-      DH for UR5:
-      a = [0.00000, -0.42500, -0.39225,  0.00000,  0.00000,  0.0000]
-      d = [0.089159,  0.00000,  0.00000,  0.10915,  0.09465,  0.0823]
-      alpha = [ 1.570796327, 0, 0, 1.570796327, -1.570796327, 0 ]
-      q_home_offset = [0, -1.570796327, 0, -1.570796327, 0, 0]
-      joint_direction = [-1, -1, 1, 1, 1, 1]
-      mass = [3.7000, 8.3930, 2.2750, 1.2190, 1.2190, 0.1879]
-      center_of_mass = [ [0, -0.02561, 0.00193], [0.2125, 0, 0.11336], [0.11993, 0.0, 0.0265], [0, -0.0018, 0.01634], [0, 0.0018,0.01634], [0, 0, -0.001159] ]
-    -->
-   <!--  <xacro:property name="d1" value="0.089159" />
-    <xacro:property name="a2" value="-0.42500" />
-    <xacro:property name="a3" value="-0.39225" />
-    <xacro:property name="d4" value="0.10915" />
-    <xacro:property name="d5" value="0.09465" />
-    <xacro:property name="d6" value="0.0823" /> -->
-
-    <!-- kinematics -->
-<!--     <xacro:property name="shoulder_x" value="${sec_kinematics['shoulder']['x']}" scope="parent"/>
-    <xacro:property name="shoulder_y" value="${sec_kinematics['shoulder']['y']}" scope="parent"/>
-    <xacro:property name="shoulder_z" value="${sec_kinematics['shoulder']['z']}" scope="parent"/>
-    <xacro:property name="shoulder_roll" value="${sec_kinematics['shoulder']['roll']}" scope="parent"/>
-    <xacro:property name="shoulder_pitch" value="${sec_kinematics['shoulder']['pitch']}" scope="parent"/>
-    <xacro:property name="shoulder_yaw" value="${sec_kinematics['shoulder']['yaw']}" scope="parent"/>
-
-    <xacro:property name="upper_arm_x" value="${sec_kinematics['upper_arm']['x']}" scope="parent"/>
-    <xacro:property name="upper_arm_y" value="${sec_kinematics['upper_arm']['y']}" scope="parent"/>
-    <xacro:property name="upper_arm_z" value="${sec_kinematics['upper_arm']['z']}" scope="parent"/>
-    <xacro:property name="upper_arm_roll" value="${sec_kinematics['upper_arm']['roll']}" scope="parent"/>
-    <xacro:property name="upper_arm_pitch" value="${sec_kinematics['upper_arm']['pitch']}" scope="parent"/>
-    <xacro:property name="upper_arm_yaw" value="${sec_kinematics['upper_arm']['yaw']}" scope="parent"/>
-
-    <xacro:property name="forearm_x" value="${sec_kinematics['forearm']['x']}" scope="parent"/>
-    <xacro:property name="forearm_y" value="${sec_kinematics['forearm']['y']}" scope="parent"/>
-    <xacro:property name="forearm_z" value="${sec_kinematics['forearm']['z']}" scope="parent"/>
-    <xacro:property name="forearm_roll" value="${sec_kinematics['forearm']['roll']}" scope="parent"/>
-    <xacro:property name="forearm_pitch" value="${sec_kinematics['forearm']['pitch']}" scope="parent"/>
-    <xacro:property name="forearm_yaw" value="${sec_kinematics['forearm']['yaw']}" scope="parent"/>
-
-    <xacro:property name="wrist_1_x" value="${sec_kinematics['wrist_1']['x']}" scope="parent"/>
-    <xacro:property name="wrist_1_y" value="${sec_kinematics['wrist_1']['y']}" scope="parent"/>
-    <xacro:property name="wrist_1_z" value="${sec_kinematics['wrist_1']['z']}" scope="parent"/>
-    <xacro:property name="wrist_1_roll" value="${sec_kinematics['wrist_1']['roll']}" scope="parent"/>
-    <xacro:property name="wrist_1_pitch" value="${sec_kinematics['wrist_1']['pitch']}" scope="parent"/>
-    <xacro:property name="wrist_1_yaw" value="${sec_kinematics['wrist_1']['yaw']}" scope="parent"/>
-
-    <xacro:property name="wrist_2_x" value="${sec_kinematics['wrist_2']['x']}" scope="parent"/>
-    <xacro:property name="wrist_2_y" value="${sec_kinematics['wrist_2']['y']}" scope="parent"/>
-    <xacro:property name="wrist_2_z" value="${sec_kinematics['wrist_2']['z']}" scope="parent"/>
-    <xacro:property name="wrist_2_roll" value="${sec_kinematics['wrist_2']['roll']}" scope="parent"/>
-    <xacro:property name="wrist_2_pitch" value="${sec_kinematics['wrist_2']['pitch']}" scope="parent"/>
-    <xacro:property name="wrist_2_yaw" value="${sec_kinematics['wrist_2']['yaw']}" scope="parent"/>
-
-    <xacro:property name="wrist_3_x" value="${sec_kinematics['wrist_3']['x']}" scope="parent"/>
-    <xacro:property name="wrist_3_y" value="${sec_kinematics['wrist_3']['y']}" scope="parent"/>
-    <xacro:property name="wrist_3_z" value="${sec_kinematics['wrist_3']['z']}" scope="parent"/>
-    <xacro:property name="wrist_3_roll" value="${sec_kinematics['wrist_3']['roll']}" scope="parent"/>
-    <xacro:property name="wrist_3_pitch" value="${sec_kinematics['wrist_3']['pitch']}" scope="parent"/>
-    <xacro:property name="wrist_3_yaw" value="${sec_kinematics['wrist_3']['yaw']}" scope="parent"/> -->
-
-    <!-- Arbitrary offsets for shoulder/elbow joints -->
-<!--     <xacro:property name="shoulder_offset" value="0.13585" />
-    <xacro:property name="elbow_offset" value="-0.1197" />
-    <xacro:property name="wrist_1_visual_offset" value="-0.093" scope="parent"/>
-    <xacro:property name="wrist_2_visual_offset" value="-0.095" scope="parent"/>
-    <xacro:property name="wrist_3_visual_offset" value="-0.0818" scope="parent"/> -->
-
-
-    <!-- link lengths used in model -->
-<!--     <xacro:property name="shoulder_height" value="${d1}" />
-    <xacro:property name="upper_arm_length" value="${-a2}" />
-    <xacro:property name="forearm_length" value="${-a3}" />
-    <xacro:property name="wrist_1_length" value="${d4 - elbow_offset - shoulder_offset}" />
-    <xacro:property name="wrist_2_length" value="${d5}" />
-    <xacro:property name="wrist_3_length" value="${d6}" />
-
-    <xacro:property name="shoulder_radius" value="0.060" /> 
-    <xacro:property name="upper_arm_radius" value="0.054" /> 
-    <xacro:property name="elbow_radius" value="0.060" />    
-    <xacro:property name="forearm_radius" value="0.040" />   
-    <xacro:property name="wrist_radius" value="0.045" />  -->   
-
-<!--      <link name="${prefix}base_link" >
-      <visual>
-        <geometry>
-          <mesh filename="package://ur_description/meshes/ur5/visual/base.dae" />
-        </geometry>
-        <material name="LightGrey">
-          <color rgba="0.7 0.7 0.7 1.0"/>
-        </material>
-      </visual>
-      <collision>
-        <geometry>
-          <mesh filename="package://ur_description/meshes/ur5/collision/base.stl" />
-        </geometry>
-      </collision>
-      <xacro:cylinder_inertial radius="0.06" length="0.05" mass="${base_mass}">
-        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
-      </xacro:cylinder_inertial>
-    </link> -->
 
     <link name="${prefix}base_link">
       <visual>
@@ -400,7 +267,7 @@
     <joint name="${prefix}ee_fixed_joint" type="fixed">
       <parent link="${prefix}add_length_tool" />
       <child link = "${prefix}ee_link" />
-      <origin xyz="0 0 0.03" rpy="0 ${pi/-2.0} 0" />
+      <origin xyz="0 0 0.035" rpy="0 ${pi/-2.0} 0" />
     </joint>
 
     <link name="${prefix}ee_link">
@@ -414,11 +281,10 @@
 
     <link name="${prefix}tool0"/>
     <joint name="${prefix}wrist_3_link-tool0_fixed_joint" type="fixed">
-      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <origin xyz="0 0 0.06" rpy="0 0 0"/>
       <parent link="${prefix}add_length_tool"/>
       <child link="${prefix}tool0"/>
     </joint>
-
 
     <xacro:ur_arm_transmission prefix="${prefix}" />
     <xacro:ur_arm_gazebo prefix="${prefix}" />
