@@ -240,34 +240,11 @@
 
 
     <!-- Tool -->
-    <joint name="${prefix}add_length_tool_fixed" type="fixed">
-      <parent link="${prefix}wrist_3_link" />
-      <child link = "${prefix}add_length_tool" />
-      <origin xyz="0.0 0 0.03" rpy="0 0 0" />
-    </joint>
-
-    <link name="${prefix}add_length_tool">
-      <visual>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <cylinder length="0.06" radius="${wrist_3_inertia_radius}"/>
-        </geometry>
-        <material name="Black">
-          <color rgba="0 0 0 1"/>
-        </material>
-      </visual>
-      <collision>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <geometry>
-          <cylinder length="0.06" radius="${wrist_3_inertia_radius}"/>
-        </geometry>
-      </collision>
-    </link>
-
     <joint name="${prefix}ee_fixed_joint" type="fixed">
-      <parent link="${prefix}add_length_tool" />
+      <parent link="${prefix}wrist_3_link" />
       <child link = "${prefix}ee_link" />
-      <origin xyz="0 0 0.035" rpy="0 ${pi/-2.0} 0" />
+      <!-- Корректировка offset гриппера -->
+      <origin xyz="0 0 0.015" rpy="0 ${pi/-2.0} 0" />
     </joint>
 
     <link name="${prefix}ee_link">
@@ -281,10 +258,13 @@
 
     <link name="${prefix}tool0"/>
     <joint name="${prefix}wrist_3_link-tool0_fixed_joint" type="fixed">
-      <origin xyz="0 0 0.06" rpy="0 0 0"/>
-      <parent link="${prefix}add_length_tool"/>
+      <origin xyz="0 0 0" rpy="${pi/-2.0} 0 0"/>
+      <parent link="${prefix}wrist_3_link"/>
       <child link="${prefix}tool0"/>
     </joint>
+
+
+    <!-- Floor base -->
 
     <xacro:ur_arm_transmission prefix="${prefix}" />
     <xacro:ur_arm_gazebo prefix="${prefix}" />

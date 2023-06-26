@@ -12,8 +12,8 @@
   <xacro:arg name="safety_k_position" default="20" /> <!-- Used to set k position in the safety controller-->
 
   <xacro:property name="prefix" value="ur5_"/>
-  <xacro:property name="wheel_radius" value="0.1651" />
-  <xacro:property name="wheel_vertical_offset" value="0.03282" />
+  <xacro:property name="wheel_radius" value="0.1501" />
+  <xacro:property name="wheel_vertical_offset" value="0.06" />
   <xacro:property name="M_PI" value="3.14159"/>
 
   <link name="world"/>
@@ -87,7 +87,8 @@
   <joint name="ur5_to_base_link" type="fixed">
     <parent link="top_plate_link"/>
     <child link="${prefix}base_link"/>
-    <origin xyz="0.25 0.0 0.0" rpy="0 0 ${M_PI/2}"/>
+    <!--  Позиционирование робота на телеге -->
+    <origin xyz="0.3035 0.01 0.0" rpy="0 0 ${M_PI/2}"/>
   </joint>
 
 </robot>
