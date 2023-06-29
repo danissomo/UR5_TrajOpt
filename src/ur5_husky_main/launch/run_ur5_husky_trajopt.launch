@@ -13,6 +13,7 @@
   <arg name="rvizconfig" default="$(find ur5_husky_main)/config/rviz/trajopt.rviz" />
   <arg name="vx300s" default="true"/>
   <arg name="gazebo" default="false"/>
+  <arg name="script" default=""/> <!-- Название сценария -->
 
   <!-- Load controller configuration -->
   <rosparam command="load" file="$(find husky_control)/config/control.yaml" />
@@ -31,6 +32,7 @@
     <param name="debug" type="bool" value="$(arg debug)"/>
     <param name="connect_robot" type="bool" value="$(arg connect_robot)"/>
     <param name="ui_control" type="bool" value="$(arg ui_control)"/>
+    <param name="script" type="string" value="$(arg script)"/>
   </node>
 
   <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" ns="vx300s" />
