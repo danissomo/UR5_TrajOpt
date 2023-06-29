@@ -14,7 +14,6 @@
 
     <xacro:property name="husky_front_bumper_extend" value="$(optenv HUSKY_FRONT_BUMPER_EXTEND 0)" />
     <xacro:property name="husky_rear_bumper_extend" value="$(optenv HUSKY_REAR_BUMPER_EXTEND 0)" />
-    <xacro:property name="husky_top_plate" value="$(optenv HUSKY_LARGE_TOP_PLATE true)" />
 
     <!-- Spawn Husky chassis -->
     <link name="top_chassis_link">
@@ -32,7 +31,7 @@
       <child link="top_chassis_link" />
     </joint>
 
-    <xacro:if value="$(optenv HUSKY_USER_RAIL_ENABLED true)">
+    <xacro:if value="$(optenv HUSKY_USER_RAIL_ENABLED false)">
       <!-- Spawn user rails -->
       <link name="user_rail_link">
         <visual>
@@ -135,7 +134,7 @@
         <joint name="top_plate_joint" type="fixed">
           <parent link="base_link" />
           <child link="top_plate_link"/>
-          <origin xyz="0.0812 0 0.225" rpy="0 0 0"/>
+          <origin xyz="0.0812 0 0.2255" rpy="0 0 0"/>
         </joint>
         <!-- Top plate front link -->
         <joint name="top_plate_front_joint" type="fixed">
