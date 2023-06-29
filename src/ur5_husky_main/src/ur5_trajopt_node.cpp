@@ -29,6 +29,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <ur5_husky_main/GetInfo.h>
 #include <ur5_husky_main/GripperService.h>
 #include <ur5_husky_main/InfoUI.h>
+#include <ur5_husky_main/CalculateTrajectory.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -181,7 +182,7 @@ tesseract_environment::Command::Ptr addMesh(std::string link_name,
                                             Eigen::Vector3d translation,
                                             Eigen::Vector3d rotation) {
 
-  std::string mesh_path = "package://ur5_husky_main/urdf/objects/" + mesh_name;
+  std::string mesh_path = "package://ur5_husky_main/meshes/" + mesh_name;
 
   tesseract_common::ResourceLocator::Ptr locator = std::make_shared<tesseract_common::GeneralResourceLocator>();
   std::vector<tesseract_geometry::Mesh::Ptr> meshes =
@@ -465,6 +466,56 @@ bool getJointValue(ur5_husky_main::GetJointState::Request &req,
 
   return true;
 }
+
+
+bool calculateRobotTrajectory(ur5_husky_main::CalculateTrajectory::Request &req, 
+                              ur5_husky_main::CalculateTrajectory::Response &res,
+                              const std::shared_ptr<tesseract_environment::Environment> &env,
+                              const ROSPlottingPtr &plotter,
+                              const std::vector<std::string> &joint_names) {
+
+  std::vector<double> start = req.startPose.position;
+  std::vector<double> finish = req.finishPose.position;
+
+  Eigen::VectorXd startPose = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(start.data(), start.size());
+  Eigen::VectorXd finishPose = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(finish.data(), finish.size());
+
+  std::vector<Eigen::VectorXd> middlePos;
+  middlePos.empty();
+
+  UR5Trajopt calculate(env, plotter, joint_names, startPose, finishPose, true, middlePos);
+  UR5TrajoptResponce responce = calculate.run();
+
+  tesseract_common::JointTrajectory trajectoryTrajOpt = responce.getTrajectory();
+
+  std::vector<ur5_husky_main::Pose> trajectory;
+
+  TrajectoryPlayer player;
+  player.setTrajectory(trajectoryTrajOpt);
+
+  for (int i = 0; i < trajectoryTrajOpt.states.size(); i++) {
+
+    std::vector<double> position;
+
+    tesseract_common::JointState j_state = player.getByIndex(i);
+    position.resize(j_state.position.size());
+    Eigen::VectorXd::Map(&position[0], j_state.position.size()) = j_state.position;
+
+    ur5_husky_main::Pose msg;
+    msg.name = j_state.joint_names;
+    msg.position = position;
+  }
+
+  res.success = responce.isSuccessful();
+  res.message = responce.getMessage();
+  res.trajectory = trajectory;
+
+  // ros::spinOnce();
+  // loop_rate.sleep();
+
+  return true;
+}
+
 
 bool robotPlanTrajectoryMethod(ur5_husky_main::RobotPlanTrajectory::Request &req, ur5_husky_main::RobotPlanTrajectory::Response &res) {
 
@@ -886,6 +937,9 @@ int main(int argc, char** argv) {
 
   ros::ServiceServer getJointsService = nh.advertiseService<ur5_husky_main::GetJointState::Request, ur5_husky_main::GetJointState::Response>
                       ("get_joint_value", boost::bind(getJointValue, _1, _2, joint_names, joint_pub_state, env));
+
+  ros::ServiceServer robotCalculatePlanService = nh.advertiseService<ur5_husky_main::CalculateTrajectory::Request, ur5_husky_main::CalculateTrajectory::Response>
+                      ("calculate_robot_rajectory", boost::bind(calculateRobotTrajectory, _1, _2, env, plotter, joint_names));
 
   ros::ServiceServer robotPlanService = nh.advertiseService<ur5_husky_main::RobotPlanTrajectory::Request, ur5_husky_main::RobotPlanTrajectory::Response>
                       ("robot_plan_trajectory", boost::bind(robotPlanTrajectoryMethod, _1, _2));

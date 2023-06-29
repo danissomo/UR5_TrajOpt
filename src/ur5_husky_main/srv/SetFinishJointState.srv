@@ -2,6 +2,6 @@ string[] name
 float64[] position
 float64[] velocity
 float64[] effort
-ur5_husky_main/MiddlePose[] middlePose
+ur5_husky_main/Pose[] middlePose
 ---
 string result

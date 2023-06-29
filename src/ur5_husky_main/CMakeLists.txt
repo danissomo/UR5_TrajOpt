@@ -83,7 +83,7 @@ tesseract_variables()
 add_message_files(
     FILES
     Color.msg
-    MiddlePose.msg
+    Pose.msg
     InfoUI.msg
 #   Message1.msg
 #   Message2.msg
@@ -104,6 +104,7 @@ add_service_files(
   IKSolver.srv
   GripperService.srv
   GetInfo.srv
+  CalculateTrajectory.srv
 )
 
 ## Generate actions in the 'action' folder
