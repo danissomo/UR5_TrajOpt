@@ -41,7 +41,7 @@ Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 0.699999988
-      Cell Size: 0.01
+      Cell Size: 0.1
       Class: rviz/Grid
       Color: 255; 255; 255
       Enabled: true
@@ -55,7 +55,7 @@ Visualization Manager:
         Y: 0
         Z: -0.1201
       Plane: XY
-      Plane Cell Count: 200
+      Plane Cell Count: 100
       Reference Frame: <Fixed Frame>
       Value: true
     - Class: rviz/MarkerArray

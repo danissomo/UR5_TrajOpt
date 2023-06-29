@@ -22,7 +22,7 @@
     <visual>
         <origin xyz="0 0 -${wheel_radius - wheel_vertical_offset/2}" rpy="0 0 0" />
         <geometry>
-          <box size="2 2 0.00005"/>
+          <box size="10 10 0.00005"/>
         </geometry>
         <material name="Floor">
           <color rgba="0.72 0.80 0.97 0.7"/>
@@ -31,13 +31,7 @@
       <collision>
         <origin xyz="0 0 -${wheel_radius - wheel_vertical_offset/2}" rpy="0 0 0" />
         <geometry>
-          <box size="1 1 0.05"/>
-        </geometry>
-      </collision>
-      <collision>
-        <origin xyz="0 0 -${wheel_radius - wheel_vertical_offset/2}" rpy="0 0 0" />
-        <geometry>
-          <box size="1 1 0.05"/>
+          <box size="10 10 0.00005"/>
         </geometry>
       </collision>
   </link>

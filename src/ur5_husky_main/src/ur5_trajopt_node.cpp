@@ -29,6 +29,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <ur5_husky_main/GetInfo.h>
 #include <ur5_husky_main/GripperService.h>
 #include <ur5_husky_main/InfoUI.h>
+#include <ur5_husky_main/PoseList.h>
 #include <ur5_husky_main/CalculateTrajectory.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
@@ -182,7 +183,7 @@ tesseract_environment::Command::Ptr addMesh(std::string link_name,
                                             Eigen::Vector3d translation,
                                             Eigen::Vector3d rotation) {
 
-  std::string mesh_path = "package://ur5_husky_main/meshes/" + mesh_name;
+  std::string mesh_path = "package://ur5_husky_main/meshes/objects/" + mesh_name;
 
   tesseract_common::ResourceLocator::Ptr locator = std::make_shared<tesseract_common::GeneralResourceLocator>();
   std::vector<tesseract_geometry::Mesh::Ptr> meshes =
@@ -472,7 +473,9 @@ bool calculateRobotTrajectory(ur5_husky_main::CalculateTrajectory::Request &req,
                               ur5_husky_main::CalculateTrajectory::Response &res,
                               const std::shared_ptr<tesseract_environment::Environment> &env,
                               const ROSPlottingPtr &plotter,
-                              const std::vector<std::string> &joint_names) {
+                              const std::vector<std::string> &joint_names,
+                              const ros::Publisher &messagePosePub,
+                              ros::Rate &loop_rate) {
 
   std::vector<double> start = req.startPose.position;
   std::vector<double> finish = req.finishPose.position;
@@ -511,8 +514,12 @@ bool calculateRobotTrajectory(ur5_husky_main::CalculateTrajectory::Request &req,
   res.message = responce.getMessage();
   res.trajectory = trajectory;
 
-  // ros::spinOnce();
-  // loop_rate.sleep();
+  ur5_husky_main::PoseList poses;
+  poses.pose_list = trajectory;
+
+  messagePosePub.publish(poses);
+  ros::spinOnce();
+  loop_rate.sleep();
 
   return true;
 }
@@ -930,6 +937,11 @@ int main(int argc, char** argv) {
   position_vector.resize(joint_start_pos.size());
   Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
 
+  ros::Publisher messagePub = nh.advertise<std_msgs::String>("chatter", 1000);
+  ros::Publisher messageUIPub = nh.advertise<ur5_husky_main::InfoUI>("chatter_ui", 1000);
+  ros::Publisher messagePosePub = nh.advertise<ur5_husky_main::PoseList>("trajopt_pose", 1000);
+  std_msgs::String msg;
+
   ros::ServiceServer setStartJointsService = nh.advertiseService<ur5_husky_main::SetStartJointState::Request, ur5_husky_main::SetStartJointState::Response>
                       ("set_joint_start_value", boost::bind(updateStartJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot, loop_rate));
 
@@ -940,7 +952,7 @@ int main(int argc, char** argv) {
                       ("get_joint_value", boost::bind(getJointValue, _1, _2, joint_names, joint_pub_state, env));
 
   ros::ServiceServer robotCalculatePlanService = nh.advertiseService<ur5_husky_main::CalculateTrajectory::Request, ur5_husky_main::CalculateTrajectory::Response>
-                      ("calculate_robot_rajectory", boost::bind(calculateRobotTrajectory, _1, _2, env, plotter, joint_names));
+                      ("calculate_robot_rajectory", boost::bind(calculateRobotTrajectory, _1, _2, env, plotter, joint_names, messagePosePub, loop_rate));
 
   ros::ServiceServer robotPlanService = nh.advertiseService<ur5_husky_main::RobotPlanTrajectory::Request, ur5_husky_main::RobotPlanTrajectory::Response>
                       ("robot_plan_trajectory", boost::bind(robotPlanTrajectoryMethod, _1, _2));
@@ -977,11 +989,6 @@ int main(int argc, char** argv) {
 
   ros::ServiceServer gripperService = nh.advertiseService<ur5_husky_main::GripperService::Request, ur5_husky_main::GripperService::Response>
                       ("gripper_move", boost::bind(gripperMove, _1, _2));
-
-  ros::Publisher messagePub = nh.advertise<std_msgs::String>("chatter", 1000);
-  ros::Publisher messageUIPub = nh.advertise<ur5_husky_main::InfoUI>("chatter_ui", 1000);
-  std_msgs::String msg;
-
 
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);

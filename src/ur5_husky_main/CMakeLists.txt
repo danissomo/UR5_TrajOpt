@@ -85,6 +85,7 @@ add_message_files(
     Color.msg
     Pose.msg
     InfoUI.msg
+    PoseList.msg
 #   Message1.msg
 #   Message2.msg
 )
@@ -202,6 +203,11 @@ add_executable(
   src/gripper_node.cpp
 )
 
+add_executable(
+  sample_subscriber
+  src/sample_subscriber.cpp
+)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -245,6 +251,10 @@ target_link_libraries(freedrive_node
 )
 
 target_link_libraries(gripper_node
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(sample_subscriber
    ${catkin_LIBRARIES}
 )
 
