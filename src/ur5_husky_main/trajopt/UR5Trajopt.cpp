@@ -87,7 +87,7 @@ UR5TrajoptResponce UR5Trajopt::run() {
   TaskComposerPluginFactory factory(config_path);
 
   // Create Program
-  CompositeInstruction program("UR5", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "base_link", "ur5_tool0"));
+  CompositeInstruction program("UR5", CompositeInstructionOrder::ORDERED, ManipulatorInfo("manipulator", "ur5_base_link", "ur5_tool0"));
 
   // Start and End Joint Position for the program
   StateWaypointPoly wp0{ StateWaypoint(joint_names_, joint_start_pos_) };

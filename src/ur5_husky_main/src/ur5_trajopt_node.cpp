@@ -504,6 +504,7 @@ bool calculateRobotTrajectory(ur5_husky_main::CalculateTrajectory::Request &req,
     ur5_husky_main::Pose msg;
     msg.name = j_state.joint_names;
     msg.position = position;
+    trajectory.push_back(msg);
   }
 
   res.success = responce.isSuccessful();
