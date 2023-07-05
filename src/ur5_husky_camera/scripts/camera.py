@@ -26,10 +26,9 @@ class Camera():
         rospy.Subscriber("/pub/realsense_gripper/color/image_raw", ImageCamera, self.camera_gripper)
         rospy.Subscriber("/pub/zed_node/right_raw/image_raw_color/compressed", ImageCamera, self.camera_robot)
 
-        self.pub_gripper = rospy.Publisher('gripper_camera', ImageCamera, queue_size=1)
+        self.pub_gripper = rospy.Publisher('gripper_camera', ImageCamera, queue_size=10)
+        self.pub_robot = rospy.Publisher('robot_camera', ImageCamera, queue_size=10)
         self.rate = rospy.Rate(30)
-        # self.pub_robot = rospy.Publisher('robot_camera', ImageCamera, queue_size=1)
-        # self.rate = rospy.Rate(30)
 
         rospy.on_shutdown(self.shutdown)
 
