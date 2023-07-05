@@ -1,5 +1,8 @@
 #!/bin/bash
 
+echo ROS_MASTER_URI=$1
+echo ROS_IP=$2
+
 xhost +local:docker || true
 docker run  -it --rm \
         -e "DISPLAY" \
@@ -7,6 +10,8 @@ docker run  -it --rm \
         -v "/tmp/.X11-unix:/tmp/.X11-unix:rw" \
         -e XAUTHORITY \
         -e ARMBOT_PATH='/workspace' \
+        -e ROS_MASTER_URI="$1" \
+        -e ROS_IP="$2" \
         -v /dev:/dev \
         -v "$(pwd)":/workspace \
         -v ~:/home \

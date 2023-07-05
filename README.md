@@ -11,7 +11,7 @@
 
 <u>Новое окно терминала:</u>
 
-- Запустить docker-контейнер с окружением для робота: <code>sudo ./scripts/docker/run_armbot_docker.sh</code>
+- Запустить docker-контейнер с окружением для робота: <code>sudo ./scripts/docker/run_armbot_docker.sh $ROS_MASTER_URI $ROS_IP</code>
 - Перейти в рабочую директорию <code>cd workspace</code>
 - Собрать проект <code>catkin build</code>
 - Прописать пути <code>source devel/setup.bash</code>
@@ -39,6 +39,8 @@
 
 Запустить Freedrive <code>roslaunch ur5_husky_main freedrive_node.launch</code>
 
+Запустить камеру <code>roslaunch ur5_husky_camera camera.launch</code>
+
 #### Собрать ur_rtde
 <pre><code>cd /workspace/src/ur_rtde-v1.5.0
 git submodule update --init --recursive
@@ -47,3 +49,17 @@ cd build
 cmake ..
 make
 sudo make install</code></pre>
+
+Примените изменения <code>source ~/.bashrc</code>
+
+
+## Запуск просморта изображений с камеры
+
+1) На роботе запустить публикатора:
+cd /home/administrator/trajopt/camera
+catkin_make
+source devel/setup.bash
+roslaunch camera_pub camera.launch
+
+2) В проекте:
+roslaunch ur5_husky_camera camera.launch
