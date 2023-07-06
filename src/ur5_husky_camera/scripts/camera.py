@@ -9,6 +9,7 @@ from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image
 
 import cv2
+import io
 import base64
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -33,15 +34,35 @@ class Camera():
         rospy.on_shutdown(self.shutdown)
 
 
+    def base64decode(self, image):
+        decoded_data = base64.b64decode(msg.data)
+        np_data = np.fromstring(decoded_data,np.uint8)
+        img = cv2.imdecode(np_data,cv2.IMREAD_UNCHANGED)
+        return img
+
+    def createMessage(self, image):
+        img = self.cv_bridge.cv2_to_imgmsg(image)
+        _, buffer_img= cv2.imencode('.jpg', image)
+
+        msg_img = ImageCamera()
+        msg_img.data = base64.b64encode(buffer_img).decode("utf-8")
+        msg_img.encoding = 'base64'
+        msg_img.width = img.width
+        msg_img.height = img.height
+        return msg_img
+
+
     def camera_gripper(self, msg):
         self.pub_gripper.publish(msg)
+        # img = base64decode(msg.data)
+        # cv2.imshow("test", img)
+        # cv2.waitKey(3)
 
     def camera_robot(self, msg):
         self.pub_robot.publish(msg)
 
 
     def spin(self):
-
         start_time = time.time()
         while not rospy.is_shutdown():
             self.rate.sleep()
