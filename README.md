@@ -11,7 +11,7 @@
 
 <u>Новое окно терминала:</u>
 
-- Запустить docker-контейнер с окружением для робота: <code>sudo ./scripts/docker/run_armbot_docker.sh $ROS_MASTER_URI $ROS_IP</code>
+- Запустить docker-контейнер с окружением для робота: на 1 машине <code>sudo ./scripts/docker/run_armbot_docker.sh</code>, если планируется 2 машины: <code>sudo ./scripts/docker/run_armbot_docker.sh $ROS_MASTER_URI $ROS_IP</code>
 - Перейти в рабочую директорию <code>cd workspace</code>
 - Собрать проект <code>catkin build</code>
 - Прописать пути <code>source devel/setup.bash</code>
@@ -71,3 +71,8 @@ cd /home/administrator/rubleva/ur5_husky_api
 catkin_make
 source devel/setup.bash
 roslaunch gripper_move gripper.launch
+
+Минимальное положение гриппера - 0, максимальное - 0.085
+
+rosservice call gripper_move "angle: 0.04"
+
