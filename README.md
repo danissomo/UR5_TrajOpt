@@ -56,10 +56,18 @@ sudo make install</code></pre>
 ## Запуск просморта изображений с камеры
 
 1) На роботе запустить публикатора:
-cd /home/administrator/trajopt/camera
+cd /home/administrator/rubleva/ur5_husky_api
 catkin_make
 source devel/setup.bash
 roslaunch camera_pub camera.launch
 
 2) В проекте:
 roslaunch ur5_husky_camera camera.launch
+
+## Запуск ноды для гриппера
+
+1) На роботе запустить publisher:
+cd /home/administrator/rubleva/ur5_husky_api
+catkin_make
+source devel/setup.bash
+roslaunch gripper_move gripper.launch

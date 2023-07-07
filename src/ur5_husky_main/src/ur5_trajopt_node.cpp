@@ -31,6 +31,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <ur5_husky_main/InfoUI.h>
 #include <ur5_husky_main/PoseList.h>
 #include <ur5_husky_main/CalculateTrajectory.h>
+#include <ur5_husky_main/GripperMoveRobot.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -736,42 +737,20 @@ bool getInfo(ur5_husky_main::GetInfo::Request &req,
 }
 
 
-/**
- * Print object detection status of gripper
- */
-void printStatus(int Status)
-{
-  switch (Status)
-  {
-    case RobotiqGripper::MOVING:
-      std::cout << "moving";
-      break;
-    case RobotiqGripper::STOPPED_OUTER_OBJECT:
-      std::cout << "outer object detected";
-      break;
-    case RobotiqGripper::STOPPED_INNER_OBJECT:
-      std::cout << "inner object detected";
-      break;
-    case RobotiqGripper::AT_DEST:
-      std::cout << "at destination";
-      break;
-  }
-
-  std::cout << std::endl;
-}
-
-
 bool gripperMove(ur5_husky_main::GripperService::Request &req,
-                 ur5_husky_main::GripperService::Response &res) {
+                 ur5_husky_main::GripperService::Response &res,
+                 ros::ServiceClient &gripperMoveRobotService, 
+                 ur5_husky_main::GripperMoveRobot &srv) {
 
-  std::string action_name = "/command_robotiq_action";  
-  bool wait_for_server = true;
-  RobotiqActionClient* gripper = new RobotiqActionClient(action_name, wait_for_server);
+  srv.request.pose = "";
+  srv.request.speed = 0.10;
+  srv.request.angle = req.angle;
 
-  if (req.open) {
-    gripper->open();
+  if (gripperMoveRobotService.call(srv)) {
+    ROS_INFO("Move gripper send ang=%f", req.angle);
   } else {
-    gripper->close();
+    ROS_ERROR("Can not call service 'gripperMoveRobotService'");
+    return false;
   }
 
   return true;
@@ -989,8 +968,11 @@ int main(int argc, char** argv) {
   ros::ServiceServer getInfoService = nh.advertiseService<ur5_husky_main::GetInfo::Request, ur5_husky_main::GetInfo::Response>
                       ("get_info_robot", boost::bind(getInfo, _1, _2, env, joint_names, loop_rate));
 
+  ros::ServiceClient gripperMoveRobotService = nh.serviceClient<ur5_husky_main::GripperMoveRobot>("gripper_move_robot");
+  ur5_husky_main::GripperMoveRobot srv;
+
   ros::ServiceServer gripperService = nh.advertiseService<ur5_husky_main::GripperService::Request, ur5_husky_main::GripperService::Response>
-                      ("gripper_move", boost::bind(gripperMove, _1, _2));
+                      ("gripper_move", boost::bind(gripperMove, _1, _2, gripperMoveRobotService, srv));
 
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);

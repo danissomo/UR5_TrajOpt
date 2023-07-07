@@ -1,53 +1,24 @@
-cmake_minimum_required(VERSION 3.5.0)
-project(ur5_husky_main)
-
-find_package(ros_industrial_cmake_boilerplate REQUIRED)
-extract_package_metadata(pkg)
-project(${pkg_extracted_name} VERSION ${pkg_extracted_version} LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.0.2)
+project(gripper_move)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++17)
+# add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  cv_bridge
+  image_transport
+  message_generation
   roscpp
   rospy
-  roslib
-  std_srvs
   sensor_msgs
-  tesseract_monitoring
-  tesseract_rosutils
-  settings_custom_lib
-  urdf
   std_msgs
-  message_generation
-  visualization_msgs
-  robotiq_2f_gripper_control
-  #rviz_visual_tools
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
-find_package(Eigen3 REQUIRED)
-
-find_package(tesseract_environment REQUIRED)
-find_package(tesseract_command_language REQUIRED)
-find_package(tesseract_task_composer REQUIRED)
-find_package(tesseract_common REQUIRED)
-find_package(tesseract_support REQUIRED)
-find_package(trajopt_sqp REQUIRED)
-find_package(tesseract_visualization REQUIRED)
-find_package(tesseract_motion_planners REQUIRED)
-find_package(robotiq_2f_gripper_control REQUIRED)
-
-find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde")
-
-
-# Load variable for clang tidy args, compiler options and cxx version
-tesseract_variables()
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -80,34 +51,17 @@ tesseract_variables()
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-    FILES
-    Color.msg
-    Pose.msg
-    InfoUI.msg
-    PoseList.msg
+# add_message_files(
+#   FILES
 #   Message1.msg
 #   Message2.msg
-)
+# )
 
 ## Generate services in the 'srv' folder
-add_service_files(
-  FILES
-  SetStartJointState.srv
-  SetFinishJointState.srv
-  GetJointState.srv
-  RobotPlanTrajectory.srv
-  RobotExecuteTrajectory.srv
-  Box.srv
-  Freedrive.srv
-  Mesh.srv
-  RobotRestart.srv
-  IKSolver.srv
-  GripperService.srv
-  GetInfo.srv
-  CalculateTrajectory.srv
-  GripperMoveRobot.srv
-)
+ add_service_files(
+   FILES
+   GripperMoveRobot.srv
+ )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -117,12 +71,10 @@ add_service_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
+ generate_messages(
    DEPENDENCIES
-   ${MESSAGE_DEPENDENCIES}
-   std_msgs  # Or other packages containing msgs
-   sensor_msgs
-)
+   std_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -154,10 +106,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS
-  CATKIN_DEPENDS robotiq_2f_gripper_control
-#  LIBRARIES ur5_husky_main
-#  CATKIN_DEPENDS other_catkin_pkg
+   CATKIN_DEPENDS message_runtime
+#  INCLUDE_DIRS include
+#  LIBRARIES gripper_move
+#  CATKIN_DEPENDS cv_bridge image_transport message_generation roscpp rospy sensor_msgs std_msgs
 #  DEPENDS system_lib
 )
 
@@ -168,13 +120,14 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include ${catkin_INCLUDE_DIRS} trajopt ik
+# include
+  ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-# src/UR5Trajopt.cpp
-#)
+#   src/${PROJECT_NAME}/gripper_move.cpp
+# )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -184,30 +137,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/ur5_husky_main_node.cpp)
-
-add_executable(
-  ur5_trajopt_node 
-  src/ur5_trajopt_node.cpp
-  trajopt/UR5Trajopt.cpp
-  ik/KinematicsUR5.cpp
-  ik/TestIK.cpp
-)
-
-add_executable(
-  freedrive_node
-  src/freedrive_node.cpp
-)
-
-add_executable(
-  gripper_node
-  src/gripper_node.cpp
-)
-
-add_executable(
-  sample_subscriber
-  src/sample_subscriber.cpp
-)
+# add_executable(${PROJECT_NAME}_node src/gripper_move_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -219,45 +149,15 @@ add_executable(
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_dependencies(ur5_trajopt_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(freedrive_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(gripper_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
 
-
-target_link_libraries(ur5_trajopt_node
-   PRIVATE ur_rtde::rtde
-   PRIVATE tesseract::tesseract_environment
-   PRIVATE tesseract::tesseract_command_language
-   PRIVATE tesseract::tesseract_task_composer
-   PRIVATE tesseract::tesseract_common
-   PRIVATE tesseract::tesseract_support
-   PRIVATE tesseract::tesseract_visualization
-   PRIVATE tesseract::tesseract_motion_planners_trajopt
-   PRIVATE tesseract::tesseract_motion_planners_core
-   PRIVATE trajopt::trajopt_sqp
-   PRIVATE tesseract::tesseract_task_composer
-   PRIVATE tesseract::tesseract_task_composer_planning
-   ${catkin_LIBRARIES}
-)
-
-
-target_link_libraries(freedrive_node
-   PRIVATE ur_rtde::rtde
-   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(gripper_node
-   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(sample_subscriber
-   ${catkin_LIBRARIES}
-)
+#target_link_libraries(
+#  ${OpenCV_LIBS}
+#  ${catkin_LIBRARIES}
+#)
 
 
 #############
@@ -295,11 +195,6 @@ target_link_libraries(sample_subscriber
 #   PATTERN ".svn" EXCLUDE
 # )
 
-install(
-  DIRECTORY config launch
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
-
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
 #   # myfile1
@@ -312,7 +207,7 @@ install(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_ur5_husky_main.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_gripper_move.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

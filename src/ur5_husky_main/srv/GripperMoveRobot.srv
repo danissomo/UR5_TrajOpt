@@ -1,0 +1,5 @@
+string pose
+float64 speed
+float64 angle
+---
+bool res
