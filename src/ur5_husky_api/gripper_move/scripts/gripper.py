@@ -24,7 +24,7 @@ class Gripper(object):
         self.force = 0          # 25 Nytons (minimal force)
 
         if self.pos_goal < self.pos_min:
-            self.pos_goal = self.pos_goal
+            self.pos_goal = self.pos_min
         if self.pos_goal > self.pos_max:
             self.pos_goal = self.pos_max
 
@@ -34,9 +34,7 @@ class Gripper(object):
         rospy.loginfo("Connected to the gripper server")
 
     def move(self):
-        print("self.pos_goal")
-        print(self.pos_goal)
-        print("Open start")
+        print("Open start,  angle = %f, min_angle = %f, max_angle = %f, speed = %f", self.pos_goal, self.pos_min, self.pos_max, self.speed)
         Robotiq.goto(self.robotiq_client, pos=self.pos_goal, speed=self.speed, force=self.force, block=False)
         print("Open finish")
 
