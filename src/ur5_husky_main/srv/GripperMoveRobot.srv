@@ -1,4 +1,4 @@
-string pose
+string name
 float64 speed
 float64 angle
 ---

@@ -742,7 +742,7 @@ bool gripperMove(ur5_husky_main::GripperService::Request &req,
                  ros::ServiceClient &gripperMoveRobotService, 
                  ur5_husky_main::GripperMoveRobot &srv) {
 
-  srv.request.pose = "";
+  srv.request.name = "";
   srv.request.speed = 0.10;
   srv.request.angle = req.angle;
 

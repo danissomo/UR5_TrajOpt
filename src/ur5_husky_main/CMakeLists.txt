@@ -86,6 +86,7 @@ add_message_files(
     Pose.msg
     InfoUI.msg
     PoseList.msg
+    Gripper.msg
 #   Message1.msg
 #   Message2.msg
 )
