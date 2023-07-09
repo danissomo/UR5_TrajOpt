@@ -1086,22 +1086,27 @@ int main(int argc, char** argv) {
 
     //////////////////////////////////////////////////
     //////////////////////////////////////////////////
-    // Detach the simulated cup from the world and attach to the end effector
+    // Detach the simulated attach from the world and attach to the end effector
     tesseract_environment::Commands cmds;
-    Joint joint_cup("joint_attach");
-    joint_cup.parent_link_name = "ur5_tool0";
-    joint_cup.child_link_name = "attach";
-    joint_cup.type = JointType::FIXED;
-    joint_cup.parent_to_joint_origin_transform = Eigen::Isometry3d::Identity();
-    joint_cup.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(x_pos_correct, y_pos_correct, z_pos_correct);
+    Joint joint_attach("joint_attach");
+    joint_attach.parent_link_name = "ur5_tool0";
+    joint_attach.child_link_name = "attach";
+
+    if (script == "open_lock") {
+      joint_attach.child_link_name = "locker_box_1";
+    }
+
+    joint_attach.type = JointType::FIXED;
+    joint_attach.parent_to_joint_origin_transform = Eigen::Isometry3d::Identity();
+    joint_attach.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(x_pos_correct, y_pos_correct, z_pos_correct);
     Eigen::AngleAxisd rotX(x_orient_correct, Eigen::Vector3d::UnitX());
     Eigen::AngleAxisd rotY(y_orient_correct, Eigen::Vector3d::UnitY());
     Eigen::AngleAxisd rotZ(z_orient_correct, Eigen::Vector3d::UnitZ());
-    joint_cup.parent_to_joint_origin_transform.rotate(rotX);
-    joint_cup.parent_to_joint_origin_transform.rotate(rotY);
-    joint_cup.parent_to_joint_origin_transform.rotate(rotZ);
+    joint_attach.parent_to_joint_origin_transform.rotate(rotX);
+    joint_attach.parent_to_joint_origin_transform.rotate(rotY);
+    joint_attach.parent_to_joint_origin_transform.rotate(rotZ);
 
-    cmds.push_back(std::make_shared<tesseract_environment::MoveLinkCommand>(joint_cup));
+    cmds.push_back(std::make_shared<tesseract_environment::MoveLinkCommand>(joint_attach));
     tesseract_common::AllowedCollisionMatrix add_ac;
     // add_ac.addAllowedCollision("cup", "ur5_tool0", "Never");
     cmds.push_back(std::make_shared<tesseract_environment::ModifyAllowedCollisionsCommand>(

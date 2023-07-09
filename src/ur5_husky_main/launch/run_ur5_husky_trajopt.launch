@@ -14,6 +14,7 @@
   <arg name="vx300s" default="true"/>
   <arg name="gazebo" default="false"/>
   <arg name="script" default=""/> <!-- Название сценария -->
+  <!-- Варианты сценариев: open_lock (открыть ящик тумбы) -->
 
   <!-- Load controller configuration -->
   <rosparam command="load" file="$(find husky_control)/config/control.yaml" />
