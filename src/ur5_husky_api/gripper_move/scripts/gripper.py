@@ -12,10 +12,11 @@ import numpy as np
 import time
 
 from gripper_move.srv import *
+from gripper_move.msg import *
 
 
 class Gripper(object):
-    def __init__(self, angle, speed = 0.10): # speed = 0.10 = 5 sm/sec
+    def __init__(self, angle = 0, speed = 0.10): # speed = 0.10 = 5 sm/sec
         # params
         self.pos_goal = angle
         self.pos_max = 0.085
@@ -38,15 +39,29 @@ class Gripper(object):
         Robotiq.goto(self.robotiq_client, pos=self.pos_goal, speed=self.speed, force=self.force, block=False)
         print("Open finish")
 
+    def state(self):
+        return Robotiq.get_current_joint_position()
 
-def handle_gripper_move(req):
+
+def handle_gripper_move_srv(req):
     global gripper
-    print(req)
     gripper = Gripper(req.angle, req.speed)
     gripper.move()
     return GripperMoveRobotResponse(True)
 
+def handle_gripper_move_sub(msg):
+    global gripper
+    gripper = Gripper(msg.angle)
+    gripper.move()
+
+def handle_gripper_state_srv(req):
+    gripper = Gripper()
+    return GripperStateRobot(gripper.state)
+
+
 if __name__ == '__main__':
     rospy.init_node("gripper_controller")
-    s = rospy.Service('gripper_move_robot', GripperMoveRobot, handle_gripper_move)
+    s = rospy.Service('gripper_move_robot', GripperMoveRobot, handle_gripper_move_srv)
+    state = rospy.Service('gripper_state_robot', GripperStateRobot, handle_gripper_move_srv)
+    rospy.Subscriber("gripper_state", Gripper, handle_gripper_move_sub)
     rospy.spin()

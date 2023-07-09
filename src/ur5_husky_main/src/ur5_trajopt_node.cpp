@@ -32,6 +32,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <ur5_husky_main/PoseList.h>
 #include <ur5_husky_main/CalculateTrajectory.h>
 #include <ur5_husky_main/GripperMoveRobot.h>
+#include <ur5_husky_main/GetGripperState.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -131,6 +132,8 @@ bool robotExecuteTrajectory = false;
 bool setRobotNotConnectErrorMes = false;
 bool robotRestart = true;
 bool freeDriveOn = false;
+std::vector<ur5_husky_main::Gripper> gripperPoseList;
+ur5_husky_main::Gripper gripperPosePrev;
 
 
 ColorInfo getDefaultColor(std::string colorName) {
@@ -350,7 +353,8 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
                       const ros::Publisher &joint_pub_state,
                       const std::vector<std::string> &joint_names,
                       const bool connect_robot,
-                      ros::Rate &loop_rate) {
+                      ros::Rate &loop_rate,
+                      ros::Publisher &gripperPub) {
 
     std::vector<double> position_vector;
     std::vector<double> velocity;
@@ -373,8 +377,13 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
     position_vector.resize(joint_start_pos.size());
     Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
 
+    std::cout << "gripper start: " << req.gripperPose[0].name << " " << req.gripperPose[0].angle << std::endl;
+    gripperPosePrev.name = req.gripperPose[0].name;
+    gripperPosePrev.angle = req.gripperPose[0].angle;
+
     if (connect_robot) {
         robotMove(position_vector);
+        gripperPub.publish(req.gripperPose[0]);
     }
 
     env->setState(joint_names, joint_start_pos);
@@ -393,6 +402,9 @@ bool updateFinishJointValue(ur5_husky_main::SetFinishJointState::Request &req,
                       const ros::Publisher &joint_pub_state,
                       const std::vector<std::string> &joint_names,
                       const bool connect_robot) {
+
+    gripperPoseList.insert(gripperPoseList.begin(), std::begin(req.gripperPose), std::end(req.gripperPose));
+    std::cout << "gripperPoseList: " << gripperPoseList.size() << std::endl;
 
     int index = 0;
     for (int j = 0; j < joint_names.size(); j++) {
@@ -757,6 +769,27 @@ bool gripperMove(ur5_husky_main::GripperService::Request &req,
 }
 
 
+bool getGripperState(ur5_husky_main::GetGripperState::Request &req,
+                 ur5_husky_main::GetGripperState::Response &res,
+                 ros::ServiceClient &gsService, 
+                 ur5_husky_main::GetGripperState &gripperStateSrv) {
+
+
+  if (gsService.call(gripperStateSrv)) {
+    res.angle = gripperStateSrv.response.angle;
+  } else {
+    ROS_ERROR("Can not call service 'gsService'");
+    return false;
+  }
+  return true;
+}
+
+
+void gripperCallback(const ur5_husky_main::Gripper::ConstPtr &msg, ros::Publisher &gripperPub) {
+  gripperPub.publish(msg);
+}
+
+
 void sendMessageToUI(std::string message, ros::Publisher &messageUIPub, ros::Rate &loop_rate, double time = 0.0) {
   ur5_husky_main::InfoUI msg;
   msg.code = message;
@@ -923,8 +956,10 @@ int main(int argc, char** argv) {
   ros::Publisher messagePosePub = nh.advertise<ur5_husky_main::PoseList>("trajopt_pose", 1000);
   std_msgs::String msg;
 
+  ros::Publisher gripperPub = nh.advertise<ur5_husky_main::Gripper>("gripper_state", 1000);
+
   ros::ServiceServer setStartJointsService = nh.advertiseService<ur5_husky_main::SetStartJointState::Request, ur5_husky_main::SetStartJointState::Response>
-                      ("set_joint_start_value", boost::bind(updateStartJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot, loop_rate));
+                      ("set_joint_start_value", boost::bind(updateStartJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot, loop_rate, gripperPub));
 
   ros::ServiceServer setFinishJointsService = nh.advertiseService<ur5_husky_main::SetFinishJointState::Request, ur5_husky_main::SetFinishJointState::Response>
                       ("set_joint_finish_value", boost::bind(updateFinishJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
@@ -973,6 +1008,15 @@ int main(int argc, char** argv) {
 
   ros::ServiceServer gripperService = nh.advertiseService<ur5_husky_main::GripperService::Request, ur5_husky_main::GripperService::Response>
                       ("gripper_move", boost::bind(gripperMove, _1, _2, gripperMoveRobotService, srv));
+
+
+  ros::ServiceClient gsService = nh.serviceClient<ur5_husky_main::GetGripperState>("gripper_state_robot");
+  ur5_husky_main::GetGripperState gripperStateSrv;
+
+  ros::ServiceServer gripperStateService = nh.advertiseService<ur5_husky_main::GetGripperState::Request, ur5_husky_main::GetGripperState::Response>
+                      ("get_gripper_state", boost::bind(getGripperState, _1, _2, gsService, gripperStateSrv));                    
+
+  ros::Subscriber sub = nh.subscribe<ur5_husky_main::Gripper>("gripper_state", 10, boost::bind(gripperCallback, _1, gripperPub));
 
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
@@ -1065,27 +1109,86 @@ int main(int argc, char** argv) {
     env->applyCommands(cmds);
     ////////////////////////////////////////////////////
 
-    UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
-    UR5TrajoptResponce responce = calculate.run();
-    bool success = responce.isSuccessful();
 
-    if (!success) {
-      ROS_ERROR("Planning ended with errors!");
-      sendMessageToUI("error_trajopt", messageUIPub, loop_rate, responce.getTime());
-      robotPlanTrajectory = false;
-      robotExecuteTrajectory = false;
-      setRobotNotConnectErrorMes = false;
-      continue;
+    ////////////////////////////////////////////////////////////
+    //
+    //    Проверить, необходимо ли менять положение гриппера
+    //
+    /////////////////////////////////////////////////////////////
+    std::vector<Eigen::VectorXd> joint_middle_pos_list_tmp; // Промежуточные позы, которые будем отправлять на робота
+
+    std::vector<tesseract_common::JointTrajectory> trajectoryList;
+    std::vector<ur5_husky_main::Gripper> gripperStates;
+
+    bool changeGripperState = false;
+    double time = 0.0;
+
+    std::cout << "Gripper: " << std::endl;
+
+    for (int i = 0; i < joint_middle_pos_list.size(); i++) {
+      if (i < gripperPoseList.size()) {
+
+        std::cout << gripperPoseList[i].name << " " << gripperPoseList[i].angle << std::endl;
+
+        joint_middle_pos_list_tmp.push_back(joint_middle_pos_list[i]);
+        if (gripperPoseList[i].angle != gripperPosePrev.angle) {
+          changeGripperState = true;
+          gripperStates.push_back(gripperPoseList[i]);
+
+          UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list_tmp);
+          UR5TrajoptResponce responce = calculate.run();
+          bool success = responce.isSuccessful();
+
+          // TODO подумать, что тут делать в случае ошибки (при расчете сложной траектории из множества кусков)
+          if (!success) {
+            ROS_ERROR("Planning (PLAN №%d) ended with errors!", i+1);
+            sendMessageToUI("error_trajopt", messageUIPub, loop_rate, responce.getTime());
+            robotPlanTrajectory = false;
+            robotExecuteTrajectory = false;
+            setRobotNotConnectErrorMes = false;
+            continue;
+
+          } else {
+            tesseract_common::JointTrajectory trajectory = responce.getTrajectory();
+            trajectoryList.push_back(trajectory);
+            time += responce.getTime();
+          }
+
+          joint_middle_pos_list_tmp.clear();
+        }
+
+        gripperPosePrev = gripperPoseList[i];
+      } else {
+        joint_middle_pos_list_tmp.push_back(joint_middle_pos_list[i]);
+      }
     }
 
-    tesseract_common::JointTrajectory trajectory = responce.getTrajectory();
 
-    sendMessageToUI("plan_finish", messageUIPub, loop_rate, responce.getTime());
+    // Если в принципе не было смены состояния гриппера, то тоже считаем план
+    if (!changeGripperState) {
+      UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
+      UR5TrajoptResponce responce = calculate.run();
+      bool success = responce.isSuccessful();
 
+      if (!success) {
+        ROS_ERROR("Planning ended with errors!");
+        sendMessageToUI("error_trajopt", messageUIPub, loop_rate, responce.getTime());
+        robotPlanTrajectory = false;
+        robotExecuteTrajectory = false;
+        setRobotNotConnectErrorMes = false;
+        continue;
+      }
+
+      tesseract_common::JointTrajectory trajectory = responce.getTrajectory();
+      trajectoryList.push_back(trajectory);
+      time = responce.getTime();
+    }
+
+    sendMessageToUI("plan_finish", messageUIPub, loop_rate, time);
 
     /////////////////////////////////////////////////
     //
-    //   Выполнение траектории в симуляторе rViz
+    //   Выполнение траектории в симуляторе rViz и на роботе
     //
     /////////////////////////////////////////////////
 
@@ -1122,76 +1225,91 @@ int main(int argc, char** argv) {
     if (robotExecuteTrajectory || input_simbol == 'y') {
       std::cout << "Executing... \n";
 
-      TrajectoryPlayer player;
-      player.setTrajectory(trajectory);
+      for (int j = 0; j < trajectoryList.size(); j++) {
 
-      std::vector<tesseract_common::JointState> j_states;
-          
-      ROS_INFO("Added intermediate joints: ");
+          tesseract_common::JointTrajectory trajectory = trajectoryList[j];
 
-      // Список доступных положений робота
-      std::vector<std::vector<double>> jointsPath;
-      std::vector<double> path_pose;
+          TrajectoryPlayer player;
+          player.setTrajectory(trajectory);
 
-      for (int i = 0; i < trajectory.states.size(); i++) {
+          std::vector<tesseract_common::JointState> j_states;
+              
+          ROS_INFO("Added intermediate joints: ");
 
-        tesseract_common::JointState j_state = player.getByIndex(i);
-        path_pose.resize(j_state.position.size());
-        Eigen::VectorXd::Map(&path_pose[0], j_state.position.size()) = j_state.position;
-        path_pose.push_back(ur_speed);
-        path_pose.push_back(ur_acceleration);
-        path_pose.push_back(ur_blend);
-        jointsPath.push_back(path_pose);
+          // Список доступных положений робота
+          std::vector<std::vector<double>> jointsPath;
+          std::vector<double> path_pose;
 
-        ROS_INFO("%d point of traectory: ", i+1);
+          for (int i = 0; i < trajectory.states.size(); i++) {
 
-        std::cout << "joint_names: ";
-        for (const auto& name: j_state.joint_names) {
-          std::cout << name.c_str() << ' ';
-        }
-        std::cout << std::endl;
-        
-        std::cout << "positions: " << j_state.position.transpose() << std::endl;
-        std::cout << "velocity: " << j_state.velocity.transpose() << std::endl;
-        std::cout << "acceleration: " << j_state.acceleration.transpose() << std::endl;
-        std::cout << "effort: " << j_state.effort.transpose() << std::endl;
-        std::cout << "====================" << std::endl;
+            tesseract_common::JointState j_state = player.getByIndex(i);
+            path_pose.resize(j_state.position.size());
+            Eigen::VectorXd::Map(&path_pose[0], j_state.position.size()) = j_state.position;
+            path_pose.push_back(ur_speed);
+            path_pose.push_back(ur_acceleration);
+            path_pose.push_back(ur_blend);
+            jointsPath.push_back(path_pose);
+
+            ROS_INFO("%d point of traectory: ", i+1);
+
+            std::cout << "joint_names: ";
+            for (const auto& name: j_state.joint_names) {
+              std::cout << name.c_str() << ' ';
+            }
+            std::cout << std::endl;
+            
+            std::cout << "positions: " << j_state.position.transpose() << std::endl;
+            std::cout << "velocity: " << j_state.velocity.transpose() << std::endl;
+            std::cout << "acceleration: " << j_state.acceleration.transpose() << std::endl;
+            std::cout << "effort: " << j_state.effort.transpose() << std::endl;
+            std::cout << "====================" << std::endl;
+          }
+
+          std::cout << "jointsPath: " << jointsPath.size() << std::endl;
+
+          // Обновить состояние до последней позиции
+          position_vector.resize(joint_end_pos.size());
+          Eigen::VectorXd::Map(&position_vector[0], joint_end_pos.size()) = joint_end_pos;
+
+          path_pose.resize(position_vector.size());
+          Eigen::VectorXd::Map(&path_pose[0], joint_end_pos.size()) = joint_end_pos;
+          path_pose.push_back(ur_speed);
+          path_pose.push_back(ur_acceleration);
+          path_pose.push_back(ur_blend);
+          jointsPath.push_back(path_pose);
+
+          // Отправить на робота
+          try {
+            RTDEControlInterface rtde_control(robot_ip);
+            rtde_control.moveJ(jointsPath);
+            rtde_control.stopScript();
+
+          } catch (...) {
+            ROS_ERROR("Can`t connect with UR5.");
+          }
+
+          // Поменять состояние гриппера
+          std::cout << "gripperStates = " << gripperStates.size() << std::endl;
+          std::cout << "j = " << j << std::endl;
+          if (j < gripperStates.size()) {
+            std::cout << "PUB GRIPPER STATE = " << gripperStates[j].name << " " << gripperStates[j].angle << std::endl;
+            gripperPub.publish(gripperStates[j]);
+          }
+
+          // Установить состояние для tesseract
+          env->setState(joint_names, joint_end_pos);
+
+          // Сообщение для отправки конечного состояния для обновления в rViz
+          sensor_msgs::JointState joint_state_msg;
+          joint_state_msg.name = joint_names;
+          joint_state_msg.position = position_vector;
+          joint_state_msg.velocity = velocity_default; // скорость
+          joint_state_msg.effort = effort_default; // усилие
+          joint_pub_state.publish(joint_state_msg);
       }
 
-      std::cout << "jointsPath: " << jointsPath.size() << std::endl;
-
-      // Обновить состояние до последней позиции
-      position_vector.resize(joint_end_pos.size());
-      Eigen::VectorXd::Map(&position_vector[0], joint_end_pos.size()) = joint_end_pos;
-
-      path_pose.resize(position_vector.size());
-      Eigen::VectorXd::Map(&path_pose[0], joint_end_pos.size()) = joint_end_pos;
-      path_pose.push_back(ur_speed);
-      path_pose.push_back(ur_acceleration);
-      path_pose.push_back(ur_blend);
-      jointsPath.push_back(path_pose);
-
-      // Отправить на робота
-      try {
-        RTDEControlInterface rtde_control(robot_ip);
-        rtde_control.moveJ(jointsPath);
-        rtde_control.stopScript();
-
-      } catch (...) {
-        ROS_ERROR("Can`t connect with UR5.");
-      }
-
-      // Установить состояние для tesseract
-      env->setState(joint_names, joint_end_pos);
-
-      // Сообщение для отправки конечного состояния для обновления в rViz
-      sensor_msgs::JointState joint_state_msg;
-      joint_state_msg.name = joint_names;
-      joint_state_msg.position = position_vector;
-      joint_state_msg.velocity = velocity_default; // скорость
-      joint_state_msg.effort = effort_default; // усилие
-      joint_pub_state.publish(joint_state_msg);
-
+      // Установить итоговое состояние гриппера после выполнения траектории
+      gripperPub.publish(gripperPoseList[gripperPoseList.size()-1]);
 
     } else {
       std::cout << "The trajectory in the simulator will not be executed. \n";
@@ -1202,6 +1320,8 @@ int main(int argc, char** argv) {
     robotPlanTrajectory = false;
     robotExecuteTrajectory = false;
     setRobotNotConnectErrorMes = false;
+    joint_middle_pos_list_tmp.clear();
+    gripperPoseList.clear();
 
     ros::spinOnce();
     loop_rate.sleep();
