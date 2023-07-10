@@ -6,15 +6,19 @@
   <arg name="paused" default="true" />
   <arg name="use_sim_time" default="true"/>
   <arg name="debug" default="true"/> <!-- Включить для вывода результатов расчетов -->
-  <arg name="connect_robot" default="true"/> <!-- Подключение к роботу (в симулции или к реальному роботу) -->
+  <arg name="connect_robot" default="true"/> <!-- Подключение к роботу (в симуляции или к реальному роботу) -->
   <arg name="ui_control" default="true"/> <!-- Управление роботом из UI, если true, false - управление из командной строки-->
-  <arg name="delay" default="2.0" />  <!-- Задержка для запуска ноды -->
+  <arg name="delay" default="0.5" />  <!-- Задержка для запуска ноды -->
   <arg name="prefix" default="ur5_"/>
   <arg name="rvizconfig" default="$(find ur5_husky_main)/config/rviz/trajopt.rviz" />
   <arg name="vx300s" default="true"/>
+  <arg name="gazebo" default="false"/>
+  <arg name="script" default=""/> <!-- Название сценария -->
+  <!-- Варианты сценариев: open_lock (открыть ящик тумбы) -->
 
   <!-- Load controller configuration -->
   <rosparam command="load" file="$(find husky_control)/config/control.yaml" />
+  <rosparam command="load" file="$(find ur5_husky_main)/config/arm_controller_ur5.yaml" />
   <rosparam command="load" file="$(find ur5_husky_main)/config/vx300s_trajectory_controllers.yaml"/>
 
   <!-- Load robot description -->
@@ -29,11 +33,8 @@
     <param name="debug" type="bool" value="$(arg debug)"/>
     <param name="connect_robot" type="bool" value="$(arg connect_robot)"/>
     <param name="ui_control" type="bool" value="$(arg ui_control)"/>
+    <param name="script" type="string" value="$(arg script)"/>
   </node>
-
-  <!-- Spawn controllers -->
-  <node name="controller_spawner" pkg="controller_manager" type="controller_manager" respawn="false" output="screen"
-        args="spawn arm_controller gripper_controller joint_state_controller"/>
 
   <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" ns="vx300s" />
 
@@ -44,5 +45,26 @@
 
   <!-- Подключение Webserver rosbridge -->
   <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+
+  <!-- Проба для Gazebo -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch" if="$(arg gazebo)">
+    <arg name="world_name" value="$(find ur5_husky_main)/worlds/scene.world"/>
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot -z 0.2" respawn="false" output="screen" if="$(arg gazebo)"/>
+
+  <!-- Start joint state controller -->
+  <node name="controller_spawner" pkg="controller_manager" type="controller_manager" respawn="false" output="screen" args="spawn ur5_controller" if="$(arg gazebo)" />
+  <!-- GAZEBO finish -->
+
+  <!-- Получение изображений с камеры робота -->
+  <node name="camera_node" pkg="ur5_husky_camera" type="camera.py" output="screen" />
+ 
 
 </launch>

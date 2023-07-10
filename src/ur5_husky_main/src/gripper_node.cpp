@@ -15,15 +15,15 @@ typedef robotiq_2f_gripper_control::RobotiqActionClient RobotiqActionClient;
 bool gripperMove(ur5_husky_main::GripperService::Request &req,
                  ur5_husky_main::GripperService::Response &res) {
 
-  std::string action_name = "/command_robotiq_action";  
-  bool wait_for_server = true;
-  RobotiqActionClient* gripper = new RobotiqActionClient(action_name, wait_for_server);
+  // std::string action_name = "/command_robotiq_action";  
+  // bool wait_for_server = true;
+  // RobotiqActionClient* gripper = new RobotiqActionClient(action_name, wait_for_server);
 
-  if (req.open) {
-    gripper->open();
-  } else {
-    gripper->close();
-  }
+  // if (req.open) {
+  //   gripper->open();
+  // } else {
+  //   gripper->close();
+  // }
 
   return true;
 }

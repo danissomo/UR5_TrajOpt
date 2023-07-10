@@ -83,7 +83,10 @@ tesseract_variables()
 add_message_files(
     FILES
     Color.msg
-    MiddlePose.msg
+    Pose.msg
+    InfoUI.msg
+    PoseList.msg
+    Gripper.msg
 #   Message1.msg
 #   Message2.msg
 )
@@ -103,6 +106,9 @@ add_service_files(
   IKSolver.srv
   GripperService.srv
   GetInfo.srv
+  CalculateTrajectory.srv
+  GripperMoveRobot.srv
+  GetGripperState.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -200,6 +206,11 @@ add_executable(
   src/gripper_node.cpp
 )
 
+add_executable(
+  sample_subscriber
+  src/sample_subscriber.cpp
+)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -243,6 +254,10 @@ target_link_libraries(freedrive_node
 )
 
 target_link_libraries(gripper_node
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(sample_subscriber
    ${catkin_LIBRARIES}
 )
 

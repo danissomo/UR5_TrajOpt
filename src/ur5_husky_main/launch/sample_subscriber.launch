@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="ur5_husky_main" type="sample_subscriber" name="sample_subscriber" output="screen" />   
+</launch>

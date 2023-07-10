@@ -1,0 +1,6 @@
+ur5_husky_main/Pose startPose
+ur5_husky_main/Pose finishPose
+---
+bool success
+string message
+ur5_husky_main/Pose[] trajectory

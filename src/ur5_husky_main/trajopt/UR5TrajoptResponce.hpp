@@ -15,21 +15,25 @@ using namespace tesseract_environment;
 class UR5TrajoptResponce
 {
 public:
-  UR5TrajoptResponce(tesseract_common::JointTrajectory  trajectory, bool isSuccessful, double timeSecond) {
+  UR5TrajoptResponce(tesseract_common::JointTrajectory  trajectory, bool isSuccessful, std::string message, double timeSecond) {
     trajectory_ = trajectory;
     isSuccessful_ = isSuccessful;
     timeSecond_ = timeSecond;
+    message_ = message;
   };
   ~UR5TrajoptResponce() = default;
 
   tesseract_common::JointTrajectory getTrajectory() { return trajectory_; }
   double getTime() { return timeSecond_; }
   bool isSuccessful() { return isSuccessful_; }
+  std::string getMessage() { return message_; }
+
 
 private:
   tesseract_common::JointTrajectory trajectory_;
   double timeSecond_;
   bool isSuccessful_;
+  std::string message_;
   
 };
 

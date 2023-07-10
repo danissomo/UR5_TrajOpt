@@ -1,6 +1,6 @@
 # Перемещение робота-манипулятора UR5 при помощи алгоритма TrajOpt
 
-1. Склонировать репозиторий <code>git clone https://github.com/allicen/trajopt_ur5</code>.
+1. Склонировать репозиторий <code>git clone --recurse-submodules https://github.com/allicen/trajopt_ur5</code>.
 
 2. Перейти в папку проекта <code>cd trajopt_ur5</code>.
 
@@ -11,7 +11,7 @@
 
 <u>Новое окно терминала:</u>
 
-- Запустить docker-контейнер с окружением для робота: <code>sudo ./scripts/docker/run_armbot_docker.sh</code>
+- Запустить docker-контейнер с окружением для робота: на 1 машине <code>sudo ./scripts/docker/run_armbot_docker.sh</code>, если планируется 2 машины: <code>sudo ./scripts/docker/run_armbot_docker.sh $ROS_MASTER_URI $ROS_IP</code>
 - Перейти в рабочую директорию <code>cd workspace</code>
 - Собрать проект <code>catkin build</code>
 - Прописать пути <code>source devel/setup.bash</code>
@@ -39,6 +39,8 @@
 
 Запустить Freedrive <code>roslaunch ur5_husky_main freedrive_node.launch</code>
 
+Запустить камеру <code>roslaunch ur5_husky_camera camera.launch</code>
+
 #### Собрать ur_rtde
 <pre><code>cd /workspace/src/ur_rtde-v1.5.0
 git submodule update --init --recursive
@@ -47,3 +49,30 @@ cd build
 cmake ..
 make
 sudo make install</code></pre>
+
+Примените изменения <code>source ~/.bashrc</code>
+
+
+## Запуск просморта изображений с камеры
+
+1) На роботе запустить публикатора:
+cd /home/administrator/rubleva/ur5_husky_api
+catkin_make
+source devel/setup.bash
+roslaunch camera_pub camera.launch
+
+2) В проекте:
+roslaunch ur5_husky_camera camera.launch
+
+## Запуск ноды для гриппера
+
+1) На роботе запустить publisher:
+cd /home/administrator/rubleva/ur5_husky_api
+catkin_make
+source devel/setup.bash
+roslaunch gripper_move gripper.launch
+
+Минимальное положение гриппера - 0, максимальное - 0.085
+
+rosservice call gripper_move "angle: 0.04"
+

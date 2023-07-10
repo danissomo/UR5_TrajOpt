@@ -70,7 +70,7 @@
     </group_state>
 
     <!-- Groups kinematic plugins -->
-    <kinematics_plugin_config filename="package://ur5_husky_main/urdf/robot/ur5_trajopt_plan_plugins.yaml"/>
+    <kinematics_plugin_config filename="package://ur5_husky_main/config/ur5_trajopt_plan_plugins.yaml"/>
 
     <!--Contact Managers plugins -->
     <contact_managers_plugin_config filename="package://tesseract_support/urdf/contact_manager_plugins.yaml"/>
@@ -220,4 +220,8 @@
     <disable_collisions link1="ur5_wrist_1_link" link2="ur5_wrist_2_link" reason="Adjacent"/>
     <disable_collisions link1="ur5_wrist_1_link" link2="ur5_wrist_3_link" reason="Never"/>
     <disable_collisions link1="ur5_wrist_2_link" link2="ur5_wrist_3_link" reason="Adjacent"/>
+
+<!--     <disable_collisions link1="ur5_add_length_tool" link2="ur5_wrist_3_link" reason="Adjacent"/>
+    <disable_collisions link1="ur5_add_length_tool" link2="ur5_tool0" reason="Adjacent"/>
+    <disable_collisions link1="ur5_add_length_tool" link2="ur5_ee_link" reason="Adjacent"/> -->
 </robot>

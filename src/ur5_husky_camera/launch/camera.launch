@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <node name="camera_node" pkg="ur5_husky_camera" type="camera.py" output="screen" />
+
+    <!-- Подключение Webserver rosbridge -->
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+</launch>

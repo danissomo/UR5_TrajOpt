@@ -34,3 +34,9 @@
 [submodule "src/libs/tesseract_ros"]
 	path = src/libs/tesseract_ros
 	url = ../../tesseract-robotics/tesseract_ros
+[submodule "src/rosbag/rosbag_to_csv"]
+	path = src/rosbag/rosbag_to_csv
+	url = ../../AtsushiSakai/rosbag_to_csv
+[submodule "src/rosbag/rosbag2video"]
+	path = src/rosbag/rosbag2video
+	url = ../../mlaiacker/rosbag2video

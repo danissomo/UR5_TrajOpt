@@ -1,9 +1,19 @@
 <?xml version="1.0"?>
 
 <robot xmlns:xacro="http://ros.org/wiki/xacro" name="robot" >
+
+  <xacro:arg name="kinematics_parameters_file" default="$(find ur5_husky_main)/config/ur5/default_kinematics.yaml"/>
+  <xacro:arg name="physical_parameters_file" default="$(find ur5_husky_main)/config/ur5/physical_parameters.yaml"/>
+  <xacro:arg name="joint_limits_parameters_file" default="$(find ur5_husky_main)/config/ur5/joint_limits.yaml"/>
+  <xacro:arg name="visual_parameters_file" default="$(find ur5_husky_main)/config/ur5/visual_parameters_file.yaml"/>
+
+  <xacro:arg name="safety_limits" default="false" /> <!-- If True, enable the safety limits controller -->
+  <xacro:arg name="safety_pos_margin" default="0.15" /> <!-- The lower/upper limits in the safety controller -->
+  <xacro:arg name="safety_k_position" default="20" /> <!-- Used to set k position in the safety controller-->
+
   <xacro:property name="prefix" value="ur5_"/>
-  <xacro:property name="wheel_radius" value="0.1651" />
-  <xacro:property name="wheel_vertical_offset" value="0.03282" />
+  <xacro:property name="wheel_radius" value="0.1501" />
+  <xacro:property name="wheel_vertical_offset" value="0.06" />
   <xacro:property name="M_PI" value="3.14159"/>
 
   <link name="world"/>
@@ -12,7 +22,7 @@
     <visual>
         <origin xyz="0 0 -${wheel_radius - wheel_vertical_offset/2}" rpy="0 0 0" />
         <geometry>
-          <box size="2 2 0.00005"/>
+          <box size="10 10 0.00005"/>
         </geometry>
         <material name="Floor">
           <color rgba="0.72 0.80 0.97 0.7"/>
@@ -21,13 +31,7 @@
       <collision>
         <origin xyz="0 0 -${wheel_radius - wheel_vertical_offset/2}" rpy="0 0 0" />
         <geometry>
-          <box size="1 1 0.05"/>
-        </geometry>
-      </collision>
-      <collision>
-        <origin xyz="0 0 -${wheel_radius - wheel_vertical_offset/2}" rpy="0 0 0" />
-        <geometry>
-          <box size="1 1 0.05"/>
+          <box size="10 10 0.00005"/>
         </geometry>
       </collision>
   </link>
@@ -36,17 +40,24 @@
   <xacro:include filename="$(find ur_description)/urdf/common.gazebo.xacro" />
 
   <!-- ur5 -->
-  <xacro:include filename="$(find ur_description)/urdf/ur5.urdf.xacro" />
+  <xacro:include filename="$(find ur5_husky_main)/urdf/robot/ur5.xacro" />
 
   <!-- arm -->
-  <xacro:ur5_robot prefix="${prefix}" joint_limited="false"/>
+  <xacro:ur5_robot prefix="${prefix}"
+    kinematics_parameters_file="$(arg kinematics_parameters_file)" 
+    physical_parameters_file="$(arg physical_parameters_file)" 
+    joint_limits_parameters_file="$(arg joint_limits_parameters_file)" 
+    visual_parameters_file="$(arg visual_parameters_file)"
+    safety_limits="$(arg safety_limits)"
+    safety_pos_margin="$(arg safety_pos_margin)"
+    safety_k_position="$(arg safety_k_position)"/>
 
   <!-- robotiq 85 -->
   <xacro:include filename="$(find robotiq_85_description)/urdf/robotiq_85_gripper.urdf.xacro" />
 
   <!-- gripper -->
   <xacro:robotiq_85_gripper prefix="" parent="${prefix}ee_link" >
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="0 0 0" rpy="${M_PI/2} 0 0"/>
   </xacro:robotiq_85_gripper>
 
   <!-- husky -->
@@ -70,9 +81,8 @@
   <joint name="ur5_to_base_link" type="fixed">
     <parent link="top_plate_link"/>
     <child link="${prefix}base_link"/>
-    <origin xyz="0.25 0.0 0.0" rpy="0 0 -${M_PI/2}"/>
-    <!-- не трогать xyz и rpy, иначе не считает траекторию! -->
-    <!-- <origin xyz="0.25 0.0 0.0" rpy="0 0 0"/> -->
+    <!--  Позиционирование робота на телеге -->
+    <origin xyz="0.3035 0.01 0.0" rpy="0 0 ${M_PI/2}"/>
   </joint>
 
 </robot>

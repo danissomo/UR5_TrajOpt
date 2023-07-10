@@ -89,6 +89,13 @@ float ur_speed = 0.1;
 float ur_acceleration = 0.1;
 float ur_blend = 0.0;
 
+float x_pos_correct = 0.005;
+float y_pos_correct = 0.0;
+float z_pos_correct = 0.16;
+float x_orient_correct = -1.57;
+float y_orient_correct = -1.6;
+float z_orient_correct = 0;
+
 
 class SettingsCustomLibClass {
     public:
@@ -341,7 +348,31 @@ inline void SettingsCustomLibClass::update() {
                 joint_middle_include = (strcmp("true", line.c_str()) == 0);
                 ROS_INFO("Setting updated. New value joint_middle_include = %f", joint_middle_include);
 
-            }
+            } else if (strcmp("x_pos_correct", token.c_str()) == 0) {
+                x_pos_correct = stof(line);
+                ROS_INFO("Setting updated. New value x_pos_correct = %f", x_pos_correct);
+
+            } else if (strcmp("y_pos_correct", token.c_str()) == 0) {
+                y_pos_correct = stof(line);
+                ROS_INFO("Setting updated. New value y_pos_correct = %f", y_pos_correct);
+
+            } else if (strcmp("z_pos_correct", token.c_str()) == 0) {
+                z_pos_correct = stof(line);
+                ROS_INFO("Setting updated. New value z_pos_correct = %f", z_pos_correct);
+
+            } else if (strcmp("x_orient_correct", token.c_str()) == 0) {
+                x_orient_correct = stof(line);
+                ROS_INFO("Setting updated. New value x_orient_correct = %f", x_orient_correct);
+
+            } else if (strcmp("y_orient_correct", token.c_str()) == 0) {
+                y_orient_correct = stof(line);
+                ROS_INFO("Setting updated. New value y_orient_correct = %f", y_orient_correct);
+
+            } else if (strcmp("z_orient_correct", token.c_str()) == 0) {
+                z_orient_correct = stof(line);
+                ROS_INFO("Setting updated. New value z_orient_correct = %f", z_orient_correct);
+
+            } 
         }
     }
 }
