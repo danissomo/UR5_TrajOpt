@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(tf_pub)
+project(ur5_info)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -55,11 +55,14 @@ find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
+add_message_files(
+   FILES
+   JointPositions.msg
+   SetJointPositions.msg
+   MoveUR5WithGripper.msg
 #   Message1.msg
 #   Message2.msg
-# )
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -113,7 +116,7 @@ find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde
 catkin_package(
    CATKIN_DEPENDS message_runtime
 #  INCLUDE_DIRS include
-#  LIBRARIES tf_pub
+#  LIBRARIES ur5_info
 #  CATKIN_DEPENDS cv_bridge image_transport message_generation roscpp rospy sensor_msgs std_msgs
 #  DEPENDS system_lib
 )
@@ -142,7 +145,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(tf_pub src/tf.cpp)
+add_executable(ur5_info src/ur5_info.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -153,14 +156,14 @@ add_executable(tf_pub src/tf.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(tf_pub ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(ur5_info ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
 
-target_link_libraries(tf_pub
+target_link_libraries(ur5_info
    PRIVATE ur_rtde::rtde
    ${catkin_LIBRARIES}
 )
@@ -213,7 +216,7 @@ target_link_libraries(tf_pub
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_tf_pub.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_ur5_info.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

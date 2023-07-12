@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <!-- Эта нода управляет гриппером -->
+    <node name="gripper_controller" pkg="gripper_move" type="gripper.py" output="screen" />
+
+    <!-- Эта нода публикует состояния джоинтов -->
+    <node name="ur5_info" pkg="ur5_info" type="ur5_info" output="screen" />
+
+    <!-- Эта нода управляет роботом -->
+    <node name="ur5_move" pkg="ur5_info" type="ur5_move.py" output="screen" />
+</launch>
+

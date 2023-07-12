@@ -53,7 +53,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
-   Gripper.msg
+   GripperInfo.msg
+   GripperAngle.msg
 #   Message2.msg
  )
 

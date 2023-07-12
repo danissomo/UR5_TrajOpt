@@ -76,3 +76,11 @@ roslaunch gripper_move gripper.launch
 
 rosservice call gripper_move "angle: 0.04"
 
+
+
+
+--------------------------
+
+В recorder.py
+TOPICS_FOR_SBER = [
+
