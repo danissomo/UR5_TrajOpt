@@ -33,14 +33,8 @@ class Robot():
     def __init__(self, UR_IP) -> None:
         rospy.init_node('ur5_move', anonymous=True)
         self.rate = rospy.Rate(30)
-        try:
-            self._rtde_c = RTDEControlInterface(
-                UR_IP, RTDEControlInterface.FLAG_VERBOSE | RTDEControlInterface.FLAG_USE_EXT_UR_CAP)
-            self._rtde_r = RTDEReceiveInterface(UR_IP)
-            rospy.loginfo("UR5 CONNECTED ON IP {}".format(UR_IP))
-        except RuntimeError as e:
-            rospy.logfatal(e)
-            exit()
+        self.UR_IP = UR_IP
+
 
         rospy.Subscriber("/move_robot_delay_gripper", MoveUR5WithGripper, self.move_robot)
         rospy.on_shutdown(self.shutdown)
@@ -50,19 +44,28 @@ class Robot():
         delay = msg.delay
         gripper_angle = msg.gripperAngle
 
-        for i, pos in enumerate(positions):
-            print(pos.position)
+        try:
+            self._rtde_c = RTDEControlInterface(
+                self.UR_IP, RTDEControlInterface.FLAG_VERBOSE | RTDEControlInterface.FLAG_USE_EXT_UR_CAP)
+            self._rtde_r = RTDEReceiveInterface(self.UR_IP)
+            rospy.loginfo("UR5 CONNECTED ON IP {}".format(self.UR_IP))
 
-            self._rtde_c.moveJ(pos.position, 0.1, 10.0)
-            rospy.Duration(delay[i])
+            for i, pos in enumerate(positions):
+                rospy.loginfo("Pose № {}, {}, delay: {}".format(i, pos, delay))
+                self._rtde_c.moveJ(pos.position, 0.1, 10.0)
+                d = rospy.Duration(delay[i])
+                rospy.loginfo("Waiting {} sec...".format(delay[i]))
+                rospy.sleep(d)
 
-            # print("Pose №", i)
-            # print("Get position: ", pos)
-            # print("Get delay: ", delay)
+            self.rate.sleep()
+            self._rtde_c.stopScript()
+            self._rtde_c.disconnect()
 
-        self.rate.sleep()
+        except RuntimeError as e:
+            rospy.logfatal(e)
+            exit()
+
         rospy.Publisher('/gripper_angle', GripperAngle, queue_size=10)
-
 
     def shutdown(self):
         rospy.sleep(1)

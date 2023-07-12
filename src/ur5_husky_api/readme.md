@@ -58,6 +58,9 @@ rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [
 // скинуть куб
 rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.4775620698928833, -1.3088954130755823, 1.4463391304016113, -2.300877873097555, -1.5800159613238733, 0.00014381069922819734]], delay: [0,0,0,0,0,20], gripperAngle: 0.0}" --once
 
+// 2 положения:
+rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.4775620698928833, -1.3088954130755823, 1.4463391304016113, -2.300877873097555, -1.5800159613238733, 0.00014381069922819734], position:[1.0789810419082642, -0.5552123228656214, 1.9236936569213867, -3.0894487539874476, -1.5335939566241663, 0.0014620755100622773]], delay: [0,0], gripperAngle: 0.0}" --once
+
 
 
 
