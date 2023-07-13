@@ -49,19 +49,26 @@ def handle_gripper_move_srv(req):
     gripper.move()
     return GripperMoveRobotResponse(True)
 
-def handle_gripper_move_sub(msg):
+def handle_gripper_move_sub(req):
     global gripper
-    gripper = Gripper(msg.angle)
+    gripper = Gripper(req.angle)
     gripper.move()
 
 def handle_gripper_state_srv(req):
+    global gripper
     gripper = Gripper()
-    return GripperStateRobot(gripper.state)
+    return GetGripperStateResponce(gripper.state)
+
+def handle_gripper_move_angle_sub(req):
+    global gripper
+    gripper = Gripper(req.angle)
+    gripper.move()
 
 
 if __name__ == '__main__':
     rospy.init_node("gripper_controller")
     s = rospy.Service('gripper_move_robot', GripperMoveRobot, handle_gripper_move_srv)
-    state = rospy.Service('gripper_state_robot', GripperStateRobot, handle_gripper_move_srv)
-    rospy.Subscriber("gripper_state", Gripper, handle_gripper_move_sub)
+    state = rospy.Service('gripper_state_robot', GetGripperState, handle_gripper_state_srv)
+    rospy.Subscriber("gripper_state", GripperInfo, handle_gripper_move_sub)
+    rospy.Subscriber("gripper_angle", GripperAngle, handle_gripper_move_angle_sub)
     rospy.spin()

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <arg name="robot_ip" default="127.0.0.1"/>
+
+    <!-- Эта нода управляет гриппером -->
+    <node name="gripper_controller" pkg="gripper_move" type="gripper.py" output="screen" />
+
+    <!-- Эта нода публикует состояния джоинтов -->
+    <node name="ur5_info" pkg="ur5_info" type="ur5_info" output="screen">
+        <param name="robot_ip" type="string" value="$(arg robot_ip)"/>
+    </node>
+
+    <!-- Эта нода управляет роботом -->
+    <node name="ur5_move" pkg="ur5_info" type="ur5_move.py" output="screen">
+        <param name="robot_ip" type="string" value="$(arg robot_ip)"/>
+    </node>
+
+    <!-- Эта нода публикует данные с realsence на гриппере и данные с zed-камеры (можно использовать для синхронного просмотра данных с камер на другом компьютере) -->
+    <!-- <node name="camera_pub_node" pkg="camera_pub" type="camera.py" output="screen" /> -->
+</launch>
+
