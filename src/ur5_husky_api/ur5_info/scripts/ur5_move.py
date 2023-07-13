@@ -23,6 +23,7 @@ import tf
 
 #msg
 from ur5_info.msg import MoveUR5WithGripper
+from ur5_info.msg import JointVelocities
 from gripper_move.msg import GripperAngle
 
 from collections import deque
@@ -30,13 +31,18 @@ import copy
 
 
 class Robot():
-    def __init__(self, UR_IP) -> None:
+    def __init__(self, velocity=0.1, acceleration=10.0) -> None:
         rospy.init_node('ur5_move', anonymous=True)
-        self.rate = rospy.Rate(30)
-        self.UR_IP = UR_IP
-
+        self.rate = rospy.Rate(15)
+        self.UR_IP = rospy.get_param('~robot_ip')
+        print(self.UR_IP)
+        self.velocity = velocity
+        self.acceleration = acceleration
 
         rospy.Subscriber("/move_robot_delay_gripper", MoveUR5WithGripper, self.move_robot)
+        self.gripper_pub = rospy.Publisher('/gripper_angle', GripperAngle, queue_size=10)
+        self.valocity_pub = rospy.Publisher('/joints_vel_plan', JointVelocities, queue_size=10)
+
         rospy.on_shutdown(self.shutdown)
 
     def move_robot(self, msg):
@@ -52,7 +58,12 @@ class Robot():
 
             for i, pos in enumerate(positions):
                 rospy.loginfo("Pose № {}, {}, delay: {}".format(i, pos, delay))
-                self._rtde_c.moveJ(pos.position, 0.1, 10.0)
+                msg_js_vel = JointVelocities()
+                msg_js_vel.velocity = self.velocity
+                msg_js_vel.acceleration = self.acceleration
+                self.valocity_pub.publish(msg_js_vel)
+
+                self._rtde_c.moveJ(pos.position, self.velocity, self.acceleration)
                 d = rospy.Duration(delay[i])
                 rospy.loginfo("Waiting {} sec...".format(delay[i]))
                 rospy.sleep(d)
@@ -65,7 +76,9 @@ class Robot():
             rospy.logfatal(e)
             exit()
 
-        rospy.Publisher('/gripper_angle', GripperAngle, queue_size=10)
+        msg_gripper = GripperAngle()
+        msg_gripper.angle = gripper_angle
+        gripper_pub.publish(msg_gripper)
 
     def shutdown(self):
         rospy.sleep(1)
@@ -75,5 +88,5 @@ class Robot():
             self.rate.sleep()
             
 
-robot = Robot("192.168.131.40")
+robot = Robot()
 robot.spin()

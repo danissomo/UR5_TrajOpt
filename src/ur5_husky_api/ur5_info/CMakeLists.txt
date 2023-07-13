@@ -58,8 +58,9 @@ find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde
 add_message_files(
    FILES
    JointPositions.msg
-   SetJointPositions.msg
    MoveUR5WithGripper.msg
+   RobotState.msg
+   JointVelocities.msg
 #   Message1.msg
 #   Message2.msg
 )
