@@ -36,41 +36,32 @@ position и delay - передавать массивы одинаковой д�
 
 ### Примеры команд
 
-// схватить куб
+// схватить куб:
+<pre><code>rostopic pub /gripper_angle gripper_move/GripperAngle "angle: 0.04" --once</code></pre>
 
-<code>rostopic pub /gripper_angle gripper_move/GripperAngle "angle: 0.04" --once</code>
+// отпустить куб:
+<pre><code>rostopic pub /gripper_angle gripper_move/GripperAngle "angle: 0.085" --once</code></pre>
 
-// отпустить куб
+// робот берет куб слева с пола:
+<pre><code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[2.326473,-0.553581,1.686786,-2.687753,-1.561592,-0.000419]], delay: [0], gripperAngle: 0.0}" --once</code></pre>
 
-<code>rostopic pub /gripper_angle gripper_move/GripperAngle "angle: 0.085" --once</code>
+// робот в максимально сложенном положении (смотрит вниз):
+<pre><code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.606798,-3.091649,2.827192,-1.962667,-1.436540,-0.000551]], delay: [0], gripperAngle: 0.0}" --once</code></pre>
 
-// робот берет куб слева с пола
+// робот в сложенном состоянии смотрит вперед:
+<pre><code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.595672, -2.871760, 2.799204, -3.072348,-1.581982, 0.000120]], delay: [0], gripperAngle: 0.0}" --once</code></pre>
 
-<code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[2.326473,-0.553581,1.686786,-2.687753,-1.561592,-0.000419]], delay: [0], gripperAngle: 0.0}" --once</code>
+// робот смотрит на куб:
+<pre><code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.4775620698928833, -1.6089142004596155, 1.1463332176208496, -1.400895897542135, -1.5800517241107386, 0.00013182648399379104]], delay: [0], gripperAngle: 0.0}" --once</code></pre>
 
-// робот в максимально сложенном положении (смотрит вниз)
+// робот у пола хвватает куб:
+<pre><code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.0789810419082642, -0.5552123228656214, 1.9236936569213867, -3.0894487539874476, -1.5335939566241663, 0.0014620755100622773]], delay: [0], gripperAngle: 0.0}" --once</code></pre>
 
-<code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.606798,-3.091649,2.827192,-1.962667,-1.436540,-0.000551]], delay: [0], gripperAngle: 0.0}" --once</code>
-
-// робот в сложенном состоянии смотрит вперед
-
-<code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.595672, -2.871760, 2.799204, -3.072348,-1.581982, 0.000120]], delay: [0], gripperAngle: 0.0}" --once</code>
-
-// робот смотрит на куб
-
-<code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.4775620698928833, -1.6089142004596155, 1.1463332176208496, -1.400895897542135, -1.5800517241107386, 0.00013182648399379104]], delay: [0], gripperAngle: 0.0}" --once</code>
-
-// робот у пола хвватает куб 
-
-<code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.0789810419082642, -0.5552123228656214, 1.9236936569213867, -3.0894487539874476, -1.5335939566241663, 0.0014620755100622773]], delay: [0], gripperAngle: 0.0}" --once</code>
-
-// робот в положении, из которого скидывает куб
-
-<code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.4775620698928833, -1.3088954130755823, 1.4463391304016113, -2.300877873097555, -1.5800159613238733, 0.00014381069922819734]], delay: [0], gripperAngle: 0.0}" --once</code>
+// робот в положении, из которого скидывает куб:
+<pre><code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.4775620698928833, -1.3088954130755823, 1.4463391304016113, -2.300877873097555, -1.5800159613238733, 0.00014381069922819734]], delay: [0], gripperAngle: 0.0}" --once</code></pre>
 
 // передать 2 положения:
-
-<code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.4775620698928833, -1.3088954130755823, 1.4463391304016113, -2.300877873097555, -1.5800159613238733, 0.00014381069922819734], position:[1.0789810419082642, -0.5552123228656214, 1.9236936569213867, -3.0894487539874476, -1.5335939566241663, 0.0014620755100622773]], delay: [0,0], gripperAngle: 0.0}" --once</code>
+<pre><code>rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[1.4775620698928833, -1.3088954130755823, 1.4463391304016113, -2.300877873097555, -1.5800159613238733, 0.00014381069922819734], position:[1.0789810419082642, -0.5552123228656214, 1.9236936569213867, -3.0894487539874476, -1.5335939566241663, 0.0014620755100622773]], delay: [0,0], gripperAngle: 0.0}" --once</code></pre>
 
 
 ===================
