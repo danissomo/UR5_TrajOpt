@@ -96,6 +96,8 @@ sudo make install</code></pre>
 
 Запуск trajopt <code>roslaunch ur5_husky_main run_ur5_husky_trajopt.launch</code>
 
+Запуск trajopt без управления через UI <code>roslaunch ur5_husky_main run_ur5_husky_trajopt.launch ui_control:=false</code>
+
 **6. Управляйте роботом** из терминала или через UI.
 
 Для управления из терминала:
