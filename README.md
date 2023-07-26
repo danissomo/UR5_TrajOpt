@@ -31,6 +31,47 @@
 - src/ur5_husky_main - пакет с реализацией управления роботом с помощью алгоритма TrajOpt
 - src/ur_rtde-v1.5.0 - пакет с библиотекой ur_rtde (точно такая же версия используется на роботе).
 
+<img src="media/image.png" />
+
+Что реализовано в проекте:
+- Получение положения джоинтов с робота
+- Отправка положения джоинтов на робота
+- Добавление, удаление, перемещение, поворот препятствий (препятствия добавляются из мешей - файлы .obj или .stl и можно добавить простой куб)
+- Построение траектории с помощью TrajOpt (необходимо указать начальное положение или взять с робота, конечное положение и при желании промежуточные положения)
+- Управление гриппером (размыкание на определенный угол)
+
+Количество промежуточных положений может быть любым.
+
+Количество препятствий может быть любым.
+
+Варианты управления проектом:
+1. Через web-интерфейс (управление положениями робота, препятствиями из мешей и построением траекторий); web-интерфейс в текущий проект не входит, jar-файл предоставлю по запросу (используется MySQL или могу собрать под встроенную в Spring Boot<a href="https://ru.wikipedia.org/wiki/H2">БД H2</a>);
+2. Через терминал с использованием конфигов (data/settings.txt) - ограниченное управление (нет возможности добавлять разные виды препятствий, нет возможности добавлять промежуточные положения для манипулятора);
+3. Через терминал с отправкой отдельных команд через сервисы и топики (пример команд приведены ниже).
+
+## Предварительная подготовка
+
+#### 1. Собрать ur_rtde
+<pre><code>cd /workspace/src/ur_rtde-v1.5.0
+git submodule update --init --recursive
+mkdir build
+cd build
+cmake ..
+make
+sudo make install</code></pre>
+
+Примените изменения <code>source ~/.bashrc</code>
+
+#### 2. Настроить скрипты
+
+- Дать права на запуск скриптов: <code>sudo chmod +x scripts/*sh</code>
+
+При первом запуске скриптов нужно исправить ошибку перед запуском скриптов (преобразование окончаний строк из формата DOS в формат UNIX):
+
+- Выполнить <code>sed -i -e 's/\r$//' "$ARMBOT_PATH/scripts/fix.sh"</code>
+- Выполнить <code>./scripts/fix.sh</code>
+
+
 ## Как управлять роботом с помощью TrajOpt
 
 1. Склонировать репозиторий <code>git clone --recurse-submodules https://github.com/allicen/trajopt_ur5</code>.
@@ -64,52 +105,106 @@
 
 #### Список команд для управления
 
-1. 
+1. Пример команды для получения траектории робота-манипулятора после применения TrajOpt
 
 request
-
-response (success)
-
-
-
-response (unsuccess)
-
-
+```
+rosservice call /calculate_robot_rajectory "{startPose: {name: ["ur5_shoulder_pan_joint", "ur5_shoulder_lift_joint", "ur5_elbow_joint", "ur5_wrist_1_joint", "ur5_wrist_2_joint", "ur5_wrist_3_joint"], position: [1.526473, -0.553581, 1.686786, -2.687753, -1.461592, -0.000419]}, finishPose: {name: ["ur5_shoulder_pan_joint", "ur5_shoulder_lift_joint", "ur5_elbow_joint", "ur5_wrist_1_joint", "ur5_wrist_2_joint", "ur5_wrist_3_joint"], position: [1.542354, -1.203353, 0.634284, -1.138470, -1.573804, -0.000371]}}"
+```
+где:
+- startPose.position - начальное положение джоинтов
+- finishPose.position - конечное положение джоинтов
 
 
 
-<img src="media/image.png" />
+response success
+```
+success: True
+message: "Found valid solution"
+trajectory:
+  -
+    name:
+      - ur5_shoulder_pan_joint
+      - ur5_shoulder_lift_joint
+      - ur5_elbow_joint
+      - ur5_wrist_1_joint
+      - ur5_wrist_2_joint
+      - ur5_wrist_3_joint
+    position: [1.526473, -0.553581, 1.686786, -2.687753, -1.461592, -0.000419]
+  -
+    name:
+      - ur5_shoulder_pan_joint
+      - ur5_shoulder_lift_joint
+      - ur5_elbow_joint
+      - ur5_wrist_1_joint
+      - ur5_wrist_2_joint
+      - ur5_wrist_3_joint
+    position: [1.5291198333333333, -0.6618763333333333, 1.5113690000000002, -2.4295391666666664, -1.480294, -0.000411]
+  -
+    name:
+      - ur5_shoulder_pan_joint
+      - ur5_shoulder_lift_joint
+      - ur5_elbow_joint
+      - ur5_wrist_1_joint
+      - ur5_wrist_2_joint
+      - ur5_wrist_3_joint
+    position: [1.5317666666666667, -0.7701716666666666, 1.335952, -2.1713253333333333, -1.498996, -0.000403]
+  -
+    name:
+      - ur5_shoulder_pan_joint
+      - ur5_shoulder_lift_joint
+      - ur5_elbow_joint
+      - ur5_wrist_1_joint
+      - ur5_wrist_2_joint
+      - ur5_wrist_3_joint
+    position: [1.5344134999999999, -0.8784669999999999, 1.1605349999999999, -1.9131115, -1.517698, -0.000395]
+  -
+    name:
+      - ur5_shoulder_pan_joint
+      - ur5_shoulder_lift_joint
+      - ur5_elbow_joint
+      - ur5_wrist_1_joint
+      - ur5_wrist_2_joint
+      - ur5_wrist_3_joint
+    position: [1.5370603333333333, -0.9867623333333333, 0.9851179999999999, -1.6548976666666668, -1.5364, -0.00038700000000000003]
+  -
+    name:
+      - ur5_shoulder_pan_joint
+      - ur5_shoulder_lift_joint
+      - ur5_elbow_joint
+      - ur5_wrist_1_joint
+      - ur5_wrist_2_joint
+      - ur5_wrist_3_joint
+    position: [1.5397071666666666, -1.0950576666666665, 0.809701, -1.3966838333333333, -1.555102, -0.000379]
+  -
+    name:
+      - ur5_shoulder_pan_joint
+      - ur5_shoulder_lift_joint
+      - ur5_elbow_joint
+      - ur5_wrist_1_joint
+      - ur5_wrist_2_joint
+      - ur5_wrist_3_joint
+    position: [1.542354, -1.203353, 0.634284, -1.13847, -1.573804, -0.000371]
+```
+
+responce failed
+```
+success: False
+message: "Failed to find valid solution"
+trajectory: []
+```
 
 
-#### Другие команды:
+## Другие команды (не связанные с построением траекторий TrajOpt):
 
 Зайти в docker-контейнер <code>sudo docker exec -ti trajopt bash</code>
 
-Запись значений джоинтов на UR5 <code>roslaunch ur5_single_arm_manipulation ur5_set_joint_pos.launch</code>
-
 Запустить тележку: <code>roslaunch ur5_husky_main robot_control.launch</code>
 
-Запуск trajopt <code>roslaunch ur5_single_arm_manipulation move_robot_trajopt_ex.launch</code> (раннее)
-
-Запуск rViz для подбора поз робота  <code>roslaunch ur5_single_arm_manipulation ur5.rviz.launch</code>
-
-Запустить Freedrive <code>roslaunch ur5_husky_main freedrive_node.launch</code>
-
-Запустить камеру <code>roslaunch ur5_husky_camera camera.launch</code>
-
-#### Собрать ur_rtde
-<pre><code>cd /workspace/src/ur_rtde-v1.5.0
-git submodule update --init --recursive
-mkdir build
-cd build
-cmake ..
-make
-sudo make install</code></pre>
-
-Примените изменения <code>source ~/.bashrc</code>
+Запустить Freedrive <code>roslauch ur5_husky_main freedrive_node.launch</code>
 
 
-## Запуск просморта изображений с камеры
+#### Запуск просморта изображений с камер робота
 
 1) На роботе запустить публикатора:
 cd /home/administrator/rubleva/ur5_husky_api
@@ -120,7 +215,7 @@ roslaunch camera_pub camera.launch
 2) В проекте:
 roslaunch ur5_husky_camera camera.launch
 
-## Запуск ноды для гриппера
+#### Запуск ноды для гриппера
 
 1) На роботе запустить publisher:
 cd /home/administrator/rubleva/ur5_husky_api
@@ -130,5 +225,6 @@ roslaunch gripper_move gripper.launch
 
 Минимальное положение гриппера - 0, максимальное - 0.085
 
+2) В проекте:
 rosservice call gripper_move "angle: 0.04"
 
