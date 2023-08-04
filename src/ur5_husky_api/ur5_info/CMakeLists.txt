@@ -61,6 +61,7 @@ add_message_files(
    MoveUR5WithGripper.msg
    RobotState.msg
    JointVelocities.msg
+   SetJointPositions.msg
 #   Message1.msg
 #   Message2.msg
 )
