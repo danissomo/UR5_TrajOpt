@@ -2,7 +2,7 @@
 
 ############################################
 ##
-##  Здесь можно управлять манипулятором (передавать 6 углов джоинтов) и размыкать гриппер на определенный угол
+##  You can use a manipulator (predavat 6-year-olds) and pick a grape on the left hand
 ##
 ############################################
 
@@ -78,7 +78,7 @@ class Robot():
 
         msg_gripper = GripperAngle()
         msg_gripper.angle = gripper_angle
-        gripper_pub.publish(msg_gripper)
+        self.gripper_pub.publish(msg_gripper)
 
     def shutdown(self):
         rospy.sleep(1)
