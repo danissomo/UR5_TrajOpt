@@ -33,6 +33,11 @@ rostopic pub /gripper_angle gripper_move/GripperAngle "angle: 0.0" --once</code>
 source devel/setup.bash
 rostopic pub move_robot_delay_gripper ur5_info/MoveUR5WithGripper "{positions: [position:[]], delay: [], gripperAngle: 0.0}" --once</code></pre>
 
+в) Сбор датасета
+```cd /rubleva/ur5_husky_api
+source devel/setup.bash
+roslaunch pub_to_dataset run.launch robot_ip:=127.0.0.1```
+
 ВАЖНО!!!
 position и delay - передавать массивы одинаковой длины
 
