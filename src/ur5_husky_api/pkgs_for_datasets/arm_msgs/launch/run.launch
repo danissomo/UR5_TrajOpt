@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
     <arg name="robot_ip" default="127.0.0.1"/>
-    <arg name="language" default="c_plus_plus" />
+    <arg name="language" default="python" />
 
     <!-- C++ -->
     <node name="arm_msgs" pkg="arm_msgs" type="arm_msgs" output="screen" if="$(eval language=='c_plus_plus')">

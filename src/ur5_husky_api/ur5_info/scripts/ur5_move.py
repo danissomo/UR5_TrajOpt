@@ -29,6 +29,7 @@ from arm_msgs.msg import ManipulatorState
 
 from collections import deque
 import copy
+import time
 
 
 class Robot():
@@ -38,6 +39,9 @@ class Robot():
         self.UR_IP = rospy.get_param('~robot_ip')
         self.velocity = velocity
         self.acceleration = acceleration
+        self.tau_actual = [0, 0, 0, 0, 0, 0]
+        self.num = 1
+
         try:
             self._rtde_c = RTDEControlInterface(
                 self.UR_IP, RTDEControlInterface.FLAG_VERBOSE | RTDEControlInterface.FLAG_USE_EXT_UR_CAP)
@@ -67,7 +71,7 @@ class Robot():
             msg_js_vel.acceleration = self.acceleration
             self.valocity_pub.publish(msg_js_vel)
             
-            self._rtde_c.moveJ(pos.position, self.velocity, self.acceleration)
+            self._rtde_c.moveJ(pos.position, self.velocity, self.acceleration, True)
             d = rospy.Duration(delay[i])
             rospy.loginfo("Waiting {} sec...".format(delay[i]))
             rospy.sleep(d)
@@ -77,37 +81,42 @@ class Robot():
         self.gripper_pub.publish(msg_gripper)
     
     def manipulator_state(self):
-            msg = ManipulatorState()
-            msg.q_target = self._rtde_r.getTargetQ()
-            msg.qd_target = self._rtde_r.getTargetQd()
-            msg.i_target = self._rtde_r.getTargetCurrent()
-            msg.m_target = self._rtde_r.getTargetMoment()
-            # msg.tau_target = self._rtde_c.getJointTorques()
-            msg.tool_vector_target = self._rtde_r.getTargetTCPPose()
-            msg.q_actual = self._rtde_r.getActualQ()
-            msg.qd_actual = self._rtde_r.getActualQd()
-            msg.i_actual = self._rtde_r.getActualCurrent()
-            msg.tau_actual = self._rtde_r.getTargetMoment()
-            msg.tcp_force = self._rtde_r.getActualTCPForce()
-            msg.tool_vector_actual = self._rtde_r.getActualTCPPose()
-            msg.tcp_speed = self._rtde_r.getActualTCPSpeed()
-            msg.motor_temperatures = self._rtde_r.getJointTemperatures()
-            msg.joint_modes =  [float(item) for item in self._rtde_r.getJointMode()]
-            msg.controller_timer = self._rtde_r.getActualExecutionTime()
-            msg.qdd_target = self._rtde_r.getTargetQdd()
-            msg.qdd_actual = []
-            msg.tool_acc_values = self._rtde_r.getActualToolAccelerometer()
-            msg.robot_mode = self._rtde_r.getRobotMode()
-            msg.digital_input_bits = float(self._rtde_r.getActualDigitalInputBits())
-            msg.test_value = 0.0
+        msg = ManipulatorState()
+        msg.q_target = self._rtde_r.getTargetQ()
+        msg.qd_target = self._rtde_r.getTargetQd()
+        msg.i_target = self._rtde_r.getTargetCurrent()
+        msg.m_target = self._rtde_r.getTargetMoment()
+        msg.tau_target = self._rtde_r.getTargetMoment()
+        msg.tool_vector_target = self._rtde_r.getTargetTCPPose()
+        msg.q_actual = self._rtde_r.getActualQ()
+        msg.qd_actual = self._rtde_r.getActualQd()
+        msg.i_actual = self._rtde_r.getActualCurrent()
+        msg.tau_actual = self.tau_actual
+        msg.tcp_force = self._rtde_r.getActualTCPForce()
+        msg.tool_vector_actual = self._rtde_r.getActualTCPPose()
+        msg.tcp_speed = self._rtde_r.getActualTCPSpeed()
+        msg.motor_temperatures = self._rtde_r.getJointTemperatures()
+        msg.joint_modes =  [float(item) for item in self._rtde_r.getJointMode()]
+        msg.controller_timer = self._rtde_r.getActualExecutionTime()
+        msg.qdd_target = self._rtde_r.getTargetQdd()
+        msg.qdd_actual = []
+        msg.tool_acc_values = self._rtde_r.getActualToolAccelerometer()
+        msg.robot_mode = self._rtde_r.getRobotMode()
+        msg.digital_input_bits = float(self._rtde_r.getActualDigitalInputBits())
+        msg.test_value = 0.0
 
-            self.state_pub.publish(msg)
+        self.state_pub.publish(msg)
+
+    def getActualJointTorques(self):
+        self.tau_actual = self._rtde_c.getJointTorques()
+        # rospy.sleep(rospy.Duration(10))
 
     def shutdown(self):
         rospy.sleep(1)
 
     def spin(self):
         while not rospy.is_shutdown():
+            self.getActualJointTorques()
             self.manipulator_state()
             self.rate.sleep()
             

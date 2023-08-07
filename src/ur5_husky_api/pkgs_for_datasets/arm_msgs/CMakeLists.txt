@@ -58,6 +58,7 @@ find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde
 add_message_files(
    FILES
    ManipulatorState.msg
+   ActualJointTorques.msg
 #   Message1.msg
 #   Message2.msg
 )
