@@ -232,3 +232,21 @@ roslaunch gripper_move gripper.launch
 2) В проекте:
 rosservice call gripper_move "angle: 0.04"
 
+
+## Решение проблем
+
+**1) Ошибка с пакетом robotiq_ft_sensor** (тречается только на ноутбуке Dell)
+
+Текст проблемы:
+
+```resource not found: robotiq_ft_sensor```
+
+Решение:
+```
+catkin clean robotiq_ft_sensor
+catkin build robotiq_ft_sensor
+```
+
+
+
+

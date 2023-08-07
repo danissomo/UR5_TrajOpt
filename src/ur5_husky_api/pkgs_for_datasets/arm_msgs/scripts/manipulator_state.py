@@ -29,8 +29,9 @@ class Robot():
         self.rate = rospy.Rate(15)
         self.UR_IP = rospy.get_param('~robot_ip')
         print(self.UR_IP)
+        self.connect_info_pub = False
 
-        self.valocity_pub = rospy.Publisher('/state/arm/0/arm_state', ManipulatorState, queue_size=10)
+        self.state_pub = rospy.Publisher('/state/arm/0/arm_state', ManipulatorState, queue_size=10)
         rospy.on_shutdown(self.shutdown)
 
     def state(self):
@@ -38,7 +39,9 @@ class Robot():
             self._rtde_c = RTDEControlInterface(
                 self.UR_IP, RTDEControlInterface.FLAG_VERBOSE | RTDEControlInterface.FLAG_USE_EXT_UR_CAP)
             self._rtde_r = RTDEReceiveInterface(self.UR_IP)
-            rospy.loginfo("UR5 CONNECTED ON IP {}".format(self.UR_IP))
+            if self.connect_info_pub is False:
+                rospy.loginfo("UR5 CONNECTED ON IP {}".format(self.UR_IP))
+                self.connect_info_pub = True
 
             msg = ManipulatorState()
             msg.q_target = self._rtde_r.getTargetQ()
@@ -62,7 +65,9 @@ class Robot():
             msg.tool_acc_values = self._rtde_r.getActualToolAccelerometer()
             msg.robot_mode = self._rtde_r.getRobotMode()
             msg.digital_input_bits = float(self._rtde_r.getActualDigitalInputBits())
-            msg.test_value = 0.0;
+            msg.test_value = 0.0
+
+            self.state_pub.publish(msg)
 
             self.rate.sleep()
             self._rtde_c.stopScript()
