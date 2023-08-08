@@ -26,6 +26,7 @@ from ur5_info.msg import MoveUR5WithGripper
 from ur5_info.msg import JointVelocities
 from gripper_move.msg import GripperAngle
 from arm_msgs.msg import ManipulatorState
+from std_msgs.msg import Empty
 
 from collections import deque
 import copy
@@ -40,7 +41,9 @@ class Robot():
         self.velocity = velocity
         self.acceleration = acceleration
         self.tau_actual = [0, 0, 0, 0, 0, 0]
-        self.num = 1
+        self.joints_state_current = [0, 0, 0, 0, 0, 0]
+        self.joints_delta_target = 0.0001
+        self.next_step_available = True
 
         try:
             self._rtde_c = RTDEControlInterface(
@@ -50,6 +53,9 @@ class Robot():
         except RuntimeError as e:
             rospy.logfatal(e)
             exit()
+        
+        self.joints_state_current = self._rtde_r.getTargetQ()
+        self.getActualJointTorques()
 
         rospy.Subscriber("/move_robot_delay_gripper", MoveUR5WithGripper, self.move_robot)
         self.gripper_pub = rospy.Publisher('/gripper_angle', GripperAngle, queue_size=10)
@@ -59,7 +65,6 @@ class Robot():
         rospy.on_shutdown(self.shutdown)
 
     def move_robot(self, msg):
-        print(msg)
         positions = msg.positions
         delay = msg.delay
         gripper_angle = msg.gripperAngle
@@ -72,6 +77,11 @@ class Robot():
             self.valocity_pub.publish(msg_js_vel)
             
             self._rtde_c.moveJ(pos.position, self.velocity, self.acceleration, True)
+
+            while self.joints_pos_delta(pos.position) > self.joints_delta_target:
+                self.rate.sleep()
+                continue
+
             d = rospy.Duration(delay[i])
             rospy.loginfo("Waiting {} sec...".format(delay[i]))
             rospy.sleep(d)
@@ -79,6 +89,17 @@ class Robot():
         msg_gripper = GripperAngle()
         msg_gripper.angle = gripper_angle
         self.gripper_pub.publish(msg_gripper)
+
+    def joints_pos_delta(self, joints):
+        joints_current_sum = 0
+        joints_target_sum = 0
+
+        for i in range(len(joints)):
+            joints_current_sum += abs(joints[i])
+            joints_target_sum += abs(self.joints_state_current[i])
+
+        return abs(joints_current_sum - joints_target_sum)
+        
     
     def manipulator_state(self):
         msg = ManipulatorState()
@@ -105,18 +126,29 @@ class Robot():
         msg.digital_input_bits = float(self._rtde_r.getActualDigitalInputBits())
         msg.test_value = 0.0
 
+        self.joints_state_current = msg.q_target
+
         self.state_pub.publish(msg)
 
     def getActualJointTorques(self):
         self.tau_actual = self._rtde_c.getJointTorques()
-        # rospy.sleep(rospy.Duration(10))
 
     def shutdown(self):
         rospy.sleep(1)
 
     def spin(self):
+        delta_time_default = 3 # wait 3 sec
+        time_now = rospy.Time.now()
+        time_prev = time_now
+
         while not rospy.is_shutdown():
-            self.getActualJointTorques()
+            now = rospy.Time.now()
+            delta_time = now - time_prev
+            
+            if delta_time.secs >= delta_time_default:
+                self.getActualJointTorques()
+                time_prev = now
+
             self.manipulator_state()
             self.rate.sleep()
             
