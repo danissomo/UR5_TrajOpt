@@ -235,7 +235,7 @@ rosservice call gripper_move "angle: 0.04"
 
 ## Решение проблем
 
-**1) Ошибка с пакетом robotiq_ft_sensor** (тречается только на ноутбуке Dell)
+**1) Ошибка с пакетом robotiq_ft_sensor** (втречается только на ноутбуке Dell)
 
 Текст проблемы:
 
