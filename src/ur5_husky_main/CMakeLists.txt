@@ -20,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   tesseract_monitoring
   tesseract_rosutils
   settings_custom_lib
-  ur_rtde_interface
+  robot_context
   urdf
   std_msgs
   message_generation

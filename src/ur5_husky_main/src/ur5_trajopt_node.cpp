@@ -15,7 +15,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <TestIK.hpp>
 #include <UR5Trajopt.hpp>
 #include <UR5TrajoptResponce.hpp>
-#include <ur_rtde_interface/ur_rtde_interface.hpp>
+#include "robot_context/ur_rtde_interface.hpp"
 
 #include <ur5_husky_main/SetStartJointState.h>
 #include <ur5_husky_main/SetFinishJointState.h>
@@ -327,10 +327,10 @@ bool removeMesh(ur5_husky_main::Mesh::Request &req,
 void robotMove(std::vector<double> &path_pose) {
     try {
 
-        URRTDEInterface con(robot_ip);
-        auto rtde_control = con->rtdeControlConnect();
+        // URRTDEInterface con(robot_ip);
+        // auto rtde_control = con->rtdeControlConnect();
 
-        // RTDEControlInterface rtde_control(robot_ip);
+        RTDEControlInterface rtde_control(robot_ip);
         path_pose.push_back(ur_speed);
         path_pose.push_back(ur_acceleration);
         path_pose.push_back(ur_blend);

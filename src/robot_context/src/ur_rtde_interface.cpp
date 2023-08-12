@@ -3,7 +3,7 @@
 
 #include <ros/ros.h>
 
-#include "ur_rtde_interface.hpp"
+#include "robot_context/ur_rtde_interface.hpp"
 
 using namespace ur_rtde;
 
