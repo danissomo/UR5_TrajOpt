@@ -443,6 +443,19 @@ bool updateFinishJointValue(ur5_husky_main::SetFinishJointState::Request &req,
 }
 
 
+void printPoseInRviz(const ros::Publisher &joint_pub_state,
+                     const std::vector<std::string> &joint_names) {
+
+  std::vector<double> joint_positions;
+  joint_positions.resize(joint_end_pos.size());
+  Eigen::VectorXd::Map(&joint_positions[0], joint_end_pos.size()) = joint_end_pos;
+
+  sensor_msgs::JointState joint_state_msg;
+  joint_state_msg.name = joint_names;
+  joint_state_msg.position = joint_positions;
+  joint_pub_state.publish(joint_state_msg);
+}
+
 bool getJointValue(ur5_husky_main::GetJointState::Request &req,
                    ur5_husky_main::GetJointState::Response &res,
                    const std::vector<std::string> &joint_names,
@@ -472,12 +485,7 @@ bool getJointValue(ur5_husky_main::GetJointState::Request &req,
   joint_positions.resize(joint_start_pos.size());
   Eigen::VectorXd::Map(&joint_positions[0], joint_start_pos.size()) = joint_start_pos;
 
-  // Это надо перенести отсюда 
-  // не выставляем здесь значения!!!
-  sensor_msgs::JointState joint_state_msg;
-  joint_state_msg.name = joint_names;
-  joint_state_msg.position = joint_positions;
-  joint_pub_state.publish(joint_state_msg);
+  printPoseInRviz(joint_pub_state, joint_names);
 
   res.name = joint_names;
   res.position = joint_positions;
@@ -920,11 +928,13 @@ int main(int argc, char** argv) {
 
   if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
     ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
-    try {
-      RTDEReceiveInterface rtde_receive(robot_ip);
-      ROS_INFO("Connect success!");
-      std::vector<double> joint_positions = rtde_receive.getActualQ();
+    URRTDEInterface rtde(robot_ip);
+    auto rtde_receive = rtde.rtdeReceiveConnect();
+    // std::cout << "TYPE = " <<  typeid(*rtde_receive).name() << '\n';
 
+    try {
+      ROS_INFO("Connect success!");
+      std::vector<double> joint_positions = rtde_receive->getActualQ();
       if (joint_positions.size() == 6) {
 
         for (auto i = 0; i < joint_positions.size(); i++ ) {
@@ -954,6 +964,8 @@ int main(int argc, char** argv) {
   // Установить начальное положение JointState
   position_vector.resize(joint_start_pos.size());
   Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
+
+  printPoseInRviz(joint_pub_state, joint_names);
 
   ros::Publisher messagePub = nh.advertise<std_msgs::String>("chatter", 1000);
   ros::Publisher messageUIPub = nh.advertise<ur5_husky_main::InfoUI>("chatter_ui", 1000);
