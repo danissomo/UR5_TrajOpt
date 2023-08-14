@@ -13,6 +13,6 @@ float64 rotateX
 float64 rotateY
 float64 rotateZ
 string colorByName
-ur5_husky_main/Color color
+ur5_husky_scene/Color color
 ---
 string result

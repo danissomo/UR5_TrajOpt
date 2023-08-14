@@ -94,9 +94,11 @@ sudo make install</code></pre>
 
 **5. Запуск сцены**
 
-Запуск trajopt без управления через UI <code>roslaunch ur5_husky_main run_ur5_husky_trajopt.launch ui_control:=false</code>
+5.а. Запуск trajopt без управления через UI <code>roslaunch ur5_husky_main run_ur5_husky_trajopt.launch ui_control:=false</code>
 
 Запуск trajopt с UI <code>roslaunch ur5_husky_main run_ur5_husky_trajopt.launch</code>
+
+5.б. Запуск ноды с формированием сцены ```roslaunch ur5_husky_scene run_scene.launch```
 
 **6. Управляйте роботом** из терминала или через UI.
 

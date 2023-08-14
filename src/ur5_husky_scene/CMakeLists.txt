@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(ur5_husky_main)
+project(ur5_husky_scene)
 
 find_package(ros_industrial_cmake_boilerplate REQUIRED)
 extract_package_metadata(pkg)
@@ -19,13 +19,12 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   tesseract_monitoring
   tesseract_rosutils
-  settings_custom_lib
   robot_context
+  settings_custom_lib
   urdf
   std_msgs
   message_generation
   visualization_msgs
-  robotiq_2f_gripper_control
   #rviz_visual_tools
 )
 
@@ -42,9 +41,6 @@ find_package(tesseract_support REQUIRED)
 find_package(trajopt_sqp REQUIRED)
 find_package(tesseract_visualization REQUIRED)
 find_package(tesseract_motion_planners REQUIRED)
-find_package(robotiq_2f_gripper_control REQUIRED)
-
-find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde")
 
 
 # Load variable for clang tidy args, compiler options and cxx version
@@ -83,10 +79,7 @@ tesseract_variables()
 ## Generate messages in the 'msg' folder
 add_message_files(
     FILES
-    Pose.msg
-    InfoUI.msg
-    PoseList.msg
-    Gripper.msg
+    Color.msg
 #   Message1.msg
 #   Message2.msg
 )
@@ -94,19 +87,8 @@ add_message_files(
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  SetStartJointState.srv
-  SetFinishJointState.srv
-  GetJointState.srv
-  RobotPlanTrajectory.srv
-  RobotExecuteTrajectory.srv
-  Freedrive.srv
-  RobotRestart.srv
-  IKSolver.srv
-  GripperService.srv
-  GetInfo.srv
-  CalculateTrajectory.srv
-  GripperMoveRobot.srv
-  GetGripperState.srv
+  Box.srv
+  Mesh.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -155,8 +137,8 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS
-  CATKIN_DEPENDS robotiq_2f_gripper_control
-#  LIBRARIES ur5_husky_main
+  CATKIN_DEPENDS 
+#  LIBRARIES ur5_husky_scene
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
 )
@@ -184,29 +166,11 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/ur5_husky_main_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/ur5_husky_scene_node.cpp)
 
 add_executable(
-  ur5_trajopt_node 
-  src/ur5_trajopt_node.cpp
-  trajopt/UR5Trajopt.cpp
-  ik/KinematicsUR5.cpp
-  ik/TestIK.cpp
-)
-
-add_executable(
-  freedrive_node
-  src/freedrive_node.cpp
-)
-
-add_executable(
-  gripper_node
-  src/gripper_node.cpp
-)
-
-add_executable(
-  sample_subscriber
-  src/sample_subscriber.cpp
+  ur5_scene_node 
+  src/ur5_husky_scene_node.cpp
 )
 
 ## Rename C++ executable without prefix
@@ -219,9 +183,7 @@ add_executable(
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_dependencies(ur5_trajopt_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(freedrive_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(gripper_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(ur5_scene_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
@@ -229,8 +191,7 @@ add_dependencies(gripper_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPOR
 # )
 
 
-target_link_libraries(ur5_trajopt_node
-   PRIVATE ur_rtde::rtde
+target_link_libraries(ur5_scene_node
    PRIVATE tesseract::tesseract_environment
    PRIVATE tesseract::tesseract_command_language
    PRIVATE tesseract::tesseract_task_composer
@@ -242,20 +203,6 @@ target_link_libraries(ur5_trajopt_node
    PRIVATE trajopt::trajopt_sqp
    PRIVATE tesseract::tesseract_task_composer
    PRIVATE tesseract::tesseract_task_composer_planning
-   ${catkin_LIBRARIES}
-)
-
-
-target_link_libraries(freedrive_node
-   PRIVATE ur_rtde::rtde
-   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(gripper_node
-   ${catkin_LIBRARIES}
-)
-
-target_link_libraries(sample_subscriber
    ${catkin_LIBRARIES}
 )
 
@@ -312,7 +259,7 @@ install(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_ur5_husky_main.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_ur5_husky_scene.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

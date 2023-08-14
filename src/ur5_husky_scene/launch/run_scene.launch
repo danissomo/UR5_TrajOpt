@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="prefix" default="ur5_"/>
+  <!-- Load robot description -->
+  <include file="$(find ur5_husky_main)/launch/robot_load_ur5.launch" >
+    <arg name="prefix" value="$(arg prefix)" />
+  </include>
+  <node pkg="ur5_husky_scene" type="ur5_scene_node" name="ur5_scene_node" output="screen">
+  </node>
+  <!-- Подключение Webserver rosbridge -->
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+</launch>
