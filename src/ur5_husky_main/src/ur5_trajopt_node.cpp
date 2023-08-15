@@ -15,7 +15,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <TestIK.hpp>
 #include <UR5Trajopt.hpp>
 #include <UR5TrajoptResponce.hpp>
-#include "robot_context/ur_rtde_interface.hpp"
+#include <robot_context/ur_rtde_interface.hpp>
 
 #include <ur5_husky_main/SetStartJointState.h>
 #include <ur5_husky_main/SetFinishJointState.h>
@@ -135,20 +135,19 @@ ur5_husky_main::Gripper gripperPosePrev;
 
 void robotMove(std::vector<double> &path_pose) {
     try {
+        URRTDEInterface* con =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
+        auto rtde_control = con->getRtdeControl();
 
-        // URRTDEInterface con(settingsConfig.robot_ip);
-        // auto rtde_control = con->rtdeControlConnect();
-
-        RTDEControlInterface rtde_control(settingsConfig.robot_ip);
+        // RTDEControlInterface rtde_control(settingsConfig.robot_ip);
         path_pose.push_back(settingsConfig.ur_speed);
         path_pose.push_back(settingsConfig.ur_acceleration);
         path_pose.push_back(settingsConfig.ur_blend);
 
         std::vector<std::vector<double>> jointsPath;
         jointsPath.push_back(path_pose);
-        rtde_control.moveJ(jointsPath);
-        rtde_control.stopScript();
-        rtde_control.disconnect();
+        rtde_control->moveJ(jointsPath);
+        rtde_control->stopScript();
+        rtde_control->disconnect();
     
     } catch (...) {
         if (!setRobotNotConnectErrorMes) {
@@ -574,6 +573,12 @@ int main(int argc, char** argv) {
 
   ros::Rate loop_rate(settingsConfig.delay_loop_rate);
 
+  URRTDEInterface* con =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
+  auto rtde_control = con->getRtdeControl();
+  std::cout << "CONTROL === " << rtde_control->isConnected() << std::endl;
+  
+
+
   bool plotting = true;
   bool rviz = true;
   bool debug = false;
@@ -654,9 +659,8 @@ int main(int argc, char** argv) {
 
   if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
     ROS_INFO("Start connect with UR5 to %s ...", settingsConfig.robot_ip.c_str());
-    URRTDEInterface rtde(settingsConfig.robot_ip);
-    auto rtde_receive = rtde.rtdeReceiveConnect();
-    // std::cout << "TYPE = " <<  typeid(*rtde_receive).name() << '\n';
+    URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
+    auto rtde_receive = rtde->getRtdeReceive();
 
     try {
       ROS_INFO("Connect success!");
@@ -745,6 +749,10 @@ int main(int argc, char** argv) {
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
   }
+
+
+  URRTDEInterface* con2 =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
+  auto rtde_control2 = con2->getRtdeControl();
 
 
   while(ros::ok()) {

@@ -15,31 +15,44 @@
 
 using namespace ur_rtde;
 
-class URRTDEInterface
-{
-public:
-  URRTDEInterface(std::string);
-  ~URRTDEInterface() = default;
-
-  std::shared_ptr<DashboardClient> dashboardConnect() {
-    return dash_board_;
-  };
-  std::shared_ptr<RTDEControlInterface> rtdeControlConnect() {
-    return rtde_control_;
-  };
-  std::shared_ptr<RTDEIOInterface> rtdeIOConnect() {
-    return rtde_io_;
-  };
-  std::shared_ptr<RTDEReceiveInterface> rtdeReceiveConnect() {
-    return rtde_receive_;
-  };
-
+class URRTDEInterface {
 private:
-  std::string hostname_;
-  std::shared_ptr<RTDEControlInterface> rtde_control_;
-  std::shared_ptr<RTDEReceiveInterface> rtde_receive_;
-  std::shared_ptr<RTDEIOInterface> rtde_io_;
-  std::shared_ptr<DashboardClient> dash_board_;
+    static URRTDEInterface * instance_;
+    static std::mutex mutex_;
+
+    static std::shared_ptr<RTDEControlInterface> rtde_control_;
+    static std::shared_ptr<RTDEReceiveInterface> rtde_receive_;
+    static std::shared_ptr<RTDEIOInterface> rtde_io_;
+    static std::shared_ptr<DashboardClient> dash_board_;
+
+
+protected:
+    URRTDEInterface(const std::string hostname): hostname_(hostname) { }
+    ~URRTDEInterface() {}
+    std::string hostname_;
+
+public:
+    URRTDEInterface(URRTDEInterface &other) = delete;
+    void operator=(const URRTDEInterface &) = delete;
+
+    static URRTDEInterface *getInstance(const std::string& value);
+    
+    std::string getHostname() const {
+        return hostname_;
+    }
+    std::shared_ptr<DashboardClient> getDashboard() {
+      return dash_board_;
+    };
+    std::shared_ptr<RTDEControlInterface> getRtdeControl() {
+      return rtde_control_;
+    };
+    std::shared_ptr<RTDEIOInterface> getRtdeIO() {
+      return rtde_io_;
+    };
+    std::shared_ptr<RTDEReceiveInterface> getRtdeReceive() {
+      return rtde_receive_;
+    };
 };
+
 
 #endif
