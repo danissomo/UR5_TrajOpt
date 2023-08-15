@@ -88,7 +88,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <vector>
 #include <string>
 
-#include <settings_custom_lib/SettingsCustomLib.hpp>
+#include <settings_custom_lib/settings_custom_lib.hpp>
 
 #include <urdf_parser/urdf_parser.h>
 #include <srdfdom/model.h>
@@ -136,13 +136,13 @@ ur5_husky_main::Gripper gripperPosePrev;
 void robotMove(std::vector<double> &path_pose) {
     try {
 
-        // URRTDEInterface con(robot_ip);
+        // URRTDEInterface con(settingsConfig.robot_ip);
         // auto rtde_control = con->rtdeControlConnect();
 
-        RTDEControlInterface rtde_control(robot_ip);
-        path_pose.push_back(ur_speed);
-        path_pose.push_back(ur_acceleration);
-        path_pose.push_back(ur_blend);
+        RTDEControlInterface rtde_control(settingsConfig.robot_ip);
+        path_pose.push_back(settingsConfig.ur_speed);
+        path_pose.push_back(settingsConfig.ur_acceleration);
+        path_pose.push_back(settingsConfig.ur_blend);
 
         std::vector<std::vector<double>> jointsPath;
         jointsPath.push_back(path_pose);
@@ -275,7 +275,7 @@ bool getJointValue(ur5_husky_main::GetJointState::Request &req,
 
   if (req.from_robot) {
     try {
-      RTDEReceiveInterface rtde_receive(robot_ip);
+      RTDEReceiveInterface rtde_receive(settingsConfig.robot_ip);
       ROS_INFO("Connect success!");
       std::vector<double> joint_positions = rtde_receive.getActualQ();
 
@@ -320,7 +320,7 @@ bool calculateRobotTrajectory(ur5_husky_main::CalculateTrajectory::Request &req,
   std::vector<Eigen::VectorXd> middlePos;
   middlePos.empty();
 
-  UR5Trajopt calculate(env, plotter, joint_names, startPose, finishPose, true, middlePos);
+  UR5Trajopt calculate(env, plotter, joint_names, startPose, finishPose, true, middlePos, settingsConfig);
   UR5TrajoptResponce responce = calculate.run();
 
   tesseract_common::JointTrajectory trajectoryTrajOpt = responce.getTrajectory();
@@ -389,9 +389,9 @@ bool robotRestartMethod(ur5_husky_main::RobotRestart::Request &req, ur5_husky_ma
 void freedriveControl(ros::Rate &loop_rate) {
 
   try {
-    RTDEControlInterface rtde_control(robot_ip);
-    RTDEReceiveInterface rtde_receive(robot_ip);
-    DashboardClient dash_board(robot_ip);
+    RTDEControlInterface rtde_control(settingsConfig.robot_ip);
+    RTDEReceiveInterface rtde_receive(settingsConfig.robot_ip);
+    DashboardClient dash_board(settingsConfig.robot_ip);
 
     dash_board.connect();
 
@@ -454,9 +454,9 @@ bool getInfo(ur5_husky_main::GetInfo::Request &req,
                    const std::vector<std::string> &joint_names,
                    ros::Rate &loop_rate) {
 
-  TestIK test(robot_ip, ur_speed, ur_acceleration, ur_blend, req.debug);
+  TestIK test(settingsConfig.robot_ip, settingsConfig.ur_speed, settingsConfig.ur_acceleration, settingsConfig.ur_blend, req.debug);
   // try {
-    DashboardClient dash_board(robot_ip);
+    DashboardClient dash_board(settingsConfig.robot_ip);
     dash_board.connect();
     std::cout << "--- Модель робота ---" << dash_board.getRobotModel() << std::endl;
     // getSerialNumber() function is not supported on the dashboard server for PolyScope versions less than 5.6.0
@@ -474,7 +474,7 @@ bool getInfo(ur5_husky_main::GetInfo::Request &req,
       // Получить данные из библиотеки ur_rtde
       try {
 
-        RTDEControlInterface rtde_control(robot_ip);
+        RTDEControlInterface rtde_control(settingsConfig.robot_ip);
         if (rtde_control.isConnected()) {
           std::vector<double> fk = rtde_control.getForwardKinematics();
           if (req.fk) {
@@ -572,7 +572,7 @@ int main(int argc, char** argv) {
   ros::NodeHandle pnh("~");
   ros::NodeHandle nh;
 
-  ros::Rate loop_rate(delay_loop_rate);
+  ros::Rate loop_rate(settingsConfig.delay_loop_rate);
 
   bool plotting = true;
   bool rviz = true;
@@ -637,24 +637,24 @@ int main(int argc, char** argv) {
   joint_names.emplace_back("ur5_wrist_2_joint");
   joint_names.emplace_back("ur5_wrist_3_joint");
 
-  joint_start_pos(0) = joint_start_pos_0;
-  joint_start_pos(1) = joint_start_pos_1;
-  joint_start_pos(2) = joint_start_pos_2;
-  joint_start_pos(3) = joint_start_pos_3;
-  joint_start_pos(4) = joint_start_pos_4;
-  joint_start_pos(5) = joint_start_pos_5;
+  joint_start_pos(0) = settingsConfig.joint_start_pos_0;
+  joint_start_pos(1) = settingsConfig.joint_start_pos_1;
+  joint_start_pos(2) = settingsConfig.joint_start_pos_2;
+  joint_start_pos(3) = settingsConfig.joint_start_pos_3;
+  joint_start_pos(4) = settingsConfig.joint_start_pos_4;
+  joint_start_pos(5) = settingsConfig.joint_start_pos_5;
 
-  joint_end_pos(0) = joint_end_pos_0;
-  joint_end_pos(1) = joint_end_pos_1;
-  joint_end_pos(2) = joint_end_pos_2;
-  joint_end_pos(3) = joint_end_pos_3;
-  joint_end_pos(4) = joint_end_pos_4;
-  joint_end_pos(5) = joint_end_pos_5;
+  joint_end_pos(0) = settingsConfig.joint_end_pos_0;
+  joint_end_pos(1) = settingsConfig.joint_end_pos_1;
+  joint_end_pos(2) = settingsConfig.joint_end_pos_2;
+  joint_end_pos(3) = settingsConfig.joint_end_pos_3;
+  joint_end_pos(4) = settingsConfig.joint_end_pos_4;
+  joint_end_pos(5) = settingsConfig.joint_end_pos_5;
 
 
   if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
-    ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
-    URRTDEInterface rtde(robot_ip);
+    ROS_INFO("Start connect with UR5 to %s ...", settingsConfig.robot_ip.c_str());
+    URRTDEInterface rtde(settingsConfig.robot_ip);
     auto rtde_receive = rtde.rtdeReceiveConnect();
     // std::cout << "TYPE = " <<  typeid(*rtde_receive).name() << '\n';
 
@@ -822,10 +822,10 @@ int main(int argc, char** argv) {
 
     joint_attach.type = JointType::FIXED;
     joint_attach.parent_to_joint_origin_transform = Eigen::Isometry3d::Identity();
-    joint_attach.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(x_pos_correct, y_pos_correct, z_pos_correct);
-    Eigen::AngleAxisd rotX(x_orient_correct, Eigen::Vector3d::UnitX());
-    Eigen::AngleAxisd rotY(y_orient_correct, Eigen::Vector3d::UnitY());
-    Eigen::AngleAxisd rotZ(z_orient_correct, Eigen::Vector3d::UnitZ());
+    joint_attach.parent_to_joint_origin_transform.translation() = Eigen::Vector3d(settingsConfig.x_pos_correct, settingsConfig.y_pos_correct, settingsConfig.z_pos_correct);
+    Eigen::AngleAxisd rotX(settingsConfig.x_orient_correct, Eigen::Vector3d::UnitX());
+    Eigen::AngleAxisd rotY(settingsConfig.y_orient_correct, Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd rotZ(settingsConfig.z_orient_correct, Eigen::Vector3d::UnitZ());
     joint_attach.parent_to_joint_origin_transform.rotate(rotX);
     joint_attach.parent_to_joint_origin_transform.rotate(rotY);
     joint_attach.parent_to_joint_origin_transform.rotate(rotZ);
@@ -864,7 +864,7 @@ int main(int argc, char** argv) {
           changeGripperState = true;
           gripperStates.push_back(gripperPoseList[i]);
 
-          UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list_tmp);
+          UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list_tmp, settingsConfig);
           UR5TrajoptResponce responce = calculate.run();
           bool success = responce.isSuccessful();
 
@@ -895,7 +895,7 @@ int main(int argc, char** argv) {
 
     // Если в принципе не было смены состояния гриппера, то тоже считаем план
     if (!changeGripperState) {
-      UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
+      UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list, settingsConfig);
       UR5TrajoptResponce responce = calculate.run();
       bool success = responce.isSuccessful();
 
@@ -974,9 +974,9 @@ int main(int argc, char** argv) {
             tesseract_common::JointState j_state = player.getByIndex(i);
             path_pose.resize(j_state.position.size());
             Eigen::VectorXd::Map(&path_pose[0], j_state.position.size()) = j_state.position;
-            path_pose.push_back(ur_speed);
-            path_pose.push_back(ur_acceleration);
-            path_pose.push_back(ur_blend);
+            path_pose.push_back(settingsConfig.ur_speed);
+            path_pose.push_back(settingsConfig.ur_acceleration);
+            path_pose.push_back(settingsConfig.ur_blend);
             jointsPath.push_back(path_pose);
 
             ROS_INFO("%d point of traectory: ", i+1);
@@ -1002,14 +1002,14 @@ int main(int argc, char** argv) {
 
           path_pose.resize(position_vector.size());
           Eigen::VectorXd::Map(&path_pose[0], joint_end_pos.size()) = joint_end_pos;
-          path_pose.push_back(ur_speed);
-          path_pose.push_back(ur_acceleration);
-          path_pose.push_back(ur_blend);
+          path_pose.push_back(settingsConfig.ur_speed);
+          path_pose.push_back(settingsConfig.ur_acceleration);
+          path_pose.push_back(settingsConfig.ur_blend);
           jointsPath.push_back(path_pose);
 
           // Отправить на робота
           try {
-            RTDEControlInterface rtde_control(robot_ip);
+            RTDEControlInterface rtde_control(settingsConfig.robot_ip);
             rtde_control.moveJ(jointsPath);
             rtde_control.stopScript();
 
