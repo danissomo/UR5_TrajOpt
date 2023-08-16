@@ -19,9 +19,6 @@ std::shared_ptr<RTDEReceiveInterface> URRTDEInterface::rtde_receive_;
 URRTDEInterface *URRTDEInterface::getInstance(const std::string& hostname) {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    bool test = instance_ == nullptr;
-    std::cout << "INS 1 = " << test << std::endl;
-
     if (instance_ == nullptr) {
         instance_ = new URRTDEInterface(hostname);
 

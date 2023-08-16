@@ -87,6 +87,7 @@ add_message_files(
     InfoUI.msg
     PoseList.msg
     Gripper.msg
+    Color.msg
 #   Message1.msg
 #   Message2.msg
 )
@@ -94,6 +95,8 @@ add_message_files(
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
+  Box.srv
+  Mesh.srv
   SetStartJointState.srv
   SetFinishJointState.srv
   GetJointState.srv

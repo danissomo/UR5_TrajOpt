@@ -20,7 +20,6 @@ include_directories(
 
 add_library(${PROJECT_NAME}
   src/ur_rtde_interface.cpp
-  src/robot_env_interface.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
