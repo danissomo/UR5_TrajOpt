@@ -337,12 +337,10 @@ bool createBox(ur5_husky_main::Box::Request &req,
   ColorInfo color{req.color.name, req.color.r, req.color.g, req.color.b, req.color.a};
 
   Command::Ptr box = addBox(req.name, joint_name.c_str(), req.length, req.width, req.height, req.x, req.y, req.z, color);
-  // if (!env->applyCommand(box)) {
-  //   res.result = "ERROR - create box";
-  //   return false;
-  // }
-
-  std::cout << "CREATE3! " << env->applyCommand(box) << std::endl;
+  if (!env->applyCommand(box)) {
+    res.result = "ERROR - create box";
+    return false;
+  }
 
   // Сдвинуть box
   Command::Ptr move = renderMove(req.name, joint_name.c_str(), req.offsetX, req.offsetY, req.offsetZ, req.rotateX, req.rotateY, req.rotateZ);
@@ -386,27 +384,21 @@ bool createMesh(ur5_husky_main::Mesh::Request &req,
 
 
 void robotMove(std::vector<double> &path_pose) {
-    try {
-        URRTDEInterface* con =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
-        auto rtde_control = con->getRtdeControl();
+    URRTDEInterface* con =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
+    auto rtde_control = con->getRtdeControl();
 
-        // RTDEControlInterface rtde_control(settingsConfig.robot_ip);
-        path_pose.push_back(settingsConfig.ur_speed);
-        path_pose.push_back(settingsConfig.ur_acceleration);
-        path_pose.push_back(settingsConfig.ur_blend);
+    path_pose.push_back(settingsConfig.ur_speed);
+    path_pose.push_back(settingsConfig.ur_acceleration);
+    path_pose.push_back(settingsConfig.ur_blend);
 
-        std::vector<std::vector<double>> jointsPath;
-        jointsPath.push_back(path_pose);
-        rtde_control->moveJ(jointsPath);
-        rtde_control->stopScript();
-        rtde_control->disconnect();
-    
-    } catch (...) {
-        if (!setRobotNotConnectErrorMes) {
-          // 1 сообщения хватит
-          setRobotNotConnectErrorMes = true;
-          ROS_ERROR("I can't connect with UR5.");
-        }
+    std::vector<std::vector<double>> jointsPath;
+    jointsPath.push_back(path_pose);
+    rtde_control->moveJ(jointsPath);
+    rtde_control->stopScript();
+    rtde_control->disconnect();
+
+    if (!con->robotConnect() && !setRobotNotConnectErrorMes) {
+      setRobotNotConnectErrorMes = true;
     }
 }
 
@@ -525,21 +517,16 @@ bool getJointValue(ur5_husky_main::GetJointState::Request &req,
   std::vector<double> joint_positions;
 
   if (req.from_robot) {
-    try {
-      RTDEReceiveInterface rtde_receive(settingsConfig.robot_ip);
-      ROS_INFO("Connect success!");
-      std::vector<double> joint_positions = rtde_receive.getActualQ();
+    URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
+    auto rtde_receive = rtde->getRtdeReceive();
+    ROS_INFO("Connect success!");
+    std::vector<double> joint_positions = rtde_receive->getActualQ();
 
-      for (auto i = 0; i < joint_positions.size(); i++) {
-        joint_start_pos(i) = joint_positions[i];
-      }
-
-      env->setState(joint_names, joint_start_pos);
-
-    } catch (...) {
-      ROS_ERROR("Can`t connect with UR5!");
-      env->setState(joint_names, joint_start_pos);
+    for (auto i = 0; i < joint_positions.size(); i++) {
+      joint_start_pos(i) = joint_positions[i];
     }
+
+    env->setState(joint_names, joint_start_pos);
   }
 
   joint_positions.resize(joint_start_pos.size());
@@ -638,50 +625,45 @@ bool robotRestartMethod(ur5_husky_main::RobotRestart::Request &req, ur5_husky_ma
 
 
 void freedriveControl(ros::Rate &loop_rate) {
+  URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
+  auto rtde_receive = rtde->getRtdeReceive();
+  auto rtde_control = rtde->getRtdeControl();
+  auto dash_board = rtde->getDashboard();
 
-  try {
-    RTDEControlInterface rtde_control(settingsConfig.robot_ip);
-    RTDEReceiveInterface rtde_receive(settingsConfig.robot_ip);
-    DashboardClient dash_board(settingsConfig.robot_ip);
+  dash_board->connect();
 
-    dash_board.connect();
+  if (rtde_control->isConnected()) {
 
-    if (rtde_control.isConnected()) {
+      rtde_control->teachMode();
 
-        rtde_control.teachMode();
+      // Если значения ниже - 7 7 2, то freedrive включен
+      std::cout << "Robot mode: " << rtde_receive->getRobotMode() << "\n";
+      std::cout << "Robot status: " << rtde_receive->getRobotStatus() << "\n";
+      std::cout << "RuntimeState: " << rtde_receive->getRuntimeState() << "\n";
+      std::cout << dash_board->polyscopeVersion() << "\n";
 
-        // Если значения ниже - 7 7 2, то freedrive включен
-        std::cout << "Robot mode: " << rtde_receive.getRobotMode() << "\n";
-        std::cout << "Robot status: " << rtde_receive.getRobotStatus() << "\n";
-        std::cout << "RuntimeState: " << rtde_receive.getRuntimeState() << "\n";
-        std::cout << dash_board.polyscopeVersion() << "\n";
+      ROS_INFO("Freedrive on");
 
-        ROS_INFO("Freedrive on");
-
-        while(ros::ok()) {
-          ros::spinOnce();
-          loop_rate.sleep();
-          if (!freeDriveOn) {
-            break;
-          }
+      while(ros::ok()) {
+        ros::spinOnce();
+        loop_rate.sleep();
+        if (!freeDriveOn) {
+          break;
         }
+      }
 
-        rtde_control.endTeachMode();
-        std::cout << "Robot status: " << rtde_receive.getRobotStatus() << "\n";
+      rtde_control->endTeachMode();
+      std::cout << "Robot status: " << rtde_receive->getRobotStatus() << "\n";
 
-        ROS_INFO("Freedrive off");
-    }
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    rtde_control.stopScript();
-    rtde_control.disconnect();
-    dash_board.stop();
-    dash_board.disconnect();
-    std::cout<<"stop script..." <<std::endl;
-
-  } catch(...) {
-    ROS_ERROR(" Connect error with UR5 for Freedrive");
+      ROS_INFO("Freedrive off");
   }
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  rtde_control->stopScript();
+  rtde_control->disconnect();
+  dash_board->stop();
+  dash_board->disconnect();
+  std::cout<<"stop script..." <<std::endl;
 }
 
 
@@ -706,51 +688,44 @@ bool getInfo(ur5_husky_main::GetInfo::Request &req,
                    ros::Rate &loop_rate) {
 
   TestIK test(settingsConfig.robot_ip, settingsConfig.ur_speed, settingsConfig.ur_acceleration, settingsConfig.ur_blend, req.debug);
-  // try {
-    DashboardClient dash_board(settingsConfig.robot_ip);
-    dash_board.connect();
-    std::cout << "--- Модель робота ---" << dash_board.getRobotModel() << std::endl;
-    // getSerialNumber() function is not supported on the dashboard server for PolyScope versions less than 5.6.0
-    // std::cout << "--- Серийный номер робота ---" << dash_board.getSerialNumber() << std::endl;
-    std::cout << "--- Программа робота: ---" << dash_board.getLoadedProgram() << std::endl;
+  URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
+  auto dash_board = rtde->getDashboard();
+  dash_board->connect();
+  std::cout << "--- Модель робота ---" << dash_board->getRobotModel() << std::endl;
+  // getSerialNumber() function is not supported on the dashboard server for PolyScope versions less than 5.6.0
+  // std::cout << "--- Серийный номер робота ---" << dash_board->getSerialNumber() << std::endl;
+  std::cout << "--- Программа робота: ---" << dash_board->getLoadedProgram() << std::endl;
 
-    dash_board.stop();
-    dash_board.disconnect();
-  // } catch(...) {
-  //   ROS_ERROR(" Connect error with UR5 for connect dash_board");
-  // }
+  dash_board->stop();
+  dash_board->disconnect();
 
   if (req.fk || req.ik) {
     if (req.fk) {
       // Получить данные из библиотеки ur_rtde
-      try {
+      auto rtde_control = rtde->getRtdeControl();
 
-        RTDEControlInterface rtde_control(settingsConfig.robot_ip);
-        if (rtde_control.isConnected()) {
-          std::vector<double> fk = rtde_control.getForwardKinematics();
-          if (req.fk) {
-            std::cout << "Прямая кинематика (ur_rtde): ";
-            for (int i = 0; i < fk.size(); i++) {
-              std::cout << fk[i] << " ";
-            }
-            std::cout << std::endl;              
+      if (rtde_control->isConnected()) {
+        std::vector<double> fk = rtde_control->getForwardKinematics();
+        if (req.fk) {
+          std::cout << "Прямая кинематика (ur_rtde): ";
+          for (int i = 0; i < fk.size(); i++) {
+            std::cout << fk[i] << " ";
           }
-
-          if (req.ik) {
-              std::vector<double> ik = rtde_control.getInverseKinematics(fk);
-              std::cout << "Обратная кинематика (ur_rtde): ";
-              for (int i = 0; i < ik.size(); i++) {
-                std::cout << ik[i] << " ";
-              }
-              std::cout << std::endl;
-          }
-
-          rtde_control.stopScript();
-          rtde_control.disconnect();
-
+          std::cout << std::endl;              
         }
-      } catch(...) {
-        ROS_ERROR(" Connect error with UR5 for get info");
+
+        if (req.ik) {
+            std::vector<double> ik = rtde_control->getInverseKinematics(fk);
+            std::cout << "Обратная кинематика (ur_rtde): ";
+            for (int i = 0; i < ik.size(); i++) {
+              std::cout << ik[i] << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        rtde_control->stopScript();
+        rtde_control->disconnect();
+
       }
 
       test.getForwardKinematics(joint_start_pos);
@@ -1305,14 +1280,11 @@ int main(int argc, char** argv) {
           jointsPath.push_back(path_pose);
 
           // Отправить на робота
-          try {
-            RTDEControlInterface rtde_control(settingsConfig.robot_ip);
-            rtde_control.moveJ(jointsPath);
-            rtde_control.stopScript();
+          URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
+          auto rtde_control = rtde->getRtdeControl();
 
-          } catch (...) {
-            ROS_ERROR("Can`t connect with UR5.");
-          }
+          rtde_control->moveJ(jointsPath);
+          rtde_control->stopScript();
 
           // Поменять состояние гриппера
           std::cout << "gripperStates = " << gripperStates.size() << std::endl;

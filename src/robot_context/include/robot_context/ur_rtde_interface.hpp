@@ -25,6 +25,8 @@ private:
     static std::shared_ptr<RTDEIOInterface> rtde_io_;
     static std::shared_ptr<DashboardClient> dash_board_;
 
+    static bool robotConnect_;
+
 
 protected:
     URRTDEInterface(const std::string hostname): hostname_(hostname) { }
@@ -37,6 +39,9 @@ public:
 
     static URRTDEInterface *getInstance(const std::string& value);
     
+    bool robotConnect() const {
+        return robotConnect_;
+    }
     std::string getHostname() const {
         return hostname_;
     }
