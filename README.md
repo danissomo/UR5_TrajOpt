@@ -250,5 +250,8 @@ catkin build robotiq_ft_sensor
 ```
 
 
+## Прочее
+
+1. Собрать пакет без зависимостей ```catkin build ur5_husky_main --no-deps```
 
 
