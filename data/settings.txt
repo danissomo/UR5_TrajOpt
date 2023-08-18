@@ -107,6 +107,7 @@ joint_middle_include = true
 
 # IP робота
 robot_ip = 127.0.0.1
+# robot_ip = 192.168.131.40
 
 # Данные для тестовой отправки на UR5
 joint_test_pos_0 = 0.0

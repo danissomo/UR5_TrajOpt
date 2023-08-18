@@ -88,6 +88,7 @@ add_message_files(
     PoseList.msg
     Gripper.msg
     Color.msg
+    ManipulatorState.msg
 #   Message1.msg
 #   Message2.msg
 )
@@ -212,6 +213,11 @@ add_executable(
   src/sample_subscriber.cpp
 )
 
+add_executable(
+  ur5_state
+  src/ur5_state.cpp
+)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -250,6 +256,11 @@ target_link_libraries(ur5_trajopt_node
 
 
 target_link_libraries(freedrive_node
+   PRIVATE ur_rtde::rtde
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(ur5_state
    PRIVATE ur_rtde::rtde
    ${catkin_LIBRARIES}
 )

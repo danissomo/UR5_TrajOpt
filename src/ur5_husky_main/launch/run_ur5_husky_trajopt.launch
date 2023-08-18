@@ -65,6 +65,8 @@
 
   <!-- Получение изображений с камеры робота -->
   <node name="camera_node" pkg="ur5_husky_camera" type="camera.py" output="screen" />
- 
+
+  <!-- Получение информации с робота -->
+  <node pkg="ur5_husky_main" type="ur5_state" name="manipulator_state_info" output="screen" />
 
 </launch>
