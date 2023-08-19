@@ -398,8 +398,6 @@ void robotMove(std::vector<double> &path_pose) {
   std::vector<std::vector<double>> jointsPath;
   jointsPath.push_back(path_pose);
   rtde_control->moveJ(jointsPath);
-  rtde_control->stopScript();
-  rtde_control->disconnect();
 }
 
 
@@ -496,11 +494,12 @@ bool updateFinishJointValue(ur5_husky_main::SetFinishJointState::Request &req,
 
 
 void printPoseInRviz(const ros::Publisher &joint_pub_state,
-                     const std::vector<std::string> &joint_names) {
+                     const std::vector<std::string> &joint_names,
+                     const Eigen::VectorXd &pose) {
 
   std::vector<double> joint_positions;
-  joint_positions.resize(joint_end_pos.size());
-  Eigen::VectorXd::Map(&joint_positions[0], joint_end_pos.size()) = joint_end_pos;
+  joint_positions.resize(pose.size());
+  Eigen::VectorXd::Map(&joint_positions[0], pose.size()) = pose;
 
   sensor_msgs::JointState joint_state_msg;
   joint_state_msg.name = joint_names;
@@ -534,7 +533,7 @@ bool getJointValue(ur5_husky_main::GetJointState::Request &req,
   joint_positions.resize(joint_start_pos.size());
   Eigen::VectorXd::Map(&joint_positions[0], joint_start_pos.size()) = joint_start_pos;
 
-  printPoseInRviz(joint_pub_state, joint_names);
+  printPoseInRviz(joint_pub_state, joint_names, joint_start_pos);
 
   res.name = joint_names;
   res.position = joint_positions;
@@ -664,10 +663,6 @@ void freedriveControl(ros::Rate &loop_rate) {
   }
 
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-  rtde_control->stopScript();
-  rtde_control->disconnect();
-  dash_board->stop();
-  dash_board->disconnect();
   std::cout<<"stop script..." <<std::endl;
 }
 
@@ -701,9 +696,6 @@ bool getInfo(ur5_husky_main::GetInfo::Request &req,
     // getSerialNumber() function is not supported on the dashboard server for PolyScope versions less than 5.6.0
     // std::cout << "--- Серийный номер робота ---" << dash_board->getSerialNumber() << std::endl;
     std::cout << "--- Программа робота: ---" << dash_board->getLoadedProgram() << std::endl;
-
-    dash_board->stop();
-    dash_board->disconnect();
   }
 
   if (req.fk || req.ik) {
@@ -729,10 +721,6 @@ bool getInfo(ur5_husky_main::GetInfo::Request &req,
             }
             std::cout << std::endl;
         }
-
-        rtde_control->stopScript();
-        rtde_control->disconnect();
-
       }
 
       test.getForwardKinematics(joint_start_pos);
@@ -914,7 +902,7 @@ int main(int argc, char** argv) {
   position_vector.resize(joint_start_pos.size());
   Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
 
-  printPoseInRviz(joint_pub_state, joint_names);
+  printPoseInRviz(joint_pub_state, joint_names, joint_start_pos);
 
   ros::Publisher messagePub = nh.advertise<std_msgs::String>("chatter", 1000);
   ros::Publisher messageUIPub = nh.advertise<ur5_husky_main::InfoUI>("chatter_ui", 1000);
@@ -1283,7 +1271,6 @@ int main(int argc, char** argv) {
             auto rtde_control = rtde->getRtdeControl();
 
             rtde_control->moveJ(jointsPath);
-            rtde_control->stopScript();
           }
 
           // Поменять состояние гриппера
