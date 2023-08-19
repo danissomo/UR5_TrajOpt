@@ -98,7 +98,7 @@ sudo make install</code></pre>
 
 Запуск trajopt с UI <code>roslaunch ur5_husky_main run_ur5_husky_trajopt.launch</code>
 
-5.б. Запуск ноды с формированием сцены ```roslaunch ur5_husky_scene run_scene.launch```
+5.б. Запуск ноды с получением информации о роботе ```roslaunch ur5_husky_main ur5_state.launch``` (запускать только если подключен UR-SIM или UR5)
 
 **6. Управляйте роботом** из терминала или через UI.
 
@@ -107,6 +107,7 @@ sudo make install</code></pre>
 <u>Новая вкладка терминала:</u>
 
 - Зайти в docker-контейнер <code>sudo docker exec -ti trajopt bash</code>
+- Перейти в рабочую директорию <code>cd workspace</code>
 - Прописать пути <code>source devel/setup.bash</code>
 - Ввести команду из списка ниже.
 

@@ -36,6 +36,8 @@ int main(int argc, char* argv[]){
   ros::Rate loop_rate(15);
 
   ros::Publisher robot_pub = n.advertise<ur5_husky_main::ManipulatorState>("/state/arm/0/arm_state", 10);
+
+  bool showInfo = false;
   
   while (ros::ok) {
     bool robotMove = false;
@@ -88,7 +90,10 @@ int main(int argc, char* argv[]){
       rtde_receive.disconnect();
 
     } catch (...) {
-      ROS_ERROR("Can`t connect with UR5! IP = %s", robot_ip.c_str());
+      if (!showInfo) {
+        ROS_ERROR("Can`t connect with UR5! IP = %s", robot_ip.c_str());
+        showInfo = true;
+      }
     }
 
     ros::spinOnce();
