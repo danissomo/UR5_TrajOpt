@@ -777,6 +777,25 @@ void gripperCallback(const ur5_husky_main::Gripper::ConstPtr &msg, ros::Publishe
 }
 
 
+void robotPoseCallback(const ur5_husky_main::Pose::ConstPtr &msg,
+  const std::shared_ptr<tesseract_environment::Environment> &env,
+  const ros::Publisher &joint_pub_state, 
+  const std::vector<std::string> &joint_names) {
+
+  URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
+  if (rtde->robotConnect()) {
+    auto rtde_control = rtde->getRtdeControl();
+    rtde_control->moveJ(msg->position);
+
+    for (int i = 0; i < msg->position.size(); i++) {
+      joint_start_pos(i) = msg->position[i];
+    }
+    env->setState(joint_names, joint_start_pos);
+    printPoseInRviz(joint_pub_state, joint_names, joint_start_pos);
+  }
+}
+
+
 void sendMessageToUI(std::string message, ros::Publisher &messageUIPub, ros::Rate &loop_rate, double time = 0.0) {
   ur5_husky_main::InfoUI msg;
   msg.code = message;
@@ -952,6 +971,8 @@ int main(int argc, char** argv) {
                       ("get_gripper_state", boost::bind(getGripperState, _1, _2, gsService, gripperStateSrv));                    
 
   ros::Subscriber sub = nh.subscribe<ur5_husky_main::Gripper>("gripper_state", 10, boost::bind(gripperCallback, _1, gripperPub));
+
+  ros::Subscriber joint_sub = nh.subscribe<ur5_husky_main::Pose>("set_robot_pose", 1, boost::bind(robotPoseCallback, _1, env, joint_pub_state, joint_names));
 
   ros::ServiceServer createBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
                       ("create_box", boost::bind(createBox, _1, _2, env));
