@@ -133,6 +133,7 @@ bool robotExecuteTrajectory = false;
 bool setRobotNotConnectErrorMes = false;
 bool robotRestart = true;
 bool freeDriveOn = false;
+bool robotBusy = false;
 std::vector<ur5_husky_main::Gripper> gripperPoseList;
 ur5_husky_main::Gripper gripperPosePrev;
 
@@ -383,7 +384,29 @@ bool createMesh(ur5_husky_main::Mesh::Request &req,
 }
 
 
-void robotMove(std::vector<double> &path_pose) {
+void sendRobotState(const ros::Publisher &messageRobotBusyPub) {
+  std_msgs::String msg;
+  if (robotBusy) {
+      msg.data = "robot_busy";
+    } else {
+      msg.data = "robot_ready";
+    }
+
+    messageRobotBusyPub.publish(msg);
+}
+
+
+void robotBusyPublish(const ros::Publisher &messageRobotBusyPub) {
+  while(ros::ok()) {
+    sendRobotState(messageRobotBusyPub);
+    ros::spinOnce();
+    ros::Rate loop_rate(15);
+    loop_rate.sleep();
+  }
+}
+
+
+void robotMove(std::vector<double> &path_pose, const ros::Publisher &messageRobotBusyPub) {
   URRTDEInterface* con =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
   if (!con->robotConnect()) {
     setRobotNotConnectErrorMes = true;
@@ -397,7 +420,10 @@ void robotMove(std::vector<double> &path_pose) {
 
   std::vector<std::vector<double>> jointsPath;
   jointsPath.push_back(path_pose);
+  robotBusy = true;
+  sendRobotState(messageRobotBusyPub);
   rtde_control->moveJ(jointsPath);
+  robotBusy = false;
 }
 
 
@@ -408,7 +434,8 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
                       const std::vector<std::string> &joint_names,
                       const bool connect_robot,
                       ros::Rate &loop_rate,
-                      ros::Publisher &gripperPub) {
+                      ros::Publisher &gripperPub,
+                      const ros::Publisher &messageRobotBusyPub) {
 
     std::vector<double> position_vector;
     std::vector<double> velocity;
@@ -436,7 +463,7 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
     gripperPosePrev.angle = req.gripperPose[0].angle;
 
     if (connect_robot) {
-        robotMove(position_vector);
+        robotMove(position_vector, messageRobotBusyPub);
         gripperPub.publish(req.gripperPose[0]);
     }
 
@@ -780,12 +807,17 @@ void gripperCallback(const ur5_husky_main::Gripper::ConstPtr &msg, ros::Publishe
 void robotPoseCallback(const ur5_husky_main::Pose::ConstPtr &msg,
   const std::shared_ptr<tesseract_environment::Environment> &env,
   const ros::Publisher &joint_pub_state, 
-  const std::vector<std::string> &joint_names) {
+  const std::vector<std::string> &joint_names,
+  const ros::Publisher &messageRobotBusyPub) {
 
   URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
   if (rtde->robotConnect()) {
     auto rtde_control = rtde->getRtdeControl();
-    rtde_control->moveJ(msg->position);
+    robotBusy = true;
+    sendRobotState(messageRobotBusyPub);
+    std::vector<double> position = msg->position;
+    robotMove(position, messageRobotBusyPub);
+    robotBusy = false;
 
     for (int i = 0; i < msg->position.size(); i++) {
       joint_start_pos(i) = msg->position[i];
@@ -805,6 +837,7 @@ void sendMessageToUI(std::string message, ros::Publisher &messageUIPub, ros::Rat
   ros::spinOnce();
   loop_rate.sleep();
 }
+
 
 
 int main(int argc, char** argv) {
@@ -924,14 +957,17 @@ int main(int argc, char** argv) {
   printPoseInRviz(joint_pub_state, joint_names, joint_start_pos);
 
   ros::Publisher messagePub = nh.advertise<std_msgs::String>("chatter", 1000);
+  ros::Publisher messageRobotBusyPub = nh.advertise<std_msgs::String>("robot_busy", 1000);
   ros::Publisher messageUIPub = nh.advertise<ur5_husky_main::InfoUI>("chatter_ui", 1000);
   ros::Publisher messagePosePub = nh.advertise<ur5_husky_main::PoseList>("trajopt_pose", 1000);
   std_msgs::String msg;
 
+  std::thread robotBusyThread(robotBusyPublish, messageRobotBusyPub);
+
   ros::Publisher gripperPub = nh.advertise<ur5_husky_main::Gripper>("gripper_state", 1000);
 
   ros::ServiceServer setStartJointsService = nh.advertiseService<ur5_husky_main::SetStartJointState::Request, ur5_husky_main::SetStartJointState::Response>
-                      ("set_joint_start_value", boost::bind(updateStartJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot, loop_rate, gripperPub));
+                      ("set_joint_start_value", boost::bind(updateStartJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot, loop_rate, gripperPub, messageRobotBusyPub));
 
   ros::ServiceServer setFinishJointsService = nh.advertiseService<ur5_husky_main::SetFinishJointState::Request, ur5_husky_main::SetFinishJointState::Response>
                       ("set_joint_finish_value", boost::bind(updateFinishJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
@@ -972,7 +1008,7 @@ int main(int argc, char** argv) {
 
   ros::Subscriber sub = nh.subscribe<ur5_husky_main::Gripper>("gripper_state", 10, boost::bind(gripperCallback, _1, gripperPub));
 
-  ros::Subscriber joint_sub = nh.subscribe<ur5_husky_main::Pose>("set_robot_pose", 1, boost::bind(robotPoseCallback, _1, env, joint_pub_state, joint_names));
+  ros::Subscriber joint_sub = nh.subscribe<ur5_husky_main::Pose>("set_robot_pose", 1, boost::bind(robotPoseCallback, _1, env, joint_pub_state, joint_names, messageRobotBusyPub));
 
   ros::ServiceServer createBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
                       ("create_box", boost::bind(createBox, _1, _2, env));
@@ -1291,7 +1327,10 @@ int main(int argc, char** argv) {
           if (rtde->robotConnect()) {
             auto rtde_control = rtde->getRtdeControl();
 
+            robotBusy = true;
+            sendRobotState(messageRobotBusyPub);
             rtde_control->moveJ(jointsPath);
+            robotBusy = false;
           }
 
           // Поменять состояние гриппера
