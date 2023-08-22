@@ -808,23 +808,28 @@ void robotPoseCallback(const ur5_husky_main::Pose::ConstPtr &msg,
   const std::shared_ptr<tesseract_environment::Environment> &env,
   const ros::Publisher &joint_pub_state, 
   const std::vector<std::string> &joint_names,
-  const ros::Publisher &messageRobotBusyPub) {
+  const ros::Publisher &messageRobotBusyPub,
+  ros::Rate &loop_rate) {
+
+  robotBusy = true;
+  sendRobotState(messageRobotBusyPub);
 
   URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
   if (rtde->robotConnect()) {
     auto rtde_control = rtde->getRtdeControl();
-    robotBusy = true;
-    sendRobotState(messageRobotBusyPub);
     std::vector<double> position = msg->position;
     robotMove(position, messageRobotBusyPub);
-    robotBusy = false;
-
-    for (int i = 0; i < msg->position.size(); i++) {
-      joint_start_pos(i) = msg->position[i];
-    }
-    env->setState(joint_names, joint_start_pos);
-    printPoseInRviz(joint_pub_state, joint_names, joint_start_pos);
   }
+
+  for (int i = 0; i < msg->position.size(); i++) {
+    joint_start_pos(i) = msg->position[i];
+  }
+
+  env->setState(joint_names, joint_start_pos);
+  ros::spinOnce();
+  loop_rate.sleep();
+  printPoseInRviz(joint_pub_state, joint_names, joint_start_pos);
+  robotBusy = false;
 }
 
 
@@ -1008,7 +1013,7 @@ int main(int argc, char** argv) {
 
   ros::Subscriber sub = nh.subscribe<ur5_husky_main::Gripper>("gripper_state", 10, boost::bind(gripperCallback, _1, gripperPub));
 
-  ros::Subscriber joint_sub = nh.subscribe<ur5_husky_main::Pose>("set_robot_pose", 1, boost::bind(robotPoseCallback, _1, env, joint_pub_state, joint_names, messageRobotBusyPub));
+  ros::Subscriber joint_sub = nh.subscribe<ur5_husky_main::Pose>("set_robot_pose", 1, boost::bind(robotPoseCallback, _1, env, joint_pub_state, joint_names, messageRobotBusyPub, loop_rate));
 
   ros::ServiceServer createBoxService = nh.advertiseService<ur5_husky_main::Box::Request, ur5_husky_main::Box::Response>
                       ("create_box", boost::bind(createBox, _1, _2, env));

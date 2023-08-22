@@ -98,6 +98,9 @@ sudo make install</code></pre>
 
 Запуск trajopt с UI <code>roslaunch ur5_husky_main run_ur5_husky_trajopt.launch</code>
 
+При запуске реального робота или UrSim в файле ```run_ur5_husky_trajopt.launch``` раскомментируйте строку 
+```<node pkg="ur5_husky_main" type="ur5_state" name="manipulator_state_info" output="screen" />```
+
 5.б. Запуск ноды с получением информации о роботе ```roslaunch ur5_husky_main ur5_state.launch``` (запускать только если подключен UR-SIM или UR5)
 
 **6. Управляйте роботом** из терминала или через UI.
