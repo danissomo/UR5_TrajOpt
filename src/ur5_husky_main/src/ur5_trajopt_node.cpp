@@ -34,6 +34,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <ur5_husky_main/CalculateTrajectory.h>
 #include <ur5_husky_main/GripperMoveRobot.h>
 #include <ur5_husky_main/GetGripperState.h>
+#include <ur5_husky_main/Settings.h>
 #include <tesseract_monitoring/environment_monitor.h>
 #include <tesseract_rosutils/plotting.h>
 #include <trajectory_msgs/JointTrajectory.h>
@@ -134,6 +135,12 @@ bool setRobotNotConnectErrorMes = false;
 bool robotRestart = true;
 bool freeDriveOn = false;
 bool robotBusy = false;
+
+bool async_move = false;
+double joints_delta_target = 0.0001; // максимальная погрешность при расчете фактического положения джоинтов к желаемому
+std::vector<double> joints_state_current;
+bool robotMoveNow = false;
+
 std::vector<ur5_husky_main::Gripper> gripperPoseList;
 ur5_husky_main::Gripper gripperPosePrev;
 
@@ -406,13 +413,48 @@ void robotBusyPublish(const ros::Publisher &messageRobotBusyPub) {
 }
 
 
-void robotMove(std::vector<double> &path_pose, const ros::Publisher &messageRobotBusyPub) {
+bool robotAsyncMoveCalc(std::shared_ptr<ur_rtde::RTDEReceiveInterface> &rtde_receive) {
+  while(ros::ok()) {
+
+    if (!robotMoveNow) {
+      return 0;
+    }
+
+    joints_state_current = rtde_receive->getTargetQ();
+
+    ros::spinOnce();
+    ros::Rate loop_rate(15);
+    loop_rate.sleep();
+  }
+
+  return 1;
+}
+
+
+double joints_pos_delta(std::vector<double> &path_pose) {
+  double joints_current_sum = 0;
+  double joints_target_sum = 0;
+
+  std::vector<double> joints_state_current;
+
+
+  for (int i = 0; i < path_pose.size(); i++) {
+    joints_current_sum += abs(path_pose[i]);
+    joints_target_sum += abs(joints_state_current[i]);
+  }
+
+  return abs(joints_current_sum - joints_target_sum);
+}
+
+
+void robotMove(std::vector<double> &path_pose, const ros::Publisher &messageRobotBusyPub, ros::Rate &loop_rate) {
   URRTDEInterface* con =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
   if (!con->robotConnect()) {
     setRobotNotConnectErrorMes = true;
     return;
   }
   auto rtde_control = con->getRtdeControl();
+  auto rtde_receive = con->getRtdeReceive();
 
   path_pose.push_back(settingsConfig.ur_speed);
   path_pose.push_back(settingsConfig.ur_acceleration);
@@ -422,7 +464,21 @@ void robotMove(std::vector<double> &path_pose, const ros::Publisher &messageRobo
   jointsPath.push_back(path_pose);
   robotBusy = true;
   sendRobotState(messageRobotBusyPub);
-  rtde_control->moveJ(jointsPath);
+  rtde_control->moveJ(jointsPath, async_move);
+
+  if (async_move) {
+    robotMoveNow = true;
+    std::thread robotAsyncMoveThread(robotAsyncMoveCalc, std::ref(rtde_receive));
+
+    while (joints_pos_delta(path_pose) > joints_delta_target) {
+      loop_rate.sleep();
+      continue;
+    }
+
+    robotMoveNow = false;
+  }
+
+
   robotBusy = false;
 }
 
@@ -463,7 +519,7 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
     gripperPosePrev.angle = req.gripperPose[0].angle;
 
     if (connect_robot) {
-        robotMove(position_vector, messageRobotBusyPub);
+        robotMove(position_vector, messageRobotBusyPub, loop_rate);
         gripperPub.publish(req.gripperPose[0]);
     }
 
@@ -694,6 +750,18 @@ void freedriveControl(ros::Rate &loop_rate) {
 }
 
 
+bool setSettings(ur5_husky_main::Settings::Request &req,
+                 ur5_husky_main::Settings::Response &res) {
+
+  if (req.key == "async_move") {
+    async_move = req.value;
+    res.result = "SUCCESS";
+  }
+
+  return true;
+}
+
+
 bool freedriveEnable(ur5_husky_main::Freedrive::Request &req,
                     ur5_husky_main::Freedrive::Response &res) {
 
@@ -818,7 +886,7 @@ void robotPoseCallback(const ur5_husky_main::Pose::ConstPtr &msg,
   if (rtde->robotConnect()) {
     auto rtde_control = rtde->getRtdeControl();
     std::vector<double> position = msg->position;
-    robotMove(position, messageRobotBusyPub);
+    robotMove(position, messageRobotBusyPub, loop_rate);
   }
 
   for (int i = 0; i < msg->position.size(); i++) {
@@ -997,6 +1065,9 @@ int main(int argc, char** argv) {
 
   ros::ServiceServer getInfoService = nh.advertiseService<ur5_husky_main::GetInfo::Request, ur5_husky_main::GetInfo::Response>
                       ("get_info_robot", boost::bind(getInfo, _1, _2, env, joint_names, loop_rate));
+
+  ros::ServiceServer setSettingsService = nh.advertiseService<ur5_husky_main::Settings::Request, ur5_husky_main::Settings::Response>
+                      ("set_settings", boost::bind(setSettings, _1, _2));
 
   ros::ServiceClient gripperMoveRobotService = nh.serviceClient<ur5_husky_main::GripperMoveRobot>("gripper_move_robot");
   ur5_husky_main::GripperMoveRobot srv;
@@ -1334,7 +1405,8 @@ int main(int argc, char** argv) {
 
             robotBusy = true;
             sendRobotState(messageRobotBusyPub);
-            rtde_control->moveJ(jointsPath);
+            rtde_control->moveJ(jointsPath, async_move);
+            //// TODO Добавить обработку асинхронного движения
             robotBusy = false;
           }
 

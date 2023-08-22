@@ -111,6 +111,7 @@ add_service_files(
   CalculateTrajectory.srv
   GripperMoveRobot.srv
   GetGripperState.srv
+  Settings.srv
 )
 
 ## Generate actions in the 'action' folder
