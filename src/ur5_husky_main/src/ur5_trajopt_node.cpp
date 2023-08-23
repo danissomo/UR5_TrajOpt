@@ -926,6 +926,7 @@ int main(int argc, char** argv) {
   bool connect_robot = false;
   bool ui_control = false;
   std::string script = "";
+  std::string robot_ip = "";
 
   // конфиги для робота
   double velocity = 0.5;
@@ -946,6 +947,7 @@ int main(int argc, char** argv) {
   pnh.param("connect_robot", connect_robot, connect_robot);
   pnh.param("ui_control", ui_control, ui_control);
   pnh.param("script", script, script);
+  pnh.param("robot_ip", robot_ip, robot_ip);
 
   // Initial setup
   std::string urdf_xml_string, srdf_xml_string;

@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
+  <arg name="robot_ip" default="127.0.0.1"/>
   <arg name="plotting" default="true"/>
   <arg name="rviz" default="true"/>
   <arg name="paused" default="true" />
@@ -29,6 +30,7 @@
   <node pkg="ur5_husky_main" type="ur5_trajopt_node"
     name="ur5_trajopt_node" output="screen" launch-prefix="bash -c 'sleep $(arg delay); $0 $@' ">
     <param name="plotting" type="bool" value="$(arg plotting)"/>
+    <param name="robot_ip" type="string" value="$(arg robot_ip)"/>
     <param name="rviz" type="bool" value="$(arg rviz)"/>
     <param name="debug" type="bool" value="$(arg debug)"/>
     <param name="connect_robot" type="bool" value="$(arg connect_robot)"/>
@@ -68,6 +70,8 @@
 
   <!-- Получение информации с робота -->
   <!-- Подключать только при запущенном роботе или ursim -->
-  <!-- <node pkg="ur5_husky_main" type="ur5_state" name="manipulator_state_info" output="screen" /> -->
+  <node pkg="ur5_husky_main" type="ur5_state" name="manipulator_state_info" output="screen">
+    <param name="robot_ip" type="string" value="$(arg robot_ip)"/>
+  </node>
 
 </launch>

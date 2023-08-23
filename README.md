@@ -75,6 +75,12 @@ sudo make install</code></pre>
 - Выполнить <code>./scripts/fix.sh</code>
 
 
+### 3. Закинуть пакеты на робота из папки ```ur5_husky_api```
+
+В этой папке содержатся пакеты, которые необходимо (или желательно) запускать при работе с реальным роботом. 
+
+Следовать инструкциям в файле ```ur5_husky_api/readme.md```.
+
 ## Как управлять роботом с помощью TrajOpt
 
 **1. Склонировать репозиторий** <code>git clone --recurse-submodules https://github.com/allicen/trajopt_ur5</code>.
