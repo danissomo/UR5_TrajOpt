@@ -40,6 +40,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <trajectory_msgs/JointTrajectory.h>
 #include <sensor_msgs/JointState.h>
 #include <std_msgs/String.h>
+#include <std_srvs/Empty.h>
 #include <tesseract_environment/utils.h>
 #include <tesseract_common/timer.h>
 #include <tesseract_common/resource_locator.h>
@@ -469,11 +470,10 @@ void robotMove(std::vector<double> &path_pose, const ros::Publisher &messageRobo
   if (async_move) {
     robotMoveNow = true;
     std::thread robotAsyncMoveThread(robotAsyncMoveCalc, std::ref(rtde_receive));
-
-    while (joints_pos_delta(path_pose) > joints_delta_target) {
-      loop_rate.sleep();
-      continue;
-    }
+  //   while (joints_pos_delta(path_pose) > joints_delta_target) {
+  //     loop_rate.sleep();
+  //     continue;
+  //   }
 
     robotMoveNow = false;
   }
@@ -753,10 +753,14 @@ void freedriveControl(ros::Rate &loop_rate) {
 bool setSettings(ur5_husky_main::Settings::Request &req,
                  ur5_husky_main::Settings::Response &res) {
 
+  std::cout << "async = " << async_move << " " << req.key<< std::endl;
+
   if (req.key == "async_move") {
     async_move = req.value;
     res.result = "SUCCESS";
   }
+
+  std::cout << "async = " << async_move << std::endl;
 
   return true;
 }
@@ -911,6 +915,24 @@ void sendMessageToUI(std::string message, ros::Publisher &messageUIPub, ros::Rat
   loop_rate.sleep();
 }
 
+
+bool stopMove(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
+  URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
+
+  std::cout << "STOP!" << std::endl;
+
+  if (rtde->robotConnect()) {
+    std::cout << "STOP1!" << std::endl;
+    auto rtde_control = rtde->getRtdeControl();
+    rtde_control->moveJ(joints_state_current);
+    robotMoveNow = false;
+    robotBusy = false;
+
+    std::cout << "STOP2!" << std::endl;
+  }
+
+  return true;
+}
 
 
 int main(int argc, char** argv) {
@@ -1077,6 +1099,7 @@ int main(int argc, char** argv) {
   ros::ServiceServer gripperService = nh.advertiseService<ur5_husky_main::GripperService::Request, ur5_husky_main::GripperService::Response>
                       ("gripper_move", boost::bind(gripperMove, _1, _2, gripperMoveRobotService, srv));
 
+  ros::ServiceServer robotStopService = nh.advertiseService<std_srvs::Empty::Request, std_srvs::Empty::Response>("robot_stop", stopMove);
 
   ros::ServiceClient gsService = nh.serviceClient<ur5_husky_main::GetGripperState>("gripper_state_robot");
   ur5_husky_main::GetGripperState gripperStateSrv;
