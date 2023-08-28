@@ -1107,7 +1107,7 @@ int main(int argc, char** argv) {
   ros::ServiceServer gripperStateService = nh.advertiseService<ur5_husky_main::GetGripperState::Request, ur5_husky_main::GetGripperState::Response>
                       ("get_gripper_state", boost::bind(getGripperState, _1, _2, gsService, gripperStateSrv));                    
 
-  ros::Subscriber sub = nh.subscribe<ur5_husky_main::Gripper>("gripper_state", 10, boost::bind(gripperCallback, _1, gripperPub));
+  ros::Subscriber sub = nh.subscribe<ur5_husky_main::Gripper>("set_gripper_state", 10, boost::bind(gripperCallback, _1, gripperPub));
 
   ros::Subscriber joint_sub = nh.subscribe<ur5_husky_main::Pose>("set_robot_pose", 1, boost::bind(robotPoseCallback, _1, env, joint_pub_state, joint_names, messageRobotBusyPub, loop_rate));
 

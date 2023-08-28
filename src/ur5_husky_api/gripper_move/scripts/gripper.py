@@ -48,13 +48,11 @@ class Gripper(object):
         print("Open finish")
 
     def state(self):
-        return Robotiq.get_current_joint_position()
+        r = Robotiq()
+        return r.get_current_gripper_status().requested_position
 
     def spin(self):
         while not rospy.is_shutdown():
-            msg = GripperAngle()
-            msg.angle = Robotiq.get_current_joint_position()
-            self.connect_pub.publish(msg)
             self.rate.sleep()
 
 
@@ -72,7 +70,7 @@ def handle_gripper_move_sub(req):
 def handle_gripper_state_srv(req):
     global gripper
     gripper = Gripper()
-    return GetGripperStateResponce(gripper.state)
+    return GetGripperStateResponse(gripper.state)
 
 def handle_gripper_move_angle_sub(req):
     global gripper
@@ -84,7 +82,7 @@ if __name__ == '__main__':
     rospy.init_node("gripper_controller")
     s = rospy.Service('gripper_move_robot', GripperMoveRobot, handle_gripper_move_srv)
     state = rospy.Service('gripper_state_robot', GetGripperState, handle_gripper_state_srv)
-    rospy.Subscriber("gripper_state", GripperInfo, handle_gripper_move_sub)
+    rospy.Subscriber("gripper_state", GripperInfo, handle_gripper_move_sub) # get message from UI
     rospy.Subscriber("gripper_angle", GripperAngle, handle_gripper_move_angle_sub)
 
     gripper_state = Gripper()

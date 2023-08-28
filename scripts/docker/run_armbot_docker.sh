@@ -25,7 +25,7 @@ docker run  -it --rm \
         -e ROS_IP="$ROS_IP" \
         -v /dev:/dev \
         -v "$(pwd)":/workspace \
-        -v ~:/home \
+        -v /home:/home \
        --net=host \
        --privileged \
        --name trajopt trajopt-img
