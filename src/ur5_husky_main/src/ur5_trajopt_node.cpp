@@ -934,10 +934,11 @@ bool stopMove(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res, con
   if (rtde->robotConnect()) {
     std::cout << "STOP1!" << std::endl;
     auto rtde_control = rtde->getRtdeControl();
-    rtde_control->moveJ(joints_state_current);
+    auto rtde_receive = rtde->getRtdeReceive();
     robotMoveNow = false;
     robotBusy = false;
     sendRobotState(messageRobotBusyPub);
+    rtde_control->stopScript();
 
     std::cout << "STOP2!" << std::endl;
   }
