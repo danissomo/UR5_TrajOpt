@@ -91,6 +91,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <chrono>
 #include <vector>
 #include <string>
+#include <cstdlib>
 
 #include <settings_custom_lib/settings_custom_lib.hpp>
 
@@ -144,6 +145,9 @@ bool robotMoveNow = false;
 
 std::vector<ur5_husky_main::Gripper> gripperPoseList;
 ur5_husky_main::Gripper gripperPosePrev;
+
+/// Иначе не работает асинхронное движение
+URRTDEInterface* rtde;
 
 
 
@@ -404,21 +408,27 @@ void sendRobotState(const ros::Publisher &messageRobotBusyPub) {
 }
 
 
-void robotBusyPublish(const ros::Publisher &messageRobotBusyPub) {
+void robotBusyPublish() {
+
+  ros::NodeHandlePtr node = boost::make_shared<ros::NodeHandle>();
+  ros::Publisher messageRobotBusyPub = node->advertise<std_msgs::String>("robot_busy", 10);
+
+  ros::Rate loop_rate(15);
+
   while(ros::ok()) {
     sendRobotState(messageRobotBusyPub);
     ros::spinOnce();
-    ros::Rate loop_rate(15);
     loop_rate.sleep();
   }
 }
 
 
-bool robotAsyncMoveCalc(std::shared_ptr<ur_rtde::RTDEReceiveInterface> &rtde_receive) {
+void robotAsyncMoveCalc(std::shared_ptr<ur_rtde::RTDEReceiveInterface> &rtde_receive) {
+
   while(ros::ok()) {
 
     if (!robotMoveNow) {
-      return 0;
+      break;
     }
 
     joints_state_current = rtde_receive->getTargetQ();
@@ -427,8 +437,6 @@ bool robotAsyncMoveCalc(std::shared_ptr<ur_rtde::RTDEReceiveInterface> &rtde_rec
     ros::Rate loop_rate(15);
     loop_rate.sleep();
   }
-
-  return 1;
 }
 
 
@@ -436,10 +444,12 @@ double joints_pos_delta(std::vector<double> &path_pose) {
   double joints_current_sum = 0;
   double joints_target_sum = 0;
 
-  std::vector<double> joints_state_current;
+  if (joints_state_current.size() == 0) {
+    ROS_ERROR("Var `joints_state_current` can`t == 0!");
+    return 0.0;
+  }
 
-
-  for (int i = 0; i < path_pose.size(); i++) {
+  for (int i = 0; i < 6; i++) {
     joints_current_sum += abs(path_pose[i]);
     joints_target_sum += abs(joints_state_current[i]);
   }
@@ -449,13 +459,14 @@ double joints_pos_delta(std::vector<double> &path_pose) {
 
 
 void robotMove(std::vector<double> &path_pose, const ros::Publisher &messageRobotBusyPub, ros::Rate &loop_rate) {
-  URRTDEInterface* con =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
-  if (!con->robotConnect()) {
+
+  if (!rtde->robotConnect()) {
     setRobotNotConnectErrorMes = true;
     return;
   }
-  auto rtde_control = con->getRtdeControl();
-  auto rtde_receive = con->getRtdeReceive();
+
+  auto rtde_control = rtde->getRtdeControl();
+  auto rtde_receive = rtde->getRtdeReceive();
 
   path_pose.push_back(settingsConfig.ur_speed);
   path_pose.push_back(settingsConfig.ur_acceleration);
@@ -470,16 +481,19 @@ void robotMove(std::vector<double> &path_pose, const ros::Publisher &messageRobo
   if (async_move) {
     robotMoveNow = true;
     std::thread robotAsyncMoveThread(robotAsyncMoveCalc, std::ref(rtde_receive));
-  //   while (joints_pos_delta(path_pose) > joints_delta_target) {
-  //     loop_rate.sleep();
-  //     continue;
-  //   }
+    robotAsyncMoveThread.detach();
+    while (joints_pos_delta(path_pose) > joints_delta_target) {
+      loop_rate.sleep();
+      continue;
+    }
 
     robotMoveNow = false;
+    robotBusy = false;
+    sendRobotState(messageRobotBusyPub);
   }
 
-
   robotBusy = false;
+  sendRobotState(messageRobotBusyPub);
 }
 
 
@@ -599,7 +613,6 @@ bool getJointValue(ur5_husky_main::GetJointState::Request &req,
   std::vector<double> joint_positions;
 
   if (req.from_robot) {
-    URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
     if (rtde->robotConnect()) {
       auto rtde_receive = rtde->getRtdeReceive();
       ROS_INFO("Connect success!");
@@ -709,7 +722,6 @@ bool robotRestartMethod(ur5_husky_main::RobotRestart::Request &req, ur5_husky_ma
 
 
 void freedriveControl(ros::Rate &loop_rate) {
-  URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
   if (!rtde->robotConnect()) {
     return;
   }
@@ -787,7 +799,6 @@ bool getInfo(ur5_husky_main::GetInfo::Request &req,
                    ros::Rate &loop_rate) {
 
   TestIK test(settingsConfig.robot_ip, settingsConfig.ur_speed, settingsConfig.ur_acceleration, settingsConfig.ur_blend, req.debug);
-  URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
   if (rtde->robotConnect()) {
     auto dash_board = rtde->getDashboard();
     dash_board->connect();
@@ -886,7 +897,6 @@ void robotPoseCallback(const ur5_husky_main::Pose::ConstPtr &msg,
   robotBusy = true;
   sendRobotState(messageRobotBusyPub);
 
-  URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
   if (rtde->robotConnect()) {
     auto rtde_control = rtde->getRtdeControl();
     std::vector<double> position = msg->position;
@@ -902,6 +912,7 @@ void robotPoseCallback(const ur5_husky_main::Pose::ConstPtr &msg,
   loop_rate.sleep();
   printPoseInRviz(joint_pub_state, joint_names, joint_start_pos);
   robotBusy = false;
+  sendRobotState(messageRobotBusyPub);
 }
 
 
@@ -916,8 +927,7 @@ void sendMessageToUI(std::string message, ros::Publisher &messageUIPub, ros::Rat
 }
 
 
-bool stopMove(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
-  URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
+bool stopMove(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res, const ros::Publisher &messageRobotBusyPub) {
 
   std::cout << "STOP!" << std::endl;
 
@@ -927,6 +937,7 @@ bool stopMove(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
     rtde_control->moveJ(joints_state_current);
     robotMoveNow = false;
     robotBusy = false;
+    sendRobotState(messageRobotBusyPub);
 
     std::cout << "STOP2!" << std::endl;
   }
@@ -981,6 +992,8 @@ int main(int argc, char** argv) {
 
   settingsConfig.update();
 
+  rtde = URRTDEInterface::getInstance(settingsConfig.robot_ip);
+
   auto env = std::make_shared<tesseract_environment::Environment>();
 
   auto locator = std::make_shared<tesseract_rosutils::ROSResourceLocator>();
@@ -1024,12 +1037,12 @@ int main(int argc, char** argv) {
 
   if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
     ROS_INFO("Start connect with UR5 to %s ...", settingsConfig.robot_ip.c_str());
-    URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
 
     if (rtde->robotConnect()) {
       auto rtde_receive = rtde->getRtdeReceive();
       ROS_INFO("Connect success!");
       std::vector<double> joint_positions = rtde_receive->getActualQ();
+      joints_state_current = joint_positions;
       if (joint_positions.size() == 6) {
 
         for (auto i = 0; i < joint_positions.size(); i++ ) {
@@ -1059,7 +1072,7 @@ int main(int argc, char** argv) {
   ros::Publisher messagePosePub = nh.advertise<ur5_husky_main::PoseList>("trajopt_pose", 1000);
   std_msgs::String msg;
 
-  std::thread robotBusyThread(robotBusyPublish, messageRobotBusyPub);
+  std::thread robotBusyThread(robotBusyPublish);
 
   ros::Publisher gripperPub = nh.advertise<ur5_husky_main::Gripper>("gripper_state", 1000);
 
@@ -1099,7 +1112,7 @@ int main(int argc, char** argv) {
   ros::ServiceServer gripperService = nh.advertiseService<ur5_husky_main::GripperService::Request, ur5_husky_main::GripperService::Response>
                       ("gripper_move", boost::bind(gripperMove, _1, _2, gripperMoveRobotService, srv));
 
-  ros::ServiceServer robotStopService = nh.advertiseService<std_srvs::Empty::Request, std_srvs::Empty::Response>("robot_stop", stopMove);
+  ros::ServiceServer robotStopService = nh.advertiseService<std_srvs::Empty::Request, std_srvs::Empty::Response>("robot_stop", boost::bind(stopMove, _1, _2, messageRobotBusyPub));
 
   ros::ServiceClient gsService = nh.serviceClient<ur5_husky_main::GetGripperState>("gripper_state_robot");
   ur5_husky_main::GetGripperState gripperStateSrv;
@@ -1424,7 +1437,6 @@ int main(int argc, char** argv) {
           jointsPath.push_back(path_pose);
 
           // Отправить на робота
-          URRTDEInterface* rtde =  URRTDEInterface::getInstance(settingsConfig.robot_ip);
           if (rtde->robotConnect()) {
             auto rtde_control = rtde->getRtdeControl();
 
@@ -1433,6 +1445,7 @@ int main(int argc, char** argv) {
             rtde_control->moveJ(jointsPath, async_move);
             //// TODO Добавить обработку асинхронного движения
             robotBusy = false;
+            sendRobotState(messageRobotBusyPub);
           }
 
           // Поменять состояние гриппера
@@ -1473,6 +1486,8 @@ int main(int argc, char** argv) {
     ros::spinOnce();
     loop_rate.sleep();
   }
+
+  robotBusyThread.join();
 
   return 0;
 
