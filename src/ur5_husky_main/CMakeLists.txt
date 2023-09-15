@@ -98,8 +98,7 @@ add_service_files(
   FILES
   Box.srv
   Mesh.srv
-  SetStartJointState.srv
-  SetFinishJointState.srv
+  SetJointState.srv
   GetJointState.srv
   RobotPlanTrajectory.srv
   RobotExecuteTrajectory.srv

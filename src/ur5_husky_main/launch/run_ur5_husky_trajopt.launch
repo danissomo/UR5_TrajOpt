@@ -70,8 +70,8 @@
 
   <!-- Получение информации с робота -->
   <!-- Подключать только при запущенном роботе или ursim -->
-  <node pkg="ur5_husky_main" type="ur5_state" name="manipulator_state_info" output="screen">
+<!--   <node pkg="ur5_husky_main" type="ur5_state" name="manipulator_state_info" output="screen">
     <param name="robot_ip" type="string" value="$(arg robot_ip)"/>
-  </node>
+  </node> -->
 
 </launch>

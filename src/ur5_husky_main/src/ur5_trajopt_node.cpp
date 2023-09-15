@@ -19,8 +19,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
 #include <ur5_husky_main/Box.h>
 #include <ur5_husky_main/Mesh.h>
-#include <ur5_husky_main/SetStartJointState.h>
-#include <ur5_husky_main/SetFinishJointState.h>
+#include <ur5_husky_main/SetJointState.h>
 #include <ur5_husky_main/GetJointState.h>
 #include <ur5_husky_main/RobotPlanTrajectory.h>
 #include <ur5_husky_main/RobotExecuteTrajectory.h>
@@ -497,8 +496,8 @@ void robotMove(std::vector<double> &path_pose, const ros::Publisher &messageRobo
 }
 
 
-bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
-                      ur5_husky_main::SetStartJointState::Response &res,
+bool updateStartJointValue(ur5_husky_main::SetJointState::Request &req,
+                      ur5_husky_main::SetJointState::Response &res,
                       const std::shared_ptr<tesseract_environment::Environment> &env,
                       const ros::Publisher &joint_pub_state,
                       const std::vector<std::string> &joint_names,
@@ -547,8 +546,8 @@ bool updateStartJointValue(ur5_husky_main::SetStartJointState::Request &req,
 }
 
 
-bool updateFinishJointValue(ur5_husky_main::SetFinishJointState::Request &req,
-                      ur5_husky_main::SetFinishJointState::Response &res,
+bool updateFinishJointValue(ur5_husky_main::SetJointState::Request &req,
+                      ur5_husky_main::SetJointState::Response &res,
                       const std::shared_ptr<tesseract_environment::Environment> &env,
                       const ros::Publisher &joint_pub_state,
                       const std::vector<std::string> &joint_names,
@@ -695,9 +694,32 @@ bool calculateRobotTrajectory(ur5_husky_main::CalculateTrajectory::Request &req,
 
 
 bool robotPlanTrajectoryMethod(ur5_husky_main::RobotPlanTrajectory::Request &req, ur5_husky_main::RobotPlanTrajectory::Response &res) {
+  std::cout << "0. START" << std::endl;
 
-   robotPlanTrajectory = true;
-   res.result = "Plan Trajectory";
+  if (req.trajopt) {
+    robotPlanTrajectory = true;
+    res.result = "Plan Trajectory";
+  } else {
+
+    ////////////////////////////
+    ////////////////////////////
+    ////////////////////////////
+
+
+    std::cout << "1. joints list = " << joint_middle_pos_list.size() << std::endl;
+    std::cout << "2. gripper list = " << gripperPoseList.size() << std::endl;
+
+    for (int i = 0; i < joint_middle_pos_list.size(); i++) {
+      std::cout << joint_middle_pos_list[i] << std::endl;
+    }
+
+    for (int i = 0; i < gripperPoseList.size(); i++) {
+      std::cout << gripperPoseList[i] << std::endl;
+    }
+
+    res.result = "Run robot...";
+  }
+
    res.success = true;
    return true;
 }
@@ -1077,10 +1099,10 @@ int main(int argc, char** argv) {
 
   ros::Publisher gripperPub = nh.advertise<ur5_husky_main::Gripper>("gripper_state", 1000);
 
-  ros::ServiceServer setStartJointsService = nh.advertiseService<ur5_husky_main::SetStartJointState::Request, ur5_husky_main::SetStartJointState::Response>
+  ros::ServiceServer setStartJointsService = nh.advertiseService<ur5_husky_main::SetJointState::Request, ur5_husky_main::SetJointState::Response>
                       ("set_joint_start_value", boost::bind(updateStartJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot, loop_rate, gripperPub, messageRobotBusyPub));
 
-  ros::ServiceServer setFinishJointsService = nh.advertiseService<ur5_husky_main::SetFinishJointState::Request, ur5_husky_main::SetFinishJointState::Response>
+  ros::ServiceServer setFinishJointsService = nh.advertiseService<ur5_husky_main::SetJointState::Request, ur5_husky_main::SetJointState::Response>
                       ("set_joint_finish_value", boost::bind(updateFinishJointValue, _1, _2, env, joint_pub_state, joint_names, connect_robot));
 
   ros::ServiceServer getJointsService = nh.advertiseService<ur5_husky_main::GetJointState::Request, ur5_husky_main::GetJointState::Response>
