@@ -693,7 +693,26 @@ bool calculateRobotTrajectory(ur5_husky_main::CalculateTrajectory::Request &req,
 }
 
 
-bool robotPlanTrajectoryMethod(ur5_husky_main::RobotPlanTrajectory::Request &req, ur5_husky_main::RobotPlanTrajectory::Response &res) {
+void sendMessageToUI(std::string message, ros::Publisher &messageUIPub, ros::Rate &loop_rate, double time = 0.0) {
+  ur5_husky_main::InfoUI msg;
+  msg.code = message;
+  msg.time = time;
+  ROS_INFO("Sent message to UI: %s", msg.code.c_str());
+  messageUIPub.publish(msg);
+  ros::spinOnce();
+  loop_rate.sleep();
+}
+
+
+bool robotPlanTrajectoryMethod(ur5_husky_main::RobotPlanTrajectory::Request &req,
+      ur5_husky_main::RobotPlanTrajectory::Response &res,
+      const ros::Publisher &messageRobotBusyPub,
+      ros::Rate &loop_rate,
+      ros::Publisher &gripperPub,
+      ros::Publisher &joint_pub_state,
+      const std::shared_ptr<tesseract_environment::Environment> &env,
+      const std::vector<std::string> &joint_names,
+      ros::Publisher &messageUIPub) {
   std::cout << "0. START" << std::endl;
 
   if (req.trajopt) {
@@ -701,23 +720,30 @@ bool robotPlanTrajectoryMethod(ur5_husky_main::RobotPlanTrajectory::Request &req
     res.result = "Plan Trajectory";
   } else {
 
-    ////////////////////////////
-    ////////////////////////////
-    ////////////////////////////
-
-
     std::cout << "1. joints list = " << joint_middle_pos_list.size() << std::endl;
     std::cout << "2. gripper list = " << gripperPoseList.size() << std::endl;
 
     for (int i = 0; i < joint_middle_pos_list.size(); i++) {
-      std::cout << joint_middle_pos_list[i] << std::endl;
+      std::vector<double> position_vector_arr;
+      position_vector_arr.resize(joint_middle_pos_list[i].size());
+      Eigen::VectorXd::Map(&position_vector_arr[0], joint_middle_pos_list[i].size()) = joint_middle_pos_list[i];
+
+      robotMove(position_vector_arr, messageRobotBusyPub, loop_rate);
+      gripperPub.publish(gripperPoseList[i+1]); // приходит включая стартовое положение гриппера
+      std::cout << "Middle Pos" << joint_middle_pos_list[i] << ", gripper = " << gripperPoseList[i+1] << std::endl;
     }
 
-    for (int i = 0; i < gripperPoseList.size(); i++) {
-      std::cout << gripperPoseList[i] << std::endl;
-    }
+    std::vector<double> position_vector;
+    position_vector.resize(joint_end_pos.size());
+    Eigen::VectorXd::Map(&position_vector[0], joint_end_pos.size()) = joint_end_pos;
 
-    res.result = "Run robot...";
+    robotMove(position_vector, messageRobotBusyPub, loop_rate);
+    gripperPub.publish(gripperPoseList[gripperPoseList.size()-1]);
+
+    env->setState(joint_names, joint_end_pos);
+    printPoseInRviz(joint_pub_state, joint_names, joint_end_pos);
+    res.result = "End run robot...";
+    sendMessageToUI("move_finish", messageUIPub, loop_rate);
   }
 
    res.success = true;
@@ -938,17 +964,6 @@ void robotPoseCallback(const ur5_husky_main::Pose::ConstPtr &msg,
 }
 
 
-void sendMessageToUI(std::string message, ros::Publisher &messageUIPub, ros::Rate &loop_rate, double time = 0.0) {
-  ur5_husky_main::InfoUI msg;
-  msg.code = message;
-  msg.time = time;
-  ROS_INFO("Sent message to UI: %s", msg.code.c_str());
-  messageUIPub.publish(msg);
-  ros::spinOnce();
-  loop_rate.sleep();
-}
-
-
 bool stopMove(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res, const ros::Publisher &messageRobotBusyPub) {
 
   std::cout << "STOP!" << std::endl;
@@ -1112,7 +1127,8 @@ int main(int argc, char** argv) {
                       ("calculate_robot_rajectory", boost::bind(calculateRobotTrajectory, _1, _2, env, plotter, joint_names, messagePosePub, loop_rate));
 
   ros::ServiceServer robotPlanService = nh.advertiseService<ur5_husky_main::RobotPlanTrajectory::Request, ur5_husky_main::RobotPlanTrajectory::Response>
-                      ("robot_plan_trajectory", boost::bind(robotPlanTrajectoryMethod, _1, _2));
+                      ("robot_plan_trajectory", boost::bind(robotPlanTrajectoryMethod, _1, _2, messageRobotBusyPub, 
+                      loop_rate, gripperPub, joint_pub_state, env, joint_names, messageUIPub));
 
   ros::ServiceServer robotExecuteService = nh.advertiseService<ur5_husky_main::RobotExecuteTrajectory::Request, ur5_husky_main::RobotExecuteTrajectory::Response>
                       ("robot_execute_trajectory", boost::bind(robotExecuteTrajectoryMethod, _1, _2));
