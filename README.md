@@ -120,12 +120,20 @@ export ROS_IP=192.168.131.16
 
 <u>Развернуть URSim можно по инструкции</u>: https://hub.docker.com/r/universalrobots/ursim_cb3
 
+```
+docker pull universalrobots/ursim_cb3
+docker run --rm -it universalrobots/ursim_cb3
+```
+**robot_ip указывать как 172.17.0.2**
+
 - Запустить docker-контейнер с окружением для робота ```sudo ./scripts/docker/run_armbot_docker.sh```
 - Перейти в рабочую директорию ```cd workspace```
 - Собрать проект ```catkin build```
 - Прописать пути ```source devel/setup.bash```
 
-**5. Запуск сцены**
+**5. Запуск сцены** Файл с разными настройками робота находитяс по адресу ```data/settings.txt```.
+
+При необходимости замените настройки в нем. Основной параметр в файле, который нужнго проверить перед стартом, - это ```robot_ip = ***``` (здесь пропишите актуальный адрес робота UR5 или симулятора URSim! В противном случае оставьте значение 127.0.0.1).
 
 5.а. Запуск основной сцены ```roslaunch ur5_husky_main run_ur5_husky_trajopt.launch robot_ip:=192.168.131.40```
 
