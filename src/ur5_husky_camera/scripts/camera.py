@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+import sys
 import time
 from math import sin, cos, sqrt, atan
 import numpy as np
+np.set_printoptions(threshold=sys.maxsize)
 
 import rospy
 from geometry_msgs.msg import Twist
@@ -43,6 +45,7 @@ class Camera():
         rospy.Subscriber(self.topic_namespace + "/realsense_gripper/aligned_depth_to_color/image_raw", Image, self.camera_gripper_depth)
 
         self.pub_gripper = rospy.Publisher('gripper_camera', ImageCamera, queue_size=10)
+        self.pub_gripper_depth = rospy.Publisher('gripper_camera_depth', ImageCamera, queue_size=10)
         self.pub_robot = rospy.Publisher('robot_camera', ImageCamera, queue_size=10)
         self.rate = rospy.Rate(30)
 
@@ -89,17 +92,42 @@ class Camera():
     def camera_gripper_depth(self, msg):
         try:
             cv_image = self.cv_bridge.imgmsg_to_cv2(msg, "passthrough")
+            msg_pub = self.createMessage(cv_image)
+            self.pub_gripper_depth.publish(msg_pub)
+
         except CvBridgeError as e:
             rospy.logerr("CvBridge Error: {0}".format(e))
 
         depth_array = np.array(cv_image, dtype=np.float32)
+        ones = np.ones(depth_array.shape, dtype=np.float32)
 
-        cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
+        # cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
+        np.copyto(ones, depth_array, where=depth_array == 0)
+        
+        bl = cv2.medianBlur(ones, 5)
+
+        hsv_min = np.array((0, 0, 0), np.uint8)
+        hsv_max = np.array((0, 0, 0), np.uint8)
+        
+        img = cv2.cvtColor(bl, cv2.COLOR_GRAY2BGR)
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+        thresh = cv2.inRange( hsv, hsv_min, hsv_max )
+        contours, hierarchy = cv2.findContours( thresh.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        # print(contours)
+
+        for cnt in contours:
+            if len(cnt)>4:
+                # ellipse = cv2.fitEllipse(cnt)
+                cv2.drawContours(img, cnt, -1, (0,255,0), 3)
+                # cv2.ellipse(img,ellipse,(0,0,255),2)
+
+        # print(depth_array)
+        # print("=========================================================")
         
         # Process the depth image
-        self.ImageGripperDepth = self.process_depth_image(depth_array)
-        # print("=====================")
-        # print(depth_array)
+        self.ImageGripperDepth = self.process_depth_image(img)
 
     def process_depth_image(self, frame):
 
@@ -112,6 +140,7 @@ class Camera():
         while not rospy.is_shutdown():
             # Show Image from Camera
             if self.ImageGripperDepth is not None:
+                cv2.rectangle(self.ImageGripperDepth,(5,5),(self.width-5, self.height-80),(0,255,255),5) 
                 cv2.imshow("depth", self.ImageGripperDepth)
             
             cv2.waitKey(3)
