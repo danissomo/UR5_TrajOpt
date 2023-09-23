@@ -139,8 +139,8 @@ docker run --rm -it universalrobots/ursim_cb3
 
 В команду выше добавьте необходимые параметры (пример см. выше с командой robot_ip):
 
-- ui_control:=false (для отключения запуска с GUI)
-- use_robot:=true (если запускаете совместно с UR5 или URSim)
+- ```ui_control:=false``` (для отключения запуска с GUI)
+- ```use_robot:=true`` (если запускаете совместно с UR5 или URSim)
 
 5.б.* Отдельно можно запустить ноду с получением информации о роботе ```roslaunch ur5_husky_main ur5_state.launch``` (запускать только если подключен URSim или UR5)
 
@@ -258,26 +258,31 @@ trajectory: []
 #### Запуск просморта изображений с камер робота
 
 1) На роботе запустить публикатора:
+```
 cd /home/administrator/rubleva/ur5_husky_api
 catkin_make
 source devel/setup.bash
 roslaunch camera_pub camera.launch
+```
 
 2) В проекте:
-roslaunch ur5_husky_camera camera.launch
+```roslaunch ur5_husky_camera camera.launch```
+При проигрывании из росбэга: ```roslaunch ur5_husky_camera camera.launch rosbag:=true```
 
 #### Запуск ноды для гриппера
 
 1) На роботе запустить publisher:
+```
 cd /home/administrator/rubleva/ur5_husky_api
 catkin_make
 source devel/setup.bash
 roslaunch gripper_move gripper.launch
+```
 
 Минимальное положение гриппера - 0, максимальное - 0.085
 
 2) В проекте:
-rosservice call gripper_move "angle: 0.04"
+```rosservice call gripper_move "angle: 0.04"```
 
 
 ## Решение проблем
