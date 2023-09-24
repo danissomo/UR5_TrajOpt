@@ -16,6 +16,7 @@
   <arg name="gazebo" default="false"/>
   <arg name="script" default=""/> <!-- Название сценария -->
   <arg name="use_robot" default="false"/> <!-- Использовать URSim или UR5 -->
+  <arg name="rosbag" default="false" /> <!-- True, если планируется проигрывание сенсорной информации из росбэга -->
   
   <!-- Варианты сценариев: open_lock (открыть ящик тумбы) -->
 
@@ -68,7 +69,9 @@
   <!-- GAZEBO finish -->
 
   <!-- Получение изображений с камеры робота -->
-  <node name="camera_node" pkg="ur5_husky_camera" type="camera.py" output="screen" />
+  <!-- <node name="camera_node" pkg="ur5_husky_camera" type="camera.py" output="screen">
+    <param name="rosbag" type="bool" value="$(arg rosbag)"/>
+  </node> -->
 
   <!-- Получение информации с робота -->
   <!-- Подключать только при запущенном роботе или ursim -->

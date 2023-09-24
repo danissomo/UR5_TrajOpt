@@ -25,13 +25,12 @@ class Camera():
         rospy.init_node('camera', anonymous=True)
 
         self.rosbag = rospy.get_param("~rosbag")
-        self.topic_namespace = ""
-        if not self.rosbag:
-            self.topic_namespace = "/pub"
+        self.delay = rospy.get_param("~delay")
 
         self.cv_bridge = CvBridge()
 
         self.ImageGripperDepth = None
+        self.can_get_image_gripper_depth = False
 
         self.width = 1280
         self.height = 720
@@ -41,7 +40,7 @@ class Camera():
         self.figure_len_detect = 500
 
         self.line_height = 5
-        gripper_close_height = 80
+        gripper_close_height = 110
         gripper_close_correct = 35
 
         self.image_border_start = (0, self.height - int(self.line_height/2))
@@ -58,8 +57,9 @@ class Camera():
         rospy.Subscriber("/pub/realsense_gripper/color/image_raw", ImageCamera, self.camera_gripper)
         rospy.Subscriber("/realsense_gripper/color/image_raw/compressed", CompressedImage, self.camera_gripper)
 
-        rospy.Subscriber(self.topic_namespace + "/zed_node/right_raw/image_raw_color/compressed", ImageCamera, self.camera_robot)
-        rospy.Subscriber(self.topic_namespace + "/realsense_gripper/aligned_depth_to_color/image_raw", Image, self.camera_gripper_depth)
+        rospy.Subscriber("/zed_node/right_raw/image_raw_color/compressed", ImageCamera, self.camera_robot)
+        rospy.Subscriber("/realsense_gripper/aligned_depth_to_color/image_raw", Image, self.camera_gripper_depth)
+        rospy.Subscriber("/pub/realsense_gripper/aligned_depth_to_color/image_raw", Image, self.camera_gripper_depth)
 
         self.pub_gripper = rospy.Publisher('gripper_camera', ImageCamera, queue_size=10)
         self.pub_gripper_depth = rospy.Publisher('gripper_camera_depth', ImageCamera, queue_size=10)
@@ -108,12 +108,17 @@ class Camera():
 
 
     def camera_gripper_depth(self, msg):
-        try:
-            cv_image = self.cv_bridge.imgmsg_to_cv2(msg, "passthrough")
-            self.ImageGripperDepth = cv_image
+        # delay from get image camera
+        if self.can_get_image_gripper_depth:
+            try:
+                cv_image = self.cv_bridge.imgmsg_to_cv2(msg, "passthrough")
+                self.ImageGripperDepth = cv_image
+                self.can_get_image_gripper_depth = False
 
-        except CvBridgeError as e:
-            rospy.logerr("CvBridge Error: {0}".format(e))
+            except CvBridgeError as e:
+                rospy.logerr("CvBridge Error: {0}".format(e))
+        else:
+            self.ImageGripperDepth = None
 
 
     def process_depth_image(self, cv_image):
@@ -210,9 +215,19 @@ class Camera():
 
 
     def spin(self):
+        time_now = rospy.Time.now()
+        time_prev = time_now
+
+
         start_time = time.time()
         while not rospy.is_shutdown():
-            # Show Image from Camera
+            now = rospy.Time.now()
+            delta_time = now - time_prev
+            
+            if delta_time.secs >= self.delay:
+                self.can_get_image_gripper_depth = True
+                time_prev = now
+
             if self.ImageGripperDepth is not None:
                 img = self.process_depth_image(self.ImageGripperDepth)
                 cv2.line(img, self.image_border_start, self.image_border_end, (0,255,255), self.line_height) 
@@ -227,12 +242,13 @@ class Camera():
                 lineType = 5
                 cv2.putText(img,'Gripper Line', bottomLeftCornerOfText, font, fontScale, fontColor, thickness, lineType)
 
+                self.rate.sleep()
+
                 msg_pub = self.createMessage(img)
                 self.pub_gripper_depth.publish(msg_pub)
                 
                 cv2.imshow("depth", img)
-            
-            cv2.waitKey(3)
+                cv2.waitKey(3)
             self.rate.sleep()
 
     def shutdown(self):
