@@ -4,9 +4,6 @@
 [submodule "src/libs_pkgs_husky/husky"]
 	path = src/libs_pkgs_husky/husky
 	url = ../../husky/husky
-[submodule "src/pkgs_husky/husky"]
-	path = src/pkgs_husky/husky
-	url = ../../husky/husky
 [submodule "src/libs_rosbag/husky_tidy_bot_cv"]
 	path = src/libs_rosbag/husky_tidy_bot_cv
 	url = ../../andrey1908/husky_tidy_bot_cv
