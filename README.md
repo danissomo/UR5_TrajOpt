@@ -26,7 +26,6 @@
 - **src/pkgs_ur5** - пакеты для манипулятора Universal Robots (UR5) и гриппера Robotiq
 - **src/rosbag** - пакеты для обработки росбэгов
 - **src/settings_custom_lib** - пакет для добавления конфигов из data/settings.txt в другие пакеты
-- **src/ur5_husky_api** - пакеты, которые нужно запускать на самом роботе (опционально), подробнее см. <a href="https://github.com/allicen/UR5_TrajOpt/tree/main/src/ur5_husky_api">здесь</a>
 - **src/ur5_husky_camera** - пакет для получения изображения с камеры робота (Realsence и Zed), для получения изображений необходимо запускать соответствующий пакет на роботе (src/ur5_husky_api)
 - **src/ur5_husky_main** - пакет с реализацией управления роботом с помощью алгоритма TrajOpt
 - **src/ur_rtde-v1.5.0** - пакет с библиотекой ur_rtde (точно такая же версия используется на роботе).
