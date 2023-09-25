@@ -7,3 +7,5 @@ logs
 /src/CMakeLists.txt
 install
 .catkin_tools
+.vscode
+*.bag

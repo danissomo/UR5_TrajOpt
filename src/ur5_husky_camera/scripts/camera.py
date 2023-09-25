@@ -65,6 +65,7 @@ class Camera():
         self.pub_gripper_depth = rospy.Publisher('gripper_camera_depth', ImageCamera, queue_size=10)
         self.pub_robot = rospy.Publisher('robot_camera', ImageCamera, queue_size=10)
         self.pub_gripper_state = rospy.Publisher('gripper_state_camera_depth', String, queue_size=10)
+        self.pub_gripper_depth_small = rospy.Publisher('gripper_camera_depth_image', Image, queue_size=10)
         self.rate = rospy.Rate(30)
 
         rospy.on_shutdown(self.shutdown)
@@ -183,7 +184,7 @@ class Camera():
         for i, cnt in enumerate(cntrs_find):
             if i == 0: # the longest contour
                 # draw contour 
-                cv2.drawContours(img, cnt, -1, (0,0,255), 3)
+                cv2.drawContours(img, cnt, -1, (0,0,255), 6)
 
                 # draw lines through points
                 L1 = self.line(self.image_border_start, self.image_border_end)
@@ -208,8 +209,10 @@ class Camera():
                         msg.data = 'busy'
                     else:
                         msg.data = 'ready'
+                        self.gripper_busy = False
                 else:
                     msg.data = 'ready'
+                    self.gripper_busy = False
 
                 # send result
                 self.pub_gripper_state.publish(msg)
@@ -259,19 +262,36 @@ class Camera():
                 cv2.line(img, self.gripper_border_start, self.gripper_border_end, (255,0,0), self.line_height)
                 cv2.line(img, self.gripper_close_start, self.gripper_close_end, (255,0,0), self.line_height)
 
+                # Text style
                 font = cv2.FONT_HERSHEY_SIMPLEX
                 bottomLeftCornerOfText = (10, self.gripper_border_start[1]-10)
-                fontScale = 1
+                fontScale = 2
                 fontColor = (255,0,0)
-                thickness = 1
+                thickness = 3
                 lineType = 5
+
+                # send to Image
+                img_sent_rviz = img.copy()
+                cv2.putText(img_sent_rviz,'Obj in gripper: ', (50, 150), font, 4, (255,0,0), 12, lineType)
+                if self.gripper_busy:
+                    cv2.putText(img_sent_rviz,'YES', (1000, 150), font, 4, (0,255,0), 12, lineType)
+                else:
+                    cv2.putText(img_sent_rviz,'NO', (1000, 150), font, 4, (0,0,255), 12, lineType)
+
+                # Img sent to rviz
+                img_sent_rviz = img_sent_rviz.astype(np.uint8)
+                cv2.convertScaleAbs(img_sent_rviz, img_sent_rviz, 255, 0)
+                output = cv2.resize(img_sent_rviz, (300, int(self.height * 300 / self.width)))
+                self.pub_gripper_depth_small.publish(self.cv_bridge.cv2_to_imgmsg(output))
+
+                # add text
                 cv2.putText(img,'Gripper Line', bottomLeftCornerOfText, font, fontScale, fontColor, thickness, lineType)
 
                 # send image to GUI
                 msg_pub = self.createMessage(img)
                 self.pub_gripper_depth.publish(msg_pub)
                 
-                cv2.imshow("depth", img)
+                cv2.imshow("depth", output)
                 cv2.waitKey(3)
             self.rate.sleep()
 
