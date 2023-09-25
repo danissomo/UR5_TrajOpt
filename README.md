@@ -50,7 +50,7 @@
 
 ## Предварительная подготовка
 
-#### 1. Склонировать репозиторий** ```git clone --recurse-submodules https://github.com/allicen/trajopt_ur5```.
+#### 1. Склонировать репозиторий ```git clone --recurse-submodules https://github.com/allicen/trajopt_ur5```.
 
 #### 2. Настроить скрипты
 
