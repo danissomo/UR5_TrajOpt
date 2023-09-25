@@ -50,9 +50,11 @@
 
 ## Предварительная подготовка
 
-#### 1. Склонировать репозиторий ```git clone --recurse-submodules https://github.com/allicen/trajopt_ur5```.
+### 1. Склонировать репозиторий 
 
-#### 2. Настроить скрипты
+```git clone --recurse-submodules https://github.com/allicen/trajopt_ur5```
+
+### 2. Настроить скрипты
 
 - Дать права на запуск скриптов: ```sudo chmod +x ./trajopt_ur5/scripts/*sh```
 
@@ -67,7 +69,7 @@
 
 Следовать инструкциям в файле ```ur5_husky_api/readme.md```.
 
-## Как управлять роботом с помощью TrajOpt
+## Настройка окружения
 
 **1. Перейти в папку проекта** ```cd trajopt_ur5```.
 
