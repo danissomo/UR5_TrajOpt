@@ -28,9 +28,6 @@
 [submodule "src/libs_rosbag/rosbag_to_csv"]
 	path = src/libs_rosbag/rosbag_to_csv
 	url = ../../AtsushiSakai/rosbag_to_csv
-[submodule "src/rosbag/rosbag_to_csv"]
-	path = src/rosbag/rosbag_to_csv
-	url = ../../AtsushiSakai/rosbag_to_csv
 [submodule "src/libs_trajopt/tesseract"]
 	path = src/libs_trajopt/tesseract
 	url = ../../tesseract-robotics/tesseract
