@@ -4,7 +4,8 @@
 #include <ur_rtde/rtde_io_interface.h>
 #include <ur_rtde/rtde_receive_interface.h>
 
-#include <settings_custom_lib/SettingsCustomLib.hpp>
+#include <settings_custom_lib/settings_custom_lib.hpp>
+#include <robot_context/ur_rtde_interface.hpp>
 
 #include <thread>
 #include <chrono>
@@ -21,10 +22,10 @@ int main(int argc, char* argv[]){
 
   settingsConfig.update();
 
-  RTDEIOInterface rtde_io(robot_ip);
-  RTDEReceiveInterface rtde_receive(robot_ip);
-  RTDEControlInterface rtde_control(robot_ip);
-  DashboardClient dash_board(robot_ip);
+  RTDEIOInterface rtde_io(settingsConfig.robot_ip);
+  RTDEReceiveInterface rtde_receive(settingsConfig.robot_ip);
+  RTDEControlInterface rtde_control(settingsConfig.robot_ip);
+  DashboardClient dash_board(settingsConfig.robot_ip);
 
   bool teachModeGo(RTDEReceiveInterface&, RTDEControlInterface&, DashboardClient&);
 

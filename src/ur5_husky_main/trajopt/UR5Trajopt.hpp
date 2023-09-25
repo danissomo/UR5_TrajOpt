@@ -6,6 +6,7 @@
 #include <tesseract_environment/utils.h>
 
 #include "UR5TrajoptResponce.hpp"
+#include <settings_custom_lib/settings_custom_lib.hpp>
 
 #include <iostream>
 #include <vector>
@@ -23,7 +24,8 @@ public:
              Eigen::VectorXd joint_start_pos,
              Eigen::VectorXd joint_end_pos,
              bool ui_control,
-             std::vector<Eigen::VectorXd> joint_middle_pos_list);
+             std::vector<Eigen::VectorXd> joint_middle_pos_list,
+             SettingsCustomLibClass settingsConfig);
   ~UR5Trajopt() = default;
   UR5Trajopt(const UR5Trajopt&) = default;
   UR5Trajopt& operator=(const UR5Trajopt&) = default;
@@ -40,6 +42,7 @@ private:
   std::vector<Eigen::VectorXd> joint_middle_pos_list_;
   Eigen::VectorXd joint_end_pos_;
   bool ui_control_;
+  SettingsCustomLibClass settings_config_;
   
 };
 

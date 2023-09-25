@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   tesseract_monitoring
   tesseract_rosutils
   settings_custom_lib
+  robot_context
   urdf
   std_msgs
   message_generation
@@ -82,11 +83,12 @@ tesseract_variables()
 ## Generate messages in the 'msg' folder
 add_message_files(
     FILES
-    Color.msg
     Pose.msg
     InfoUI.msg
     PoseList.msg
     Gripper.msg
+    Color.msg
+    ManipulatorState.msg
 #   Message1.msg
 #   Message2.msg
 )
@@ -94,14 +96,13 @@ add_message_files(
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  SetStartJointState.srv
-  SetFinishJointState.srv
+  Box.srv
+  Mesh.srv
+  SetJointState.srv
   GetJointState.srv
   RobotPlanTrajectory.srv
   RobotExecuteTrajectory.srv
-  Box.srv
   Freedrive.srv
-  Mesh.srv
   RobotRestart.srv
   IKSolver.srv
   GripperService.srv
@@ -109,6 +110,7 @@ add_service_files(
   CalculateTrajectory.srv
   GripperMoveRobot.srv
   GetGripperState.srv
+  Settings.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -211,6 +213,11 @@ add_executable(
   src/sample_subscriber.cpp
 )
 
+add_executable(
+  ur5_state
+  src/ur5_state.cpp
+)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -249,6 +256,11 @@ target_link_libraries(ur5_trajopt_node
 
 
 target_link_libraries(freedrive_node
+   PRIVATE ur_rtde::rtde
+   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(ur5_state
    PRIVATE ur_rtde::rtde
    ${catkin_LIBRARIES}
 )

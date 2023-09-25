@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Получение информации с робота -->
+    <node pkg="ur5_husky_main" type="ur5_state" name="manipulator_state_info" output="screen" />
+</launch>

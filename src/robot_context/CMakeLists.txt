@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(settings_custom_lib)
+project(robot_context)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
+
+find_package(ur_rtde REQUIRED PATHS "/workspace/src/ur_rtde-v1.5.0/build/ur_rtde")
 
 catkin_package(
   INCLUDE_DIRS include
@@ -17,10 +19,11 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME}
-  src/settings_custom_lib.cpp
+  src/ur_rtde_interface.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
+   PRIVATE ur_rtde::rtde
    ${catkin_LIBRARIES}
 )
 
