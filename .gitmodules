@@ -1,0 +1,54 @@
+[submodule "src/libs_trajopt/descartes_light"]
+	path = src/libs_trajopt/descartes_light
+	url = ../../swri-robotics/descartes_light.git
+[submodule "src/libs_pkgs_husky/husky"]
+	path = src/libs_pkgs_husky/husky
+	url = ../../husky/husky
+[submodule "src/pkgs_husky/husky"]
+	path = src/pkgs_husky/husky
+	url = ../../husky/husky
+[submodule "src/libs_rosbag/husky_tidy_bot_cv"]
+	path = src/libs_rosbag/husky_tidy_bot_cv
+	url = ../../andrey1908/husky_tidy_bot_cv
+[submodule "src/libs_pkgs_ur5/ur_msgs"]
+	path = src/libs_pkgs_ur5/ur_msgs
+	url = ../../ros-industrial/ur_msgs
+[submodule "src/libs_trajopt/trajopt"]
+	path = src/libs_trajopt/trajopt
+	url = ../../tesseract-robotics/trajopt
+[submodule "src/libs_trajopt/ifopt"]
+	path = src/libs_trajopt/ifopt
+	url = ../../ethz-adrl/ifopt.git
+[submodule "src/libs_trajopt/opw_kinematics"]
+	path = src/libs_trajopt/opw_kinematics
+	url = ../../Jmeyer1292/opw_kinematics.git
+[submodule "src/libs_trajopt/ros_industrial_cmake_boilerplate"]
+	path = src/libs_trajopt/ros_industrial_cmake_boilerplate
+	url = ../../ros-industrial/ros_industrial_cmake_boilerplate.git
+[submodule "src/libs_rosbag/rosbag2video"]
+	path = src/libs_rosbag/rosbag2video
+	url = ../../mlaiacker/rosbag2video
+[submodule "src/libs_rosbag/rosbag_to_csv"]
+	path = src/libs_rosbag/rosbag_to_csv
+	url = ../../AtsushiSakai/rosbag_to_csv
+[submodule "src/rosbag/rosbag_to_csv"]
+	path = src/rosbag/rosbag_to_csv
+	url = ../../AtsushiSakai/rosbag_to_csv
+[submodule "src/libs_trajopt/tesseract"]
+	path = src/libs_trajopt/tesseract
+	url = ../../tesseract-robotics/tesseract
+[submodule "src/libs_trajopt/tesseract_planning"]
+	path = src/libs_trajopt/tesseract_planning
+	url = ../../tesseract-robotics/tesseract_planning
+[submodule "src/libs_trajopt/tesseract_qt"]
+	path = src/libs_trajopt/tesseract_qt
+	url = ../../tesseract-robotics/tesseract_qt
+[submodule "src/libs_trajopt/tesseract_ros"]
+	path = src/libs_trajopt/tesseract_ros
+	url = ../../tesseract-robotics/tesseract_ros
+[submodule "src/libs_pkgs_ur5/Universal_Robots_ROS_Driver"]
+	path = src/libs_pkgs_ur5/Universal_Robots_ROS_Driver
+	url = ../../UniversalRobots/Universal_Robots_ROS_Driver
+[submodule "src/pkgs_ur5/Universal_Robots_ROS_Driver"]
+	path = src/pkgs_ur5/Universal_Robots_ROS_Driver
+	url = ../../UniversalRobots/Universal_Robots_ROS_Driver
