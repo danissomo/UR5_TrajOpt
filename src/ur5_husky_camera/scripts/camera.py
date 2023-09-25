@@ -22,7 +22,7 @@ from ur5_husky_camera.msg import ImageCamera
 class Camera():
 
     def __init__(self):
-        rospy.init_node('camera', anonymous=True)
+        rospy.init_node('camera_depth', anonymous=True)
 
         self.rosbag = rospy.get_param("~rosbag")
         self.delay = rospy.get_param("~delay")
@@ -266,8 +266,6 @@ class Camera():
                 thickness = 1
                 lineType = 5
                 cv2.putText(img,'Gripper Line', bottomLeftCornerOfText, font, fontScale, fontColor, thickness, lineType)
-
-                self.rate.sleep()
 
                 # send image to GUI
                 msg_pub = self.createMessage(img)
