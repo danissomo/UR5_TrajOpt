@@ -51,28 +51,16 @@
 
 ## Предварительная подготовка
 
-#### 1. Собрать ur_rtde
-
-Необходимо для управления роботом. Робот должен быть подключен через Ethernet.
-
-```
-cd /workspace/src/ur_rtde-v1.5.0
-git submodule update --init --recursive
-mkdir build
-cd build
-cmake ..
-make
-sudo make install
-```
+#### 1. Склонировать репозиторий** ```git clone --recurse-submodules https://github.com/allicen/trajopt_ur5```.
 
 #### 2. Настроить скрипты
 
-- Дать права на запуск скриптов: ```sudo chmod +x scripts/*sh```
+- Дать права на запуск скриптов: ```sudo chmod +x ./trajopt_ur5/scripts/*sh```
 
 При первом запуске скриптов нужно исправить ошибку перед запуском скриптов (преобразование окончаний строк из формата DOS в формат UNIX):
 
-- Выполнить ```sed -i -e 's/\r$//' "$ARMBOT_PATH/scripts/fix.sh"```
-- Выполнить ```./scripts/fix.sh```
+- Выполнить ```sed -i -e 's/\r$//' "./trajopt_ur5/scripts/fix.sh"```
+- Выполнить ```./trajopt_ur5/scripts/fix.sh```
 
 ### 3. Закинуть пакеты на робота из проекта <a href="https://github.com/allicen/ur5_husky_api">ur5_husky_api</a>
 
@@ -82,15 +70,13 @@ sudo make install
 
 ## Как управлять роботом с помощью TrajOpt
 
-**1. Склонировать репозиторий** ```git clone --recurse-submodules https://github.com/allicen/trajopt_ur5```.
+**1. Перейти в папку проекта** ```cd trajopt_ur5```.
 
-**2. Перейти в папку проекта** ```cd trajopt_ur5```.
+**2. Собрать окружение для робота** в docker-контейнер: ```sudo docker build -t trajopt-img . --network=host --build-arg from=ubuntu:20.04```
 
-**3. Собрать окружение для робота** в docker-контейнер: ```sudo docker build -t trajopt-img . --network=host --build-arg from=ubuntu:20.04```
+**3. Запустить окружение для робота**
 
-**4. Запустить окружение для робота**
-
-**4.a. Реальный робот UR5**
+**3.a. Реальный робот UR5**
 
 <u>Новое окно терминала:</u>
 
@@ -112,11 +98,9 @@ export ROS_IP=192.168.131.16
 Примените изменения ```source ~/.bashrc```.
 
 - Запустить docker-контейнер с окружением для робота ```sudo ./scripts/docker/run_armbot_docker.sh $ROS_MASTER_URI $ROS_IP```
-- Перейти в рабочую директорию ```cd workspace```
-- Собрать проект ```catkin build```
-- Прописать пути ```source devel/setup.bash```
 
-**4.б. Симулятор URSim**
+
+**3.б. Симулятор URSim**
 
 <u>Развернуть URSim можно по инструкции</u>: https://hub.docker.com/r/universalrobots/ursim_cb3
 
@@ -127,24 +111,49 @@ docker run --rm -it universalrobots/ursim_cb3
 **robot_ip указывать как 172.17.0.2**
 
 - Запустить docker-контейнер с окружением для робота ```sudo ./scripts/docker/run_armbot_docker.sh```
+
+**4. Собрать ur_rtde**
+
+Необходимо для управления роботом. Робот должен быть подключен через Ethernet.
+
+- Зайти в docker-контейнер в отдельном окне терминала ```sudo docker exec -ti trajopt bash```
+- Собрать ur_rtde:
+
+```
+cd /workspace/src/ur_rtde-v1.5.0
+git submodule update --init --recursive
+mkdir build
+cd build
+cmake ..
+make
+sudo make install
+```
+
+Закрыть окно терминала. 
+
+**5. Собрать проект**
+
+Вернуться в первое окно терминала.
+
 - Перейти в рабочую директорию ```cd workspace```
 - Собрать проект ```catkin build```
 - Прописать пути ```source devel/setup.bash```
 
-**5. Запуск сцены** Файл с разными настройками робота находитяс по адресу ```data/settings.txt```.
+
+**6. Запуск сцены** Файл с разными настройками робота находится по адресу ```data/settings.txt```.
 
 При необходимости замените настройки в нем. Основной параметр в файле, который нужнго проверить перед стартом, - это ```robot_ip = ***``` (здесь пропишите актуальный адрес робота UR5 или симулятора URSim! В противном случае оставьте значение 127.0.0.1).
 
-5.а. Запуск основной сцены ```roslaunch ur5_husky_main run_ur5_husky_trajopt.launch robot_ip:=192.168.131.40```
+6.а. Запуск основной сцены ```roslaunch ur5_husky_main run_ur5_husky_trajopt.launch robot_ip:=192.168.131.40```
 
 В команду выше добавьте необходимые параметры (пример см. выше с командой robot_ip):
 
 - ```ui_control:=false``` (для отключения запуска с GUI)
 - ```use_robot:=true`` (если запускаете совместно с UR5 или URSim)
 
-5.б.* Отдельно можно запустить ноду с получением информации о роботе ```roslaunch ur5_husky_main ur5_state.launch``` (запускать только если подключен URSim или UR5)
+6.б.* Отдельно можно запустить ноду с получением информации о роботе ```roslaunch ur5_husky_main ur5_state.launch``` (запускать только если подключен URSim или UR5)
 
-**6. Управляйте роботом** по командам терминала или через UI.
+**7. Управляйте роботом** по командам терминала или через UI.
 
 Для управления из терминала:
 
