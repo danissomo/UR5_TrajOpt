@@ -40,9 +40,6 @@
 [submodule "src/libs_trajopt/tesseract_ros"]
 	path = src/libs_trajopt/tesseract_ros
 	url = ../../tesseract-robotics/tesseract_ros
-[submodule "src/libs_pkgs_ur5/Universal_Robots_ROS_Driver"]
-	path = src/libs_pkgs_ur5/Universal_Robots_ROS_Driver
-	url = ../../UniversalRobots/Universal_Robots_ROS_Driver
 [submodule "src/pkgs_ur5/Universal_Robots_ROS_Driver"]
 	path = src/pkgs_ur5/Universal_Robots_ROS_Driver
 	url = ../../UniversalRobots/Universal_Robots_ROS_Driver
