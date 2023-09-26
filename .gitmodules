@@ -4,9 +4,6 @@
 [submodule "src/libs_pkgs_husky/husky"]
 	path = src/libs_pkgs_husky/husky
 	url = ../../husky/husky
-[submodule "src/libs_rosbag/husky_tidy_bot_cv"]
-	path = src/libs_rosbag/husky_tidy_bot_cv
-	url = ../../andrey1908/husky_tidy_bot_cv
 [submodule "src/libs_pkgs_ur5/ur_msgs"]
 	path = src/libs_pkgs_ur5/ur_msgs
 	url = ../../ros-industrial/ur_msgs
@@ -40,6 +37,3 @@
 [submodule "src/libs_trajopt/tesseract_ros"]
 	path = src/libs_trajopt/tesseract_ros
 	url = ../../tesseract-robotics/tesseract_ros
-[submodule "src/pkgs_ur5/Universal_Robots_ROS_Driver"]
-	path = src/pkgs_ur5/Universal_Robots_ROS_Driver
-	url = ../../UniversalRobots/Universal_Robots_ROS_Driver
