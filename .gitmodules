@@ -37,3 +37,6 @@
 [submodule "src/libs_trajopt/tesseract_ros"]
 	path = src/libs_trajopt/tesseract_ros
 	url = ../../tesseract-robotics/tesseract_ros
+[submodule "src/libs_other/rviz_camera_stream"]
+	path = src/libs_other/rviz_camera_stream
+	url = ../../lucasw/rviz_camera_stream
