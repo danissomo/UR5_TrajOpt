@@ -1,4 +1,12 @@
 Panels:
+  - Class: rviz/Displays
+    Help Height: 78
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+      Splitter Ratio: 0.5
+    Tree Height: 242
   # - Class: rviz/Displays
   #   Help Height: 0
   #   Name: Displays
@@ -29,7 +37,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: Image1
   #- Class: interbotix_xs_rviz/Interbotix Control Panel
   #  Name: Interbotix Control Panel
   #  RobotNameSpace: ""
@@ -57,6 +65,60 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 100
       Reference Frame: <Fixed Frame>
+      Value: true
+    - Class: rviz/Axes
+      Enabled: false
+      Length: 1
+      Name: Axes
+      Radius: 0.100000001
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Class: rviz/TF
+      Enabled: false
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        camera1:
+          Value: true
+        world:
+          Value: true
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        world:
+          camera1:
+            {}
+      Update Interval: 0
+      Value: true
+    - Camera Info Topic: /camera1/camera_info
+      Class: rviz_camera_stream/CameraPub
+      Enabled: true
+      Frame Rate: -1
+      Image Topic: /rviz1/camera1/image
+      Name: CameraPub1
+      Queue Size: 2
+      Value: true
+      Visibility:
+        Axes: true
+        CameraPub2: true
+        Grid: true
+        Image1: true
+        TF: true
+        Value: true
+    - Class: rviz/Image
+      Enabled: true
+      Image Topic: /rviz1/camera1/image
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image1
+      Normalize Range: true
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
