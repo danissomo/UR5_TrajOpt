@@ -942,10 +942,12 @@ void robotPoseCallback(const ur5_husky_main::Pose::ConstPtr &msg,
   const ros::Publisher &messageRobotBusyPub,
   ros::Rate &loop_rate) {
 
-  robotBusy = true;
-  sendRobotState(messageRobotBusyPub);
+  if (!msg->rvizOnly) {
+    robotBusy = true;
+    sendRobotState(messageRobotBusyPub);
+  }
 
-  if (rtde->robotConnect()) {
+  if (!msg->rvizOnly && rtde->robotConnect()) {
     auto rtde_control = rtde->getRtdeControl();
     std::vector<double> position = msg->position;
     robotMove(position, messageRobotBusyPub, loop_rate);
@@ -959,8 +961,11 @@ void robotPoseCallback(const ur5_husky_main::Pose::ConstPtr &msg,
   ros::spinOnce();
   loop_rate.sleep();
   printPoseInRviz(joint_pub_state, joint_names, joint_start_pos);
-  robotBusy = false;
-  sendRobotState(messageRobotBusyPub);
+
+  if (!msg->rvizOnly) {
+    robotBusy = false;
+    sendRobotState(messageRobotBusyPub);
+  }
 }
 
 

@@ -60,6 +60,9 @@ class Camera():
         rospy.Subscriber("/realsense_gripper/aligned_depth_to_color/image_raw", Image, self.camera_gripper_depth)
         rospy.Subscriber("/pub/realsense_gripper/aligned_depth_to_color/image_raw", Image, self.camera_gripper_depth)
 
+        rospy.Subscriber("/rviz1/camera1/image", Image, self.camera_rviz)
+        self.pub_rviz = rospy.Publisher('rviz_camera', ImageCamera, queue_size=10)
+
         self.pub_gripper = rospy.Publisher('gripper_camera', ImageCamera, queue_size=10)
         self.pub_gripper_depth = rospy.Publisher('gripper_camera_depth', ImageCamera, queue_size=10)
         self.pub_robot = rospy.Publisher('robot_camera', ImageCamera, queue_size=10)
@@ -68,6 +71,13 @@ class Camera():
         self.rate = rospy.Rate(30)
 
         rospy.on_shutdown(self.shutdown)
+
+    def camera_rviz(self, msg):
+        try:
+            cv_image = self.cv_bridge.imgmsg_to_cv2(msg, "bgr8")
+            self.pub_rviz.publish(self.createMessage(cv_image))
+        except CvBridgeError as e:
+            rospy.logerr("CvBridge Error: {0}".format(e))
 
 
     def base64decode(self, image):
@@ -307,7 +317,8 @@ class Camera():
                 self.pub_gripper_depth.publish(msg_pub)
                 
                 cv2.imshow("depth", output)
-                cv2.waitKey(3)
+
+            cv2.waitKey(3)
             self.rate.sleep()
 
     def shutdown(self):
