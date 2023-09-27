@@ -26,6 +26,9 @@ class Camera():
 
         self.rosbag = rospy.get_param("~rosbag")
         self.delay = rospy.get_param("~delay")
+        gripper_h = rospy.get_param("~gripper_h")
+        gripper_close_w = rospy.get_param("~gripper_close_w")
+        self.add_size_contour = rospy.get_param("~add_size_contour")
 
         self.cv_bridge = CvBridge()
 
@@ -37,20 +40,16 @@ class Camera():
 
         self.gripper_busy = False
 
-        self.figure_len_detect = 500
-
         self.line_height = 5
-        gripper_close_height = 110
-        gripper_close_correct = 35
 
         self.image_border_start = (0, self.height - int(self.line_height/2))
         self.image_border_end = (self.width - int(self.line_height/2), self.height - int(self.line_height/2))
 
-        self.gripper_border_start = (0, self.height - int(self.line_height/2) - gripper_close_height)
-        self.gripper_border_end = (self.width - int(self.line_height/2), self.height - int(self.line_height/2) - gripper_close_height)
+        self.gripper_border_start = (0, self.height - int(self.line_height/2) - gripper_h)
+        self.gripper_border_end = (self.width - int(self.line_height/2), self.height - int(self.line_height/2) - gripper_h)
 
-        self.gripper_close_start = (int(self.width/2 - self.line_height/2) + gripper_close_correct, 0)
-        self.gripper_close_end = (int(self.width/2 - self.line_height/2) + gripper_close_correct, self.height)
+        self.gripper_close_start = (int(self.width/2 - self.line_height/2) + gripper_close_w, 0)
+        self.gripper_close_end = (int(self.width/2 - self.line_height/2) + gripper_close_w, self.height)
         
 
         # Images from RealSense 
@@ -155,8 +154,8 @@ class Camera():
 
         # re-find contours
         thresh = cv2.inRange(img, hsv_min, hsv_max)
-        dilated2 = cv2.dilate(thresh, kernel)
-        contours, _ = cv2.findContours(dilated2.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        dilated = cv2.dilate(thresh, kernel)
+        contours, _ = cv2.findContours(dilated.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         cntrs_find = []
         cntrs_white_masked = []
@@ -181,45 +180,61 @@ class Camera():
 
         cntrs_find = sorted(cntrs_find, key=cv2.contourArea, reverse=True)
 
-        for i, cnt in enumerate(cntrs_find):
-            if i == 0: # the longest contour
-                # draw contour 
-                cv2.drawContours(img, cnt, -1, (0,0,255), 6)
+        if len(cntrs_find) == 0:
+            return img
 
-                # draw lines through points
-                L1 = self.line(self.image_border_start, self.image_border_end)
-                L2 = self.line(self.gripper_border_start, self.gripper_border_end)
-                L3 = self.line(self.gripper_close_start, self.gripper_close_end)
+        long_contour = cntrs_find[0]
 
-                # find the intersection points of straight lines
-                R1 = self.intersection(L1, L3)
-                R2 = self.intersection(L2, L3)
+        # thicken the longest contour
+        if self.add_size_contour > 0:
+            for i in range(len(long_contour)):
+                if i == 0:
+                    continue
+                c = long_contour[i][0]
+                c_prev = long_contour[i-1][0]
+                cv2.line(img, (c[0], c[1]), (c_prev[0], c_prev[1]), (0,0,0), self.add_size_contour*2)
 
-                msg = String()
-                msg.data = 'ready'
+            # re-find contours
+            thresh = cv2.inRange(img, hsv_min, hsv_max)
+            dilated = cv2.dilate(thresh, kernel)
+            contours, _ = cv2.findContours(dilated.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-                if R1 and R2:
-                    # check if the point is inside the contour
-                    dist1 = cv2.pointPolygonTest(cnt, R1, True)
-                    dist2 = cv2.pointPolygonTest(cnt, R2, True)
+            if len(contours) > 0:
+                long_contour =  sorted(contours, key=cv2.contourArea, reverse=True)[0]
 
-                    # if there are both points inside the contour, then the gripper is busy
-                    if dist1 > 0 and dist2 > 0:
-                        self.gripper_busy = True
-                        msg.data = 'busy'
-                    else:
-                        msg.data = 'ready'
-                        self.gripper_busy = False
+            cv2.drawContours(img, long_contour, -1, (0,0,255), 6)
+
+            # draw lines through points
+            L1 = self.line(self.image_border_start, self.image_border_end)
+            L2 = self.line(self.gripper_border_start, self.gripper_border_end)
+            L3 = self.line(self.gripper_close_start, self.gripper_close_end)
+
+            # find the intersection points of straight lines
+            R1 = self.intersection(L1, L3)
+            R2 = self.intersection(L2, L3)
+
+            msg = String()
+            msg.data = 'ready'
+
+            if R1 and R2:
+                # check if the point is inside the contour
+                dist1 = cv2.pointPolygonTest(long_contour, R1, True)
+                dist2 = cv2.pointPolygonTest(long_contour, R2, True)
+
+                # if there are both points inside the contour, then the gripper is busy
+                if dist1 > 0 and dist2 > 0:
+                    self.gripper_busy = True
+                    msg.data = 'busy'
                 else:
                     msg.data = 'ready'
                     self.gripper_busy = False
-
-                # send result
-                self.pub_gripper_state.publish(msg)
-
             else:
-                # TODO process the other contours
-                break
+                msg.data = 'ready'
+                self.gripper_busy = False
+
+            # send result
+            self.pub_gripper_state.publish(msg)
+
         return img
 
 
@@ -281,7 +296,7 @@ class Camera():
                 # Img sent to rviz
                 img_sent_rviz = img_sent_rviz.astype(np.uint8)
                 cv2.convertScaleAbs(img_sent_rviz, img_sent_rviz, 255, 0)
-                output = cv2.resize(img_sent_rviz, (300, int(self.height * 300 / self.width)))
+                output = cv2.resize(img_sent_rviz, (800, int(self.height * 800 / self.width)))
                 self.pub_gripper_depth_small.publish(self.cv_bridge.cv2_to_imgmsg(output))
 
                 # add text
