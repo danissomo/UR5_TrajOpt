@@ -212,38 +212,38 @@ class Camera():
             if len(contours) > 0:
                 long_contour =  sorted(contours, key=cv2.contourArea, reverse=True)[0]
 
-            cv2.drawContours(img, long_contour, -1, (0,0,255), 6)
+        cv2.drawContours(img, long_contour, -1, (0,0,255), 6)
 
-            # draw lines through points
-            L1 = self.line(self.image_border_start, self.image_border_end)
-            L2 = self.line(self.gripper_border_start, self.gripper_border_end)
-            L3 = self.line(self.gripper_close_start, self.gripper_close_end)
+        # draw lines through points
+        L1 = self.line(self.image_border_start, self.image_border_end)
+        L2 = self.line(self.gripper_border_start, self.gripper_border_end)
+        L3 = self.line(self.gripper_close_start, self.gripper_close_end)
 
-            # find the intersection points of straight lines
-            R1 = self.intersection(L1, L3)
-            R2 = self.intersection(L2, L3)
+        # find the intersection points of straight lines
+        R1 = self.intersection(L1, L3)
+        R2 = self.intersection(L2, L3)
 
-            msg = String()
-            msg.data = 'ready'
+        msg = String()
+        msg.data = 'ready'
 
-            if R1 and R2:
-                # check if the point is inside the contour
-                dist1 = cv2.pointPolygonTest(long_contour, R1, True)
-                dist2 = cv2.pointPolygonTest(long_contour, R2, True)
+        if R1 and R2:
+            # check if the point is inside the contour
+            dist1 = cv2.pointPolygonTest(long_contour, R1, True)
+            dist2 = cv2.pointPolygonTest(long_contour, R2, True)
 
-                # if there are both points inside the contour, then the gripper is busy
-                if dist1 > 0 and dist2 > 0:
-                    self.gripper_busy = True
-                    msg.data = 'busy'
-                else:
-                    msg.data = 'ready'
-                    self.gripper_busy = False
+            # if there are both points inside the contour, then the gripper is busy
+            if dist1 > 0 and dist2 > 0:
+                self.gripper_busy = True
+                msg.data = 'busy'
             else:
                 msg.data = 'ready'
                 self.gripper_busy = False
+        else:
+            msg.data = 'ready'
+            self.gripper_busy = False
 
-            # send result
-            self.pub_gripper_state.publish(msg)
+        # send result
+        self.pub_gripper_state.publish(msg)
 
         return img
 
