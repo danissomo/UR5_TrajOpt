@@ -148,6 +148,8 @@ ur5_husky_main::Gripper gripperPosePrev;
 /// Иначе не работает асинхронное движение
 URRTDEInterface* rtde;
 
+float gripperAngle = 0.85;
+
 
 
 ColorInfo getDefaultColor(std::string colorName) {
@@ -527,13 +529,17 @@ bool updateStartJointValue(ur5_husky_main::SetJointState::Request &req,
     position_vector.resize(joint_start_pos.size());
     Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
 
-    std::cout << "gripper start: " << req.gripperPose[0].name << " " << req.gripperPose[0].angle << std::endl;
-    gripperPosePrev.name = req.gripperPose[0].name;
-    gripperPosePrev.angle = req.gripperPose[0].angle;
+    if (req.gripperUpdate) {
+        std::cout << "gripper start: " << req.gripperPose[0].name << " " << req.gripperPose[0].angle << std::endl;
+        gripperPosePrev.name = req.gripperPose[0].name;
+        gripperPosePrev.angle = req.gripperPose[0].angle;
+    }
 
     if (connect_robot) {
         robotMove(position_vector, messageRobotBusyPub, loop_rate);
-        gripperPub.publish(req.gripperPose[0]);
+        if (req.gripperUpdate) {
+            gripperPub.publish(req.gripperPose[0]);
+        }
     }
 
     env->setState(joint_names, joint_start_pos);
@@ -935,6 +941,13 @@ void gripperCallback(const ur5_husky_main::Gripper::ConstPtr &msg, ros::Publishe
 }
 
 
+void gripperStateCallback(const ur5_husky_main::Gripper::ConstPtr &msg) {
+  if (std::string(msg->name) == "robotiq") {
+    gripperAngle = msg->angle;
+  }
+}
+
+
 void robotPoseCallback(const ur5_husky_main::Pose::ConstPtr &msg,
   const std::shared_ptr<tesseract_environment::Environment> &env,
   const ros::Publisher &joint_pub_state, 
@@ -1078,6 +1091,9 @@ int main(int argc, char** argv) {
   joint_end_pos(5) = settingsConfig.joint_end_pos_5;
 
 
+  // Получает состояние гриппера с робота
+  ros::Subscriber sub_gripper = nh.subscribe<ur5_husky_main::Gripper>("gripper_state_robot", 10, boost::bind(gripperStateCallback, _1));
+
   if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
     ROS_INFO("Start connect with UR5 to %s ...", settingsConfig.robot_ip.c_str());
 
@@ -1096,6 +1112,9 @@ int main(int argc, char** argv) {
         ROS_ERROR("There should be 6 joints.");
       }
     }
+
+    // TODO инициализируем состояние гриппера с робота
+    // gripperAngle
 
   } else {
       ROS_INFO("I work without connecting to the robot.");

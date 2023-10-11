@@ -3,6 +3,7 @@ float64[] position
 float64[] velocity
 float64[] effort
 ur5_husky_main/Pose[] middlePose
+bool gripperUpdate
 ur5_husky_main/Gripper[] gripperPose
 ---
 string result
