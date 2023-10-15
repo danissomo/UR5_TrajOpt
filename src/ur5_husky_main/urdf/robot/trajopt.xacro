@@ -5,7 +5,7 @@
   <xacro:arg name="kinematics_parameters_file" default="$(find ur5_husky_main)/config/ur5/default_kinematics.yaml"/>
   <xacro:arg name="physical_parameters_file" default="$(find ur5_husky_main)/config/ur5/physical_parameters.yaml"/>
   <xacro:arg name="joint_limits_parameters_file" default="$(find ur5_husky_main)/config/ur5/joint_limits.yaml"/>
-  <xacro:arg name="visual_parameters_file" default="$(find ur5_husky_main)/config/ur5/visual_parameters_file.yaml"/>
+  <xacro:arg name="visual_parameters_file" default="$(find ur5_husky_main)/config/ur5/visual_parameters.yaml"/>
 
   <xacro:arg name="safety_limits" default="false" /> <!-- If True, enable the safety limits controller -->
   <xacro:arg name="safety_pos_margin" default="0.15" /> <!-- The lower/upper limits in the safety controller -->
@@ -18,7 +18,7 @@
 
   <link name="world"/>
 
-  <link name="floor">
+  <!-- <link name="floor">
     <visual>
         <origin xyz="0 0 -${wheel_radius - wheel_vertical_offset/2}" rpy="0 0 0" />
         <geometry>
@@ -34,7 +34,7 @@
           <box size="10 10 0.00005"/>
         </geometry>
       </collision>
-  </link>
+  </link> -->
 
   <!-- common stuff -->
   <xacro:include filename="$(find ur_description)/urdf/common.gazebo.xacro" />
@@ -46,7 +46,7 @@
   <xacro:ur5_robot prefix="${prefix}"
     kinematics_parameters_file="$(arg kinematics_parameters_file)" 
     physical_parameters_file="$(arg physical_parameters_file)" 
-    joint_limits_parameters_file="$(arg joint_limits_parameters_file)" 
+    joint_limits_parameters_file="$(arg joint_limits_parameters_file)"
     visual_parameters_file="$(arg visual_parameters_file)"
     safety_limits="$(arg safety_limits)"
     safety_pos_margin="$(arg safety_pos_margin)"
@@ -64,18 +64,18 @@
   <xacro:include filename="$(find ur5_husky_main)/urdf/robot/husky.xacro" />
   <xacro:robot_husky />
 
-  <joint name="floor_to_world" type="fixed">
+  <!-- <joint name="floor_to_world" type="fixed">
     <parent link="world"/>
-    <child link="floor"/>
+    <child link="floor"/> -->
     <!-- не трогать xyz и rpy, иначе не считает траекторию! -->
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-  </joint>
+    <!-- <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint> -->
 
   <joint name="base_link_to_floor" type="fixed">
-    <parent link="floor"/>
+    <parent link="world"/>
     <child link="base_link"/>
     <!-- не трогать xyz и rpy, иначе не считает траекторию! -->
-    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <origin xyz="0 0 0.1201" rpy="0 0 0"/>
   </joint>
 
   <joint name="ur5_to_base_link" type="fixed">

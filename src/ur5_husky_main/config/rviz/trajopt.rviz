@@ -61,7 +61,7 @@ Visualization Manager:
       Offset:
         X: 0
         Y: 0
-        Z: -0.1201
+        Z: -0.0
       Plane: XY
       Plane Cell Count: 100
       Reference Frame: <Fixed Frame>

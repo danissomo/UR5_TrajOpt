@@ -314,9 +314,16 @@ catkin build robotiq_ft_sensor
 
 1. Собрать пакет без зависимостей ```catkin build ur5_husky_main --no-deps```
 
+2. ```rosrun xacro xacro src/ur5_husky_main/urdf/robot/trajopt.xacro > robot_ur5_2.urdf```
+
+3. ```rosrun collada_urdf urdf_to_collada /workspace/robot_ur5_2.urdf robot_ur5_2.dae```
+
 
 ## Полезные ссылки
 
 - Библиотека UR RTDE для управления роботом-манипулятором UR5: https://sdurobotics.gitlab.io/ur_rtde/api/api.html 
 - Документация на библиотеки Tesseract (используется для алгоритма TrajOpt): https://tesseract-docs.readthedocs.io/en/latest/_source/intro/getting_started_doc.html
 - Расчет кинематики и динамифи робота: https://www.universal-robots.com/articles/ur/application-installation/dh-parameters-for-calculations-of-kinematics-and-dynamics 
+
+
+
