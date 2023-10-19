@@ -316,7 +316,7 @@ catkin build robotiq_ft_sensor
 
 2. ```rosrun xacro xacro src/ur5_husky_main/urdf/robot/trajopt.xacro > robot_ur5_2.urdf```
 
-3. ```rosrun collada_urdf urdf_to_collada /workspace/robot_ur5_2.urdf robot_ur5_2.dae```
+3. collada-dom import ```make install``` + ```rosrun collada_urdf urdf_to_collada /workspace/robot_ur5_2.urdf robot_ur5_2.dae```
 
 
 ## Полезные ссылки
