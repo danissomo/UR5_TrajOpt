@@ -174,8 +174,6 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
                                            float pos_x, float pos_y, float pos_z,
                                            ColorInfo color) {
 
-  std::cout << "CREATE! " <<std::endl;
-
   auto colorBox = std::make_shared<tesseract_scene_graph::Material>(color.getName().c_str());
   colorBox->color = Eigen::Vector4d(color.getR(), color.getG(), color.getB(), color.getA());
 
@@ -199,8 +197,6 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
   joint_sphere.parent_link_name = "world";
   joint_sphere.child_link_name = link_sphere.getName();
   joint_sphere.type = JointType::FIXED;
-
-  std::cout << "CREATE2! " <<std::endl;
 
   return std::make_shared<tesseract_environment::AddLinkCommand>(link_sphere, joint_sphere);
 }
@@ -667,7 +663,7 @@ bool calculateRobotTrajectory(ur5_husky_main::CalculateTrajectory::Request &req,
   std::vector<Eigen::VectorXd> middlePos;
   middlePos.empty();
 
-  UR5Trajopt calculate(env, plotter, joint_names, startPose, finishPose, true, middlePos);
+  UR5Trajopt calculate(env, plotter, joint_names, startPose, finishPose, middlePos);
   UR5TrajoptResponce responce = calculate.run();
 
   tesseract_common::JointTrajectory trajectoryTrajOpt = responce.getTrajectory();
@@ -1018,7 +1014,6 @@ int main(int argc, char** argv) {
   bool rviz = true;
   bool debug = false;
   bool connect_robot = false;
-  bool ui_control = false;
   std::string script = "";
 
   // конфиги для робота
@@ -1038,7 +1033,6 @@ int main(int argc, char** argv) {
   pnh.param("rviz", rviz, rviz);
   pnh.param("debug", debug, debug);
   pnh.param("connect_robot", connect_robot, connect_robot);
-  pnh.param("ui_control", ui_control, ui_control);
   pnh.param("script", script, script);
   pnh.param("robot_ip", robot_ip, robot_ip);
   pnh.param("delay_loop_rate", delay_loop_rate, delay_loop_rate);
@@ -1215,36 +1209,6 @@ int main(int argc, char** argv) {
   ros::ServiceServer removeMeshService = nh.advertiseService<ur5_husky_main::Mesh::Request, ur5_husky_main::Mesh::Response>
                       ("remove_mesh", boost::bind(removeMesh, _1, _2, env));
 
-  if (!ui_control) {
-    // TODO Тут падает
-    // Создать стол
-    Command::Ptr table = addBox("table", "joint_table_attached", settingsConfig.table_length, settingsConfig.table_width, settingsConfig.table_height, settingsConfig.table_pos_x, settingsConfig.table_pos_y, settingsConfig.table_pos_z, getDefaultColor("brown"));
-    if (!env->applyCommand(table)) {
-      return false;
-    }
-
-    // Создать коробку
-    Command::Ptr box = addBox("box", "joint_box_attached", settingsConfig.box_length, settingsConfig.box_width, settingsConfig.box_height, settingsConfig.box_pos_x, settingsConfig.box_pos_y, settingsConfig.box_pos_z, getDefaultColor(""));
-    if (!env->applyCommand(box)) {
-      return false;
-    }
-
-    // Создать стол из mesh
-    Command::Ptr table_mesh = addMesh("table", "table-js", "table-noise-2.obj", Eigen::Vector3d(0.015, 0.015, 0.015), 
-      Eigen::Vector3d(1.7, 0.0, -0.14869), Eigen::Vector3d(0.0, 0.0, 0.0));
-    if (!env->applyCommand(table_mesh)) {
-      return false;
-    }
-
-    // Создать горелку из mesh
-    Command::Ptr burner_mesh = addMesh("burner", "burner-js", "burner.obj", Eigen::Vector3d(0.03, 0.03, 0.03), 
-      Eigen::Vector3d(1.0, 0.0, 0.57), Eigen::Vector3d(0.0, 0.0, 0.0));
-    if (!env->applyCommand(burner_mesh)) {
-      return false;
-    }
-  }
-
-
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
   }
@@ -1255,24 +1219,20 @@ int main(int argc, char** argv) {
     robotRestart = true;
 
     // Ждем команды для старта
-    if (ui_control) {
-      std::cout << "Waiting for the command to start ... \n";
-      while(ros::ok()) {
-        ros::spinOnce();
-        loop_rate.sleep();
-        if (robotRestart) {
-          break;
-        }
+    std::cout << "Waiting for the command to start ... \n";
+    while(ros::ok()) {
+      ros::spinOnce();
+      loop_rate.sleep();
+      if (robotRestart) {
+        break;
       }
-    } else {
-      plotter->waitForInput("Hit Enter for start.");
     }
 
     robotRestart = false;
     plotter->clear();
 
     // Ждем команды на планирование траектории
-    if (ui_control && !robotPlanTrajectory) {
+    if (!robotPlanTrajectory) {
       std::cout << "Waiting for the command to plan the trajectory... \n";
       while(ros::ok()) {
 
@@ -1304,8 +1264,6 @@ int main(int argc, char** argv) {
       if (goToStart) {
         continue;
       }
-    } else if (!ui_control) {
-      plotter->waitForInput("Hit Enter after move robot to start position.");
     }
 
 
@@ -1366,7 +1324,7 @@ int main(int argc, char** argv) {
           changeGripperState = true;
           gripperStates.push_back(gripperPoseList[i]);
 
-          UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list_tmp);
+          UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, joint_middle_pos_list_tmp);
           UR5TrajoptResponce responce = calculate.run();
           bool success = responce.isSuccessful();
 
@@ -1397,7 +1355,7 @@ int main(int argc, char** argv) {
 
     // Если в принципе не было смены состояния гриппера, то тоже считаем план
     if (!changeGripperState) {
-      UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
+      UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, joint_middle_pos_list);
       UR5TrajoptResponce responce = calculate.run();
       bool success = responce.isSuccessful();
 
@@ -1427,13 +1385,8 @@ int main(int argc, char** argv) {
 
     char input_simbol = 'n';
 
-    if (!ui_control) {
-      std::cout << "Execute Trajectory on UR5? y/n \n";
-      std::cin >> input_simbol;
-    }
-
     // Ждем команды на выполнение траектории
-    if (ui_control && !robotExecuteTrajectory) {
+    if (!robotExecuteTrajectory) {
       std::cout << "Waiting for the command to execute the trajectory... \n";
       while(ros::ok()) {
         ros::spinOnce();

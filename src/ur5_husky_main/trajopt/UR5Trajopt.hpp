@@ -22,7 +22,6 @@ public:
              std::vector<std::string> joint_names,
              Eigen::VectorXd joint_start_pos,
              Eigen::VectorXd joint_end_pos,
-             bool ui_control,
              std::vector<Eigen::VectorXd> joint_middle_pos_list);
   ~UR5Trajopt() = default;
   UR5Trajopt(const UR5Trajopt&) = default;
@@ -39,7 +38,6 @@ private:
   Eigen::VectorXd joint_start_pos_;
   std::vector<Eigen::VectorXd> joint_middle_pos_list_;
   Eigen::VectorXd joint_end_pos_;
-  bool ui_control_;
   
 };
 

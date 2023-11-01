@@ -8,7 +8,6 @@
   <arg name="use_sim_time" default="true"/>
   <arg name="debug" default="true"/> <!-- Включить для вывода результатов расчетов -->
   <arg name="connect_robot" default="true"/> <!-- Подключение к роботу (в симуляции или к реальному роботу) -->
-  <arg name="ui_control" default="true"/> <!-- Управление роботом из UI, если true, false - управление из командной строки-->
   <arg name="delay" default="0.5" />  <!-- Задержка для запуска ноды -->
   <arg name="prefix" default="ur5_"/>
   <arg name="rvizconfig" default="$(find ur5_husky_main)/config/rviz/trajopt.rviz" />
@@ -41,7 +40,6 @@
     <param name="rviz" type="bool" value="$(arg rviz)"/>
     <param name="debug" type="bool" value="$(arg debug)"/>
     <param name="connect_robot" type="bool" value="$(arg connect_robot)"/>
-    <param name="ui_control" type="bool" value="$(arg ui_control)"/>
     <param name="script" type="string" value="$(arg script)"/>
     <param name="delay_loop_rate" type="double" value="$(arg delay_loop_rate)"/>
     <param name="ur_speed" type="double" value="$(arg ur_speed)"/>
