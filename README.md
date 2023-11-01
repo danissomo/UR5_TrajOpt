@@ -48,7 +48,7 @@
 2. Через терминал с использованием конфигов (data/settings.txt) - ограниченное управление (нет возможности добавлять разные виды препятствий, нет возможности добавлять промежуточные положения для манипулятора);
 3. Через терминал с отправкой отдельных команд через сервисы и топики (пример команд приведены ниже).
 
-## Предварительная подготовка
+## I. Предварительная подготовка
 
 ### 1. Склонировать репозиторий 
 
@@ -69,7 +69,7 @@
 
 Следовать инструкциям в файле ```ur5_husky_api/readme.md```.
 
-## Настройка окружения
+## II. Настройка окружения
 
 **1. Перейти в папку проекта** ```cd trajopt_ur5```.
 
@@ -141,16 +141,16 @@ sudo make install
 
 **6. Запуск сцены** 
 
-Файл с разными настройками робота находится по адресу ```data/settings.txt```.
+Файл с разными настройками робота находится по адресу ```data/settings.txt``` (ничего важного на текущий момент в нем нет, редактировать не надо).
 
-При необходимости замените настройки в нем. Основной параметр в файле, который нужнго проверить перед стартом, - это ```robot_ip = ***``` (здесь пропишите актуальный адрес робота UR5 или симулятора URSim! В противном случае оставьте значение 127.0.0.1).
+6.а. Запуск основной сцены ```roslaunch ur5_husky_main run_ur5_husky_trajopt.launch```
 
-6.а. Запуск основной сцены ```roslaunch ur5_husky_main run_ur5_husky_trajopt.launch robot_ip:=192.168.131.40```
+**Важно!** ```run_ur5_husky_trajopt.launch``` - основной файл запуска. Перед запуском посмотрите параметры в файле и выставите свои (или передайте через командную строку, например, IP робота: ```roslaunch ur5_husky_main run_ur5_husky_trajopt.launch```)
 
 В команду выше добавьте необходимые параметры (пример см. выше с командой robot_ip):
 
-- ```ui_control:=false``` (для отключения запуска с GUI)
-- ```use_robot:=true``` (если запускаете совместно с UR5 или URSim)
+- ```ui_control:=false``` (для включения/отключения запуска с GUI, true - включить GUI, false - отключить GUI)
+- ```use_robot:=true``` (поставить в true, если запускаете совместно с UR5 или URSim)
 
 6.б.* Отдельно можно запустить ноду с получением информации о роботе ```roslaunch ur5_husky_main ur5_state.launch``` (запускать только если подключен URSim или UR5)
 
@@ -165,17 +165,416 @@ sudo make install
 - Прописать пути ```source devel/setup.bash```
 - Ввести команду из списка ниже.
 
-### Список команд для управления
 
-**1. Получение траектории робота-манипулятора после применения TrajOpt**
+## ======  КОМАНДЫ ДЛЯ ПЛАНИРОВАНИЯ TRAJOPT  ======
+
+**Схема построения траектории TrajOpt для робота:**
+
+1. Установить начальное положение робота для планирования - 1 команда (при запуске инициализируется текущее положение робота как начальное);
+2. Добавить все препятствия на сцену (7-12 команды);
+3. Установить конечное и промежуточные положения робота (2 команда);
+4. Запустить планирование Trajopt (4 команда);
+5. Запустить выполнение траектории - 5 команда (Важно! Используется ur_rtde, если на роботе уже инициалирован ur_rtde.control, то работать не будет) или начать планирование сначала - 6 команда и потом все повторить с 1 пункта этого списка.
+
+
+### 1. Установить начальное положение ```set_joint_start_value```
+
+Начальное положение робота, от которого будет идти расчет траектории. 
+
+**request** 
+
+```
+rosservice call set_joint_start_value "name: ["ur5_shoulder_pan_joint", "ur5_shoulder_lift_joint", "ur5_elbow_joint", "ur5_wrist_1_joint", "ur5_wrist_2_joint", "ur5_wrist_3_joint"]
+position: [1.526473, -0.553581, 1.686786, -2.687753, -1.461592, -0.000419]
+velocity: [0,0,0,0,0,0]
+effort: [0,0,0,0,0,0]
+middlePose:
+- name: ["ur5_shoulder_pan_joint", "ur5_shoulder_lift_joint", "ur5_elbow_joint", "ur5_wrist_1_joint", "ur5_wrist_2_joint", "ur5_wrist_3_joint"]
+  position: [0,0,0,0,0,0]
+  rvizOnly: false
+gripperUpdate: false
+gripperPose:
+- {id: 0, name: '', angle: 0.0}"
+- {id: 0, name: '', angle: 0.0}"
+```
+
+Поля для редактирования:
+- ```name``` - названия джоинтов;
+- ```position``` - положения джоинтов;
+- ```velocity/effort``` - ускорения и силы (инициализировать нулями или не заполнять);
+- ```middlePose``` - не заполнять;
+- ```gripperUpdate``` и ```gripperPose``` не заполнять. 
+ 
+
+**responce**
+
+success: 
+
+```result: "End publish"```
+
+
+### 2. Установить конечное положение ```set_joint_finish_value```
+
+Конечное положение робота, до которого будет построена траектория. 
+
+**request** 
+
+```
+rosservice call set_joint_finish_value "name: ["ur5_shoulder_pan_joint", "ur5_shoulder_lift_joint", "ur5_elbow_joint", "ur5_wrist_1_joint", "ur5_wrist_2_joint", "ur5_wrist_3_joint"]
+position: [1.526473, -0.553581, 1.686786, -2.687753, -1.461592, -0.000419]
+velocity: [0,0,0,0,0,0]
+effort: [0,0,0,0,0,0]
+middlePose:
+- name: ["ur5_shoulder_pan_joint", "ur5_shoulder_lift_joint", "ur5_elbow_joint", "ur5_wrist_1_joint", "ur5_wrist_2_joint", "ur5_wrist_3_joint"]
+  position: [0,0,0,0,0,0]
+  rvizOnly: false
+gripperUpdate: false
+gripperPose:
+- {id: 0, name: '', angle: 0.0}"
+- {id: 0, name: '', angle: 0.0}"
+```
+
+Поля для редатирования:
+- ```name``` - названия джоинтов;
+- ```position``` - положения джоинтов;
+- ```velocity/effort``` - ускорения и силы (инициализировать нулями или не заполнять);
+- ```middlePose``` - промежуточные положения джоинтов (список положений, через которые должен пройти робот в течение выполнения траектории);
+- ```gripperUpdate``` не заполнять;
+- ```gripperPose``` - список положений гриппера (вроде можно не заполнять или заполнить по шаблону выше).
+
+
+### 3. Получить текущее значение джоинтов ```get_joint_value```
+
+**request** 
+
+```call get_joint_value "from_robot: false"```
+
+Поля для заполнения: 
+- ```from_robot``` (с робота или с rViz)
+
+**responce**
+
+```
+name: 
+  - ur5_shoulder_pan_joint
+  - ur5_shoulder_lift_joint
+  - ur5_elbow_joint
+  - ur5_wrist_1_joint
+  - ur5_wrist_2_joint
+  - ur5_wrist_3_joint
+position: [1.526473, -0.553581, 1.686786, -2.687753, -1.461592, -0.000419]
+```
+
+
+### 4. Перевести робота в режим планирования траектории ```robot_plan_trajectory```
+
+**request**
+
+```rosservice call robot_plan_trajectory "trajopt: false"```
+
+Поля для редатирования: 
+- ```trajopt``` - использовать алгоритм trajopt (выставить в значение true)
+
+
+**responce**
+
+success
+
+```
+result: "Plan Trajectory"
+success: True
+```
+
+### 5. Перевести робота в режим выполнения траектории ```robot_execute_trajectory```
+
+**request** 
+
+```rosservice call robot_execute_trajectory "{}"```
+
+**responce**
+
+```
+result: "Execute Trajectory"
+success: True
+```
+
+### 6. Начать планирование траектории сначала```robot_restart```
+
+Запускать, если хотите после планирования хотите перепланировать траекторию (и не хотите выполнять траекторию). 
+
+**request:**
+
+```rosservice call robot_restart "{}"```
+
+responce seccess:
+
+```result: "Robot restart Trajectory"```
+
+
+### Управление препятствиями
+
+### 7. Создать BOX ```create_box```
+
+Создает параллелепипед по заданным размерам.
+
+**request**
+
+```
+rosservice call create_box "id: 0
+name: ''
+length: 0.0
+width: 0.0
+height: 0.0
+x: 0.0
+y: 0.0
+z: 0.0
+offsetX: 0.0
+offsetY: 0.0
+offsetZ: 0.0
+rotateX: 0.0
+rotateY: 0.0
+rotateZ: 0.0
+colorByName: ''
+color: {id: 0, name: '', r: 0.0, g: 0.0, b: 0.0, a: 0.0}"
+```
+
+Описание полей:
+- ```id``` - любое произвольное число, можно оставить 0
+- ```name``` - обязательно уникальное имя для каждого объекта
+- ```length/width/height``` - длина/ширина/высота объекта, в метрах;
+- ```x/y/z``` - расстояние центра препятствия от центра base_link робота на момент создания объекта;
+- ```offsetX/offsetY/offsetZ``` - сдвиг препятствия относительно начального положения;
+- ```rotateX/rotateY/rotateZ``` - поворот препятствия (в радианах)
+- ```colorByName``` - не указывать;
+- ```color``` - цвет препятствия RGBA (id и name можно не указывать)
+
+
+**responce**
+
+success:
+
+```result: "Create box success"```
+
+failed:
+
+```ERROR: service [/create_box] responded with an error: b''```
+
+Частая причина ошибок: а) одинаковые имена препятствий, б) нода упала
+
+
+### 8. Подвинуть BOX ```move_box```
+
+Двигает параллелепипед.
+
+**request**
+
+```
+rosservice call move_box "id: 0
+name: ''
+length: 0.0
+width: 0.0
+height: 0.0
+x: 0.0
+y: 0.0
+z: 0.0
+offsetX: 0.0
+offsetY: 0.0
+offsetZ: 0.0
+rotateX: 0.0
+rotateY: 0.0
+rotateZ: 0.0
+colorByName: ''
+color: {id: 0, name: '', r: 0.0, g: 0.0, b: 0.0, a: 0.0}"
+```
+
+Важно передать актуальный name. По имени идет поиск.
+
+Поля для редактирования (другие не менять):
+- ```offsetX/offsetY/offsetZ``` - положение препятствия;
+- ```rotateX/rotateY/rotateZ``` - ориентация препятствия.
+
+ **responce**
+
+ success:
+
+ ```result: "Move Box end..."```
+
+failed:
+
+```ERROR: service [/move_box] responded with an error: b''```
+
+
+### 9. Удалить BOX ```remove_box```
+
+Удаляет параллелепипед со сцены.
+
+**request**
+
+```
+rosservice call remove_box "id: 0
+name: '155552455555555453'
+length: 0.0
+width: 0.0
+height: 0.0
+x: 0.0
+y: 0.0
+z: 0.0
+offsetX: 0.0
+offsetY: 0.0
+offsetZ: 0.0
+rotateX: 0.0
+rotateY: 0.0
+rotateZ: 0.0
+colorByName: ''
+color: {id: 0, name: '', r: 0.0, g: 0.0, b: 0.0, a: 0.0}" 
+```
+
+Необходимо указать только поле ```name```. 
+
+
+**responce**
+
+success:
+
+```result: "Remove Box end..."```
+
+failed:
+
+```ERROR: service [/remove_box] responded with an error: b''```
+
+
+### 10. Создать MESH ```create_mesh```
+
+Создает препятствие в виде меша.
+
+**request**
+
+```
+rosservice call create_mesh "{id: 0, name: '', fileName: '', scale: 0.0, x: 0.0, y: 0.0, z: 0.0, offsetX: 0.0,
+  offsetY: 0.0, offsetZ: 0.0, rotateX: 0.0, rotateY: 0.0, rotateZ: 0.0, fileUpload: false}"
+```
+
+Создается аналогично типу препятствия BOX.
+
+Описание полей:
+- ```name``` - уникальное название препятствия;
+- ```fileName``` - название файла из папки проекта ```src/ur5_husky_main/meshes/objects``` (перед созданием препятствия его нужно положить в эту папку);
+- ```scale```- масштаб меша;
+- ```x/y/z``` - положение препятствия в начальный момент времени;
+- ```offsetX/offsetY/offsetZ``` - положение препятствия (поля нужны для сдвига препятствия);
+- ```rotateX/rotateY/rotateZ``` - ориентация препятствия;
+- ```fileUpload``` - поле игнорировать.
+
+
+**response**
+
+success:
+
+```result: "Create mesh success"```
+
+failed:
+
+```ERROR: service [/create_mesh] responded with an error: b''```
+
+
+### 11. Сдвинуть MESH ```move_mesh```
+
+Передвигает препятствия в виде меша.
+
+**request**
+
+```
+rosservice call move_mesh "{id: 0, name: '', fileName: '', scale: 0.0, x: 0.0, y: 0.0, z: 0.0, offsetX: 0.0,
+  offsetY: 0.0, offsetZ: 0.0, rotateX: 0.0, rotateY: 0.0, rotateZ: 0.0, fileUpload: false}" 
+```
+
+Поля для редактирования (другие не менять):
+- ```name``` - название препятствия;
+- ```offsetX/offsetY/offsetZ``` - положение препятствия;
+- ```rotateX/rotateY/rotateZ``` - ориентация препятствия.
+
+**responce**
+
+success:
+
+```result: "Move Mesh end..."```
+
+failed:
+
+```ERROR: service [/create_mesh] responded with an error: b''```
+
+
+### 12. Удалить MESH ```remove_mesh```
+
+**request:**
+
+```
+call remove_mesh "{id: 0, name: '321', fileName: '', scale: 0.0, x: 0.0, y: 0.0, z: 0.0, offsetX: 0.0,
+  offsetY: 0.0, offsetZ: 0.0, rotateX: 0.0, rotateY: 0.0, rotateZ: 0.0, fileUpload: false}"
+```
+
+Поля для редактирования (другие не менять):
+- ```name``` - название меша, который необходимо удалить.
+
+**responce**:
+
+success
+
+```result: "Remove Mesh end..."```
+
+failed
+
+```ERROR: service [/create_mesh] responded with an error: b''```
+
+
+### Прочие команды
+
+### 13. Расчет прямой обратной кинематики ```get_info_robot```
+
+**request**
+
+```
+rosservice call get_info_robot "fk: false
+ik: true 
+debug: false"
+```
+
+Описание полей: 
+- fk - прямая кинематика;
+- ik обратная кинематика;
+- debug - включить режим дебага.
+
+
+### 14. Управление freedrive ```get_info_robot```
+
+resuest: 
+
+```rosservice call freedrive_change "'on': false"```
+
+
+### 15. Не описаны команды:
+- ```set_settings```
+- ```gripper_move```
+- ```get_gripper_state```
+
+
+
+
+## ======  ОДНА КОМАНДА ДЛЯ ПЛАНИРОВАНИЯ TRAJOPT  ======
+
+Получение траектории робота-манипулятора после применения TrajOpt в одном завпросе.
 
 **request**
 ```
-rosservice call /calculate_robot_rajectory "{startPose: {name: ["ur5_shoulder_pan_joint", "ur5_shoulder_lift_joint", "ur5_elbow_joint", "ur5_wrist_1_joint", "ur5_wrist_2_joint", "ur5_wrist_3_joint"], position: [1.526473, -0.553581, 1.686786, -2.687753, -1.461592, -0.000419]}, finishPose: {name: ["ur5_shoulder_pan_joint", "ur5_shoulder_lift_joint", "ur5_elbow_joint", "ur5_wrist_1_joint", "ur5_wrist_2_joint", "ur5_wrist_3_joint"], position: [1.542354, -1.203353, 0.634284, -1.138470, -1.573804, -0.000371]}}"
+rosservice call /calculate_robot_rajectory "{startPose: {name: ["ur5_shoulder_pan_joint", "ur5_shoulder_lift_joint", "ur5_elbow_joint", "ur5_wrist_1_joint", "ur5_wrist_2_joint", "ur5_wrist_3_joint"], position: [1.526473, -0.553581, 1.686786, -2.687753, -1.461592, -0.000419]},
+finishPose: {name: ["ur5_shoulder_pan_joint", "ur5_shoulder_lift_joint", "ur5_elbow_joint", "ur5_wrist_1_joint", "ur5_wrist_2_joint", "ur5_wrist_3_joint"], position: [1.542354, -1.203353, 0.634284, -1.138470, -1.573804, -0.000371]}, middlePose: [
+  {name: ["ur5_shoulder_pan_joint", "ur5_shoulder_lift_joint", "ur5_elbow_joint", "ur5_wrist_1_joint", "ur5_wrist_2_joint", "ur5_wrist_3_joint"], position: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}
+]}"
 ```
 где:
 - startPose.position - начальное положение джоинтов
 - finishPose.position - конечное положение джоинтов
+- middlePose - промежуточные положения джоинтов
 
 
 **response success**
@@ -314,9 +713,16 @@ catkin build robotiq_ft_sensor
 
 1. Собрать пакет без зависимостей ```catkin build ur5_husky_main --no-deps```
 
+2. Очистить сборку ```catkin clean```
+
+3. Из XACRO в URDF: ```rosrun xacro xacro src/ur5_husky_main/urdf/robot/trajopt.xacro > robot_ur5_2.urdf```
+
 
 ## Полезные ссылки
 
 - Библиотека UR RTDE для управления роботом-манипулятором UR5: https://sdurobotics.gitlab.io/ur_rtde/api/api.html 
 - Документация на библиотеки Tesseract (используется для алгоритма TrajOpt): https://tesseract-docs.readthedocs.io/en/latest/_source/intro/getting_started_doc.html
-- Расчет кинематики и динамифи робота: https://www.universal-robots.com/articles/ur/application-installation/dh-parameters-for-calculations-of-kinematics-and-dynamics 
+- Расчет кинематики и динамики робота: https://www.universal-robots.com/articles/ur/application-installation/dh-parameters-for-calculations-of-kinematics-and-dynamics 
+
+
+

@@ -19,6 +19,8 @@ from cv_bridge import CvBridge, CvBridgeError
 from std_msgs.msg import String
 from ur5_husky_camera.msg import ImageCamera
 
+import matplotlib.pyplot as plt
+
 class Camera():
 
     def __init__(self):
@@ -60,6 +62,9 @@ class Camera():
         rospy.Subscriber("/realsense_gripper/aligned_depth_to_color/image_raw", Image, self.camera_gripper_depth)
         rospy.Subscriber("/pub/realsense_gripper/aligned_depth_to_color/image_raw", Image, self.camera_gripper_depth)
 
+        rospy.Subscriber("/rviz1/camera1/image", Image, self.camera_rviz)
+        self.pub_rviz = rospy.Publisher('rviz_camera', ImageCamera, queue_size=10)
+
         self.pub_gripper = rospy.Publisher('gripper_camera', ImageCamera, queue_size=10)
         self.pub_gripper_depth = rospy.Publisher('gripper_camera_depth', ImageCamera, queue_size=10)
         self.pub_robot = rospy.Publisher('robot_camera', ImageCamera, queue_size=10)
@@ -68,6 +73,13 @@ class Camera():
         self.rate = rospy.Rate(30)
 
         rospy.on_shutdown(self.shutdown)
+
+    def camera_rviz(self, msg):
+        try:
+            cv_image = self.cv_bridge.imgmsg_to_cv2(msg, "bgr8")
+            self.pub_rviz.publish(self.createMessage(cv_image))
+        except CvBridgeError as e:
+            rospy.logerr("CvBridge Error: {0}".format(e))
 
 
     def base64decode(self, image):
@@ -123,6 +135,45 @@ class Camera():
 
     def process_depth_image(self, cv_image):
         depth_array = np.array(cv_image, dtype=np.float32)
+
+        bl = cv2.medianBlur(depth_array, 5)
+
+        hsv_min = np.array((0, 0, 0), np.uint8)
+        hsv_max = np.array((0, 0, 0), np.uint8)
+        
+        img = cv2.cvtColor(bl, cv2.COLOR_GRAY2BGR)
+        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+        thresh = cv2.inRange(hsv, hsv_min, hsv_max)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+        dilated = cv2.dilate(thresh, kernel)
+        
+        # cnts, _ = cv2.findContours(dilated.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+
+        # for c in cnts:
+        #     x,y,w,h = cv2.boundingRect(c)
+        #     ROI = depth_array[y:y+h, x:x+w]
+        #     mean, STD  = cv2.meanStdDev(ROI)
+
+        #     offset = 0.2
+        #     clipped = np.clip(depth_array, mean - offset*STD, mean + offset*STD).astype(np.uint8)
+        #     depth_array = cv2.normalize(clipped, clipped, 0, 255, norm_type=cv2.NORM_MINMAX)
+
+
+        
+        # return depth_array
+
+
+        cv2.normalize(bl, bl, 0, 1, cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+        # cv2.normalize(depth_array, depth_array, 0, 1, cv2.NORM_MINMAX)
+        # return depth_array
+
+        colormap = plt.get_cmap('inferno')
+        heatmap = (colormap(bl) * 2**16).astype(np.uint16)[:,:,:3]
+        heatmap = cv2.cvtColor(heatmap, cv2.COLOR_RGB2BGR)
+
+        return heatmap
        
         bl = cv2.medianBlur(depth_array, 5)
 
@@ -202,38 +253,38 @@ class Camera():
             if len(contours) > 0:
                 long_contour =  sorted(contours, key=cv2.contourArea, reverse=True)[0]
 
-            cv2.drawContours(img, long_contour, -1, (0,0,255), 6)
+        cv2.drawContours(img, long_contour, -1, (0,0,255), 6)
 
-            # draw lines through points
-            L1 = self.line(self.image_border_start, self.image_border_end)
-            L2 = self.line(self.gripper_border_start, self.gripper_border_end)
-            L3 = self.line(self.gripper_close_start, self.gripper_close_end)
+        # draw lines through points
+        L1 = self.line(self.image_border_start, self.image_border_end)
+        L2 = self.line(self.gripper_border_start, self.gripper_border_end)
+        L3 = self.line(self.gripper_close_start, self.gripper_close_end)
 
-            # find the intersection points of straight lines
-            R1 = self.intersection(L1, L3)
-            R2 = self.intersection(L2, L3)
+        # find the intersection points of straight lines
+        R1 = self.intersection(L1, L3)
+        R2 = self.intersection(L2, L3)
 
-            msg = String()
-            msg.data = 'ready'
+        msg = String()
+        msg.data = 'ready'
 
-            if R1 and R2:
-                # check if the point is inside the contour
-                dist1 = cv2.pointPolygonTest(long_contour, R1, True)
-                dist2 = cv2.pointPolygonTest(long_contour, R2, True)
+        if R1 and R2:
+            # check if the point is inside the contour
+            dist1 = cv2.pointPolygonTest(long_contour, R1, True)
+            dist2 = cv2.pointPolygonTest(long_contour, R2, True)
 
-                # if there are both points inside the contour, then the gripper is busy
-                if dist1 > 0 and dist2 > 0:
-                    self.gripper_busy = True
-                    msg.data = 'busy'
-                else:
-                    msg.data = 'ready'
-                    self.gripper_busy = False
+            # if there are both points inside the contour, then the gripper is busy
+            if dist1 > 0 and dist2 > 0:
+                self.gripper_busy = True
+                msg.data = 'busy'
             else:
                 msg.data = 'ready'
                 self.gripper_busy = False
+        else:
+            msg.data = 'ready'
+            self.gripper_busy = False
 
-            # send result
-            self.pub_gripper_state.publish(msg)
+        # send result
+        self.pub_gripper_state.publish(msg)
 
         return img
 
@@ -274,8 +325,8 @@ class Camera():
                 img = self.process_depth_image(self.ImageGripperDepth)
 
                 # add info
-                cv2.line(img, self.gripper_border_start, self.gripper_border_end, (255,0,0), self.line_height)
-                cv2.line(img, self.gripper_close_start, self.gripper_close_end, (255,0,0), self.line_height)
+                # cv2.line(img, self.gripper_border_start, self.gripper_border_end, (255,0,0), self.line_height)
+                # cv2.line(img, self.gripper_close_start, self.gripper_close_end, (255,0,0), self.line_height)
 
                 # Text style
                 font = cv2.FONT_HERSHEY_SIMPLEX
@@ -287,27 +338,28 @@ class Camera():
 
                 # send to Image
                 img_sent_rviz = img.copy()
-                cv2.putText(img_sent_rviz,'Obj in gripper: ', (50, 150), font, 4, (255,0,0), 12, lineType)
-                if self.gripper_busy:
-                    cv2.putText(img_sent_rviz,'YES', (1000, 150), font, 4, (0,255,0), 12, lineType)
-                else:
-                    cv2.putText(img_sent_rviz,'NO', (1000, 150), font, 4, (0,0,255), 12, lineType)
+                # cv2.putText(img_sent_rviz,'Obj in gripper: ', (50, 150), font, 4, (255,0,0), 12, lineType)
+                # if self.gripper_busy:
+                #     cv2.putText(img_sent_rviz,'YES', (1000, 150), font, 4, (0,255,0), 12, lineType)
+                # else:
+                #     cv2.putText(img_sent_rviz,'NO', (1000, 150), font, 4, (0,0,255), 12, lineType)
 
                 # Img sent to rviz
-                img_sent_rviz = img_sent_rviz.astype(np.uint8)
-                cv2.convertScaleAbs(img_sent_rviz, img_sent_rviz, 255, 0)
+                # img_sent_rviz = img_sent_rviz.astype(np.uint8)
+                # cv2.convertScaleAbs(img_sent_rviz, img_sent_rviz, 255, 0)
                 output = cv2.resize(img_sent_rviz, (800, int(self.height * 800 / self.width)))
                 self.pub_gripper_depth_small.publish(self.cv_bridge.cv2_to_imgmsg(output))
 
                 # add text
-                cv2.putText(img,'Gripper Line', bottomLeftCornerOfText, font, fontScale, fontColor, thickness, lineType)
+                # cv2.putText(img,'Gripper Line', bottomLeftCornerOfText, font, fontScale, fontColor, thickness, lineType)
 
                 # send image to GUI
                 msg_pub = self.createMessage(img)
                 self.pub_gripper_depth.publish(msg_pub)
                 
                 cv2.imshow("depth", output)
-                cv2.waitKey(3)
+
+            cv2.waitKey(3)
             self.rate.sleep()
 
     def shutdown(self):

@@ -148,6 +148,15 @@ ur5_husky_main::Gripper gripperPosePrev;
 /// Иначе не работает асинхронное движение
 URRTDEInterface* rtde;
 
+float gripperAngle = 0.85;
+
+std::string robot_ip = "127.0.0.1";
+
+double delay_loop_rate = 0.0;
+double ur_speed = 0.1;
+double ur_acceleration = 10.0;
+double ur_blend = 0.0;
+
 
 
 ColorInfo getDefaultColor(std::string colorName) {
@@ -164,8 +173,6 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
                                            float length, float width, float height,
                                            float pos_x, float pos_y, float pos_z,
                                            ColorInfo color) {
-
-  std::cout << "CREATE! " <<std::endl;
 
   auto colorBox = std::make_shared<tesseract_scene_graph::Material>(color.getName().c_str());
   colorBox->color = Eigen::Vector4d(color.getR(), color.getG(), color.getB(), color.getA());
@@ -190,8 +197,6 @@ tesseract_environment::Command::Ptr addBox(std::string link_name, std::string jo
   joint_sphere.parent_link_name = "world";
   joint_sphere.child_link_name = link_sphere.getName();
   joint_sphere.type = JointType::FIXED;
-
-  std::cout << "CREATE2! " <<std::endl;
 
   return std::make_shared<tesseract_environment::AddLinkCommand>(link_sphere, joint_sphere);
 }
@@ -467,9 +472,9 @@ void robotMove(std::vector<double> &path_pose, const ros::Publisher &messageRobo
   auto rtde_control = rtde->getRtdeControl();
   auto rtde_receive = rtde->getRtdeReceive();
 
-  path_pose.push_back(settingsConfig.ur_speed);
-  path_pose.push_back(settingsConfig.ur_acceleration);
-  path_pose.push_back(settingsConfig.ur_blend);
+  path_pose.push_back(ur_speed);
+  path_pose.push_back(ur_acceleration);
+  path_pose.push_back(ur_blend);
 
   std::vector<std::vector<double>> jointsPath;
   jointsPath.push_back(path_pose);
@@ -527,13 +532,17 @@ bool updateStartJointValue(ur5_husky_main::SetJointState::Request &req,
     position_vector.resize(joint_start_pos.size());
     Eigen::VectorXd::Map(&position_vector[0], joint_start_pos.size()) = joint_start_pos;
 
-    std::cout << "gripper start: " << req.gripperPose[0].name << " " << req.gripperPose[0].angle << std::endl;
-    gripperPosePrev.name = req.gripperPose[0].name;
-    gripperPosePrev.angle = req.gripperPose[0].angle;
+    if (req.gripperUpdate) {
+        std::cout << "gripper start: " << req.gripperPose[0].name << " " << req.gripperPose[0].angle << std::endl;
+        gripperPosePrev.name = req.gripperPose[0].name;
+        gripperPosePrev.angle = req.gripperPose[0].angle;
+    }
 
     if (connect_robot) {
         robotMove(position_vector, messageRobotBusyPub, loop_rate);
-        gripperPub.publish(req.gripperPose[0]);
+        if (req.gripperUpdate) {
+            gripperPub.publish(req.gripperPose[0]);
+        }
     }
 
     env->setState(joint_names, joint_start_pos);
@@ -654,7 +663,12 @@ bool calculateRobotTrajectory(ur5_husky_main::CalculateTrajectory::Request &req,
   std::vector<Eigen::VectorXd> middlePos;
   middlePos.empty();
 
-  UR5Trajopt calculate(env, plotter, joint_names, startPose, finishPose, true, middlePos, settingsConfig);
+  for (int i = 0; i < req.middlePose.size(); i++) {
+      std::vector<double> middle = req.middlePose[i].position;
+      middlePos.push_back(Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(middle.data(), middle.size()));
+  }
+
+  UR5Trajopt calculate(env, plotter, joint_names, startPose, finishPose, middlePos);
   UR5TrajoptResponce responce = calculate.run();
 
   tesseract_common::JointTrajectory trajectoryTrajOpt = responce.getTrajectory();
@@ -846,7 +860,7 @@ bool getInfo(ur5_husky_main::GetInfo::Request &req,
                    const std::vector<std::string> &joint_names,
                    ros::Rate &loop_rate) {
 
-  TestIK test(settingsConfig.robot_ip, settingsConfig.ur_speed, settingsConfig.ur_acceleration, settingsConfig.ur_blend, req.debug);
+  TestIK test(robot_ip, ur_speed, ur_acceleration, ur_blend, req.debug);
   if (rtde->robotConnect()) {
     auto dash_board = rtde->getDashboard();
     dash_board->connect();
@@ -935,6 +949,13 @@ void gripperCallback(const ur5_husky_main::Gripper::ConstPtr &msg, ros::Publishe
 }
 
 
+void gripperStateCallback(const ur5_husky_main::Gripper::ConstPtr &msg) {
+  if (std::string(msg->name) == "robotiq") {
+    gripperAngle = msg->angle;
+  }
+}
+
+
 void robotPoseCallback(const ur5_husky_main::Pose::ConstPtr &msg,
   const std::shared_ptr<tesseract_environment::Environment> &env,
   const ros::Publisher &joint_pub_state, 
@@ -942,10 +963,12 @@ void robotPoseCallback(const ur5_husky_main::Pose::ConstPtr &msg,
   const ros::Publisher &messageRobotBusyPub,
   ros::Rate &loop_rate) {
 
-  robotBusy = true;
-  sendRobotState(messageRobotBusyPub);
+  if (!msg->rvizOnly) {
+    robotBusy = true;
+    sendRobotState(messageRobotBusyPub);
+  }
 
-  if (rtde->robotConnect()) {
+  if (!msg->rvizOnly && rtde->robotConnect()) {
     auto rtde_control = rtde->getRtdeControl();
     std::vector<double> position = msg->position;
     robotMove(position, messageRobotBusyPub, loop_rate);
@@ -959,8 +982,11 @@ void robotPoseCallback(const ur5_husky_main::Pose::ConstPtr &msg,
   ros::spinOnce();
   loop_rate.sleep();
   printPoseInRviz(joint_pub_state, joint_names, joint_start_pos);
-  robotBusy = false;
-  sendRobotState(messageRobotBusyPub);
+
+  if (!msg->rvizOnly) {
+    robotBusy = false;
+    sendRobotState(messageRobotBusyPub);
+  }
 }
 
 
@@ -989,15 +1015,11 @@ int main(int argc, char** argv) {
   ros::NodeHandle pnh("~");
   ros::NodeHandle nh;
 
-  ros::Rate loop_rate(settingsConfig.delay_loop_rate);
-
   bool plotting = true;
   bool rviz = true;
   bool debug = false;
   bool connect_robot = false;
-  bool ui_control = false;
   std::string script = "";
-  std::string robot_ip = "";
 
   // конфиги для робота
   double velocity = 0.5;
@@ -1016,9 +1038,14 @@ int main(int argc, char** argv) {
   pnh.param("rviz", rviz, rviz);
   pnh.param("debug", debug, debug);
   pnh.param("connect_robot", connect_robot, connect_robot);
-  pnh.param("ui_control", ui_control, ui_control);
   pnh.param("script", script, script);
   pnh.param("robot_ip", robot_ip, robot_ip);
+  pnh.param("delay_loop_rate", delay_loop_rate, delay_loop_rate);
+  pnh.param("ur_speed", ur_speed, ur_speed);
+  pnh.param("ur_acceleration", ur_acceleration, ur_acceleration);
+  pnh.param("ur_blend", ur_blend, ur_blend);
+
+  ros::Rate loop_rate(delay_loop_rate);
 
   // Initial setup
   std::string urdf_xml_string, srdf_xml_string;
@@ -1030,7 +1057,7 @@ int main(int argc, char** argv) {
 
   settingsConfig.update();
 
-  rtde = URRTDEInterface::getInstance(settingsConfig.robot_ip);
+  rtde = URRTDEInterface::getInstance(robot_ip);
 
   auto env = std::make_shared<tesseract_environment::Environment>();
 
@@ -1073,8 +1100,11 @@ int main(int argc, char** argv) {
   joint_end_pos(5) = settingsConfig.joint_end_pos_5;
 
 
+  // Получает состояние гриппера с робота
+  ros::Subscriber sub_gripper = nh.subscribe<ur5_husky_main::Gripper>("gripper_state_robot", 10, boost::bind(gripperStateCallback, _1));
+
   if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
-    ROS_INFO("Start connect with UR5 to %s ...", settingsConfig.robot_ip.c_str());
+    ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
 
     if (rtde->robotConnect()) {
       auto rtde_receive = rtde->getRtdeReceive();
@@ -1091,6 +1121,9 @@ int main(int argc, char** argv) {
         ROS_ERROR("There should be 6 joints.");
       }
     }
+
+    // TODO инициализируем состояние гриппера с робота
+    // gripperAngle
 
   } else {
       ROS_INFO("I work without connecting to the robot.");
@@ -1181,36 +1214,6 @@ int main(int argc, char** argv) {
   ros::ServiceServer removeMeshService = nh.advertiseService<ur5_husky_main::Mesh::Request, ur5_husky_main::Mesh::Response>
                       ("remove_mesh", boost::bind(removeMesh, _1, _2, env));
 
-  if (!ui_control) {
-    // TODO Тут падает
-    // Создать стол
-    Command::Ptr table = addBox("table", "joint_table_attached", settingsConfig.table_length, settingsConfig.table_width, settingsConfig.table_height, settingsConfig.table_pos_x, settingsConfig.table_pos_y, settingsConfig.table_pos_z, getDefaultColor("brown"));
-    if (!env->applyCommand(table)) {
-      return false;
-    }
-
-    // Создать коробку
-    Command::Ptr box = addBox("box", "joint_box_attached", settingsConfig.box_length, settingsConfig.box_width, settingsConfig.box_height, settingsConfig.box_pos_x, settingsConfig.box_pos_y, settingsConfig.box_pos_z, getDefaultColor(""));
-    if (!env->applyCommand(box)) {
-      return false;
-    }
-
-    // Создать стол из mesh
-    Command::Ptr table_mesh = addMesh("table", "table-js", "table-noise-2.obj", Eigen::Vector3d(0.015, 0.015, 0.015), 
-      Eigen::Vector3d(1.7, 0.0, -0.14869), Eigen::Vector3d(0.0, 0.0, 0.0));
-    if (!env->applyCommand(table_mesh)) {
-      return false;
-    }
-
-    // Создать горелку из mesh
-    Command::Ptr burner_mesh = addMesh("burner", "burner-js", "burner.obj", Eigen::Vector3d(0.03, 0.03, 0.03), 
-      Eigen::Vector3d(1.0, 0.0, 0.57), Eigen::Vector3d(0.0, 0.0, 0.0));
-    if (!env->applyCommand(burner_mesh)) {
-      return false;
-    }
-  }
-
-
   if (debug) {
     console_bridge::setLogLevel(console_bridge::LogLevel::CONSOLE_BRIDGE_LOG_DEBUG);
   }
@@ -1221,24 +1224,20 @@ int main(int argc, char** argv) {
     robotRestart = true;
 
     // Ждем команды для старта
-    if (ui_control) {
-      std::cout << "Waiting for the command to start ... \n";
-      while(ros::ok()) {
-        ros::spinOnce();
-        loop_rate.sleep();
-        if (robotRestart) {
-          break;
-        }
+    std::cout << "Waiting for the command to start ... \n";
+    while(ros::ok()) {
+      ros::spinOnce();
+      loop_rate.sleep();
+      if (robotRestart) {
+        break;
       }
-    } else {
-      plotter->waitForInput("Hit Enter for start.");
     }
 
     robotRestart = false;
     plotter->clear();
 
     // Ждем команды на планирование траектории
-    if (ui_control && !robotPlanTrajectory) {
+    if (!robotPlanTrajectory) {
       std::cout << "Waiting for the command to plan the trajectory... \n";
       while(ros::ok()) {
 
@@ -1270,8 +1269,6 @@ int main(int argc, char** argv) {
       if (goToStart) {
         continue;
       }
-    } else if (!ui_control) {
-      plotter->waitForInput("Hit Enter after move robot to start position.");
     }
 
 
@@ -1332,7 +1329,7 @@ int main(int argc, char** argv) {
           changeGripperState = true;
           gripperStates.push_back(gripperPoseList[i]);
 
-          UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list_tmp, settingsConfig);
+          UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, joint_middle_pos_list_tmp);
           UR5TrajoptResponce responce = calculate.run();
           bool success = responce.isSuccessful();
 
@@ -1363,7 +1360,7 @@ int main(int argc, char** argv) {
 
     // Если в принципе не было смены состояния гриппера, то тоже считаем план
     if (!changeGripperState) {
-      UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list, settingsConfig);
+      UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, joint_middle_pos_list);
       UR5TrajoptResponce responce = calculate.run();
       bool success = responce.isSuccessful();
 
@@ -1393,13 +1390,8 @@ int main(int argc, char** argv) {
 
     char input_simbol = 'n';
 
-    if (!ui_control) {
-      std::cout << "Execute Trajectory on UR5? y/n \n";
-      std::cin >> input_simbol;
-    }
-
     // Ждем команды на выполнение траектории
-    if (ui_control && !robotExecuteTrajectory) {
+    if (!robotExecuteTrajectory) {
       std::cout << "Waiting for the command to execute the trajectory... \n";
       while(ros::ok()) {
         ros::spinOnce();
@@ -1442,9 +1434,9 @@ int main(int argc, char** argv) {
             tesseract_common::JointState j_state = player.getByIndex(i);
             path_pose.resize(j_state.position.size());
             Eigen::VectorXd::Map(&path_pose[0], j_state.position.size()) = j_state.position;
-            path_pose.push_back(settingsConfig.ur_speed);
-            path_pose.push_back(settingsConfig.ur_acceleration);
-            path_pose.push_back(settingsConfig.ur_blend);
+            path_pose.push_back(ur_speed);
+            path_pose.push_back(ur_acceleration);
+            path_pose.push_back(ur_blend);
             jointsPath.push_back(path_pose);
 
             ROS_INFO("%d point of traectory: ", i+1);
@@ -1470,9 +1462,9 @@ int main(int argc, char** argv) {
 
           path_pose.resize(position_vector.size());
           Eigen::VectorXd::Map(&path_pose[0], joint_end_pos.size()) = joint_end_pos;
-          path_pose.push_back(settingsConfig.ur_speed);
-          path_pose.push_back(settingsConfig.ur_acceleration);
-          path_pose.push_back(settingsConfig.ur_blend);
+          path_pose.push_back(ur_speed);
+          path_pose.push_back(ur_acceleration);
+          path_pose.push_back(ur_blend);
           jointsPath.push_back(path_pose);
 
           // Отправить на робота

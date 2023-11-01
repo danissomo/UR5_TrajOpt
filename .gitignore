@@ -9,3 +9,4 @@ install
 .catkin_tools
 .vscode
 *.bag
+src/utils/collada_urdf/collada-dom/build

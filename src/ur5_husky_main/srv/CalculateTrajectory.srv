@@ -1,5 +1,6 @@
 ur5_husky_main/Pose startPose
 ur5_husky_main/Pose finishPose
+ur5_husky_main/Pose[] middlePose
 ---
 bool success
 string message

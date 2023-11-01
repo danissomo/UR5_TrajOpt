@@ -68,7 +68,7 @@
           <mesh filename="package://husky_description/meshes/base_link.dae" />
         </geometry>
       </visual>
-      <collision>
+      <!-- <collision>
         <origin xyz="${( husky_front_bumper_extend - husky_rear_bumper_extend ) / 2.0} 0 ${base_z_size/4}" rpy="0 0 0" />
         <geometry>
           <box size="${ base_x_size + husky_front_bumper_extend + husky_rear_bumper_extend } ${base_y_size} ${base_z_size/2}"/>
@@ -79,7 +79,7 @@
         <geometry>
           <box size="${base_x_size*4/5} ${base_y_size} ${base_z_size/2-0.02}"/>
         </geometry>
-      </collision>
+      </collision> -->
     </link>
 
     <!-- Base footprint is on the ground under the robot -->
@@ -128,12 +128,12 @@
           <mass value="0.0000000000001"/>
           <inertia ixx="0.00000001" ixy="0.00000001" ixz="0.00000001" iyy="0.00000001" iyz="0.00000001" izz="0.00000001"/>
       </inertial>
-      <collision name="base_link_fixed_joint_lump__robot/bumper_link">
+      <!-- <collision name="base_link_fixed_joint_lump__robot/bumper_link">
           <origin rpy="0 0 0" xyz="0 0 0.1"/>
           <geometry>
               <box size="1.0 0.7 0.31"/>
           </geometry>
-      </collision>
+      </collision> -->
     </link>
     <joint name="bumper_joint" type="fixed">
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0"/>

@@ -9,7 +9,7 @@
 #include <chrono>
 #include <termios.h>
 
-#include <settings_custom_lib/SettingsCustomLib.hpp>
+#include <settings_custom_lib/settings_custom_lib.hpp>
 
 #include <ur_rtde/rtde_control_interface.h>
 #include <ur_rtde/rtde_receive_interface.h>
@@ -36,7 +36,7 @@ int getch() {
 
 void set_start_pos(std::vector<double> &start_pos) {
     try {
-        RTDEControlInterface rtde_control(robot_ip);
+        RTDEControlInterface rtde_control(settingsConfig.robot_ip);
 
         std::vector<double> joint_q = start_pos;
 
@@ -53,8 +53,8 @@ void set_start_pos(std::vector<double> &start_pos) {
 
 void execute(bool is_start, std::vector<double> &start_pos) {
     try {
-      RTDEReceiveInterface rtde_receive(robot_ip);
-      RTDEControlInterface rtde_control(robot_ip);
+      RTDEReceiveInterface rtde_receive(settingsConfig.robot_ip);
+      RTDEControlInterface rtde_control(settingsConfig.robot_ip);
 
       // Сначала получить данные
         std::vector<double> joint_positions = rtde_receive.getActualQ();
