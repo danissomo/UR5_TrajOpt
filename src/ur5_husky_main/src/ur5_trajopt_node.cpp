@@ -663,6 +663,11 @@ bool calculateRobotTrajectory(ur5_husky_main::CalculateTrajectory::Request &req,
   std::vector<Eigen::VectorXd> middlePos;
   middlePos.empty();
 
+  for (int i = 0; i < req.middlePose.size(); i++) {
+      std::vector<double> middle = req.middlePose[i].position;
+      middlePos.push_back(Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(middle.data(), middle.size()));
+  }
+
   UR5Trajopt calculate(env, plotter, joint_names, startPose, finishPose, middlePos);
   UR5TrajoptResponce responce = calculate.run();
 
