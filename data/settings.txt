@@ -107,7 +107,7 @@ joint_middle_include = true
 
 # IP робота
 # robot_ip = 172.17.0.2
-robot_ip = 127.0.0.1
+# robot_ip = 127.0.0.1
 # robot_ip = 192.168.131.40
 
 # Данные для тестовой отправки на UR5
@@ -119,7 +119,7 @@ joint_test_pos_4 = 0.0
 joint_test_pos_5 = 0.0
 
 # Разные настройки
-delay_loop_rate = 0.0
+# delay_loop_rate = 0.0
 
 # Настройки для стола
 table_length = 0.550
@@ -148,9 +148,9 @@ collision_constraint_config_type = DISCRETE_CONTINUOUS
 
 # параметры для движения реального робота или в симуляции ur_sim
 # максимальное значение ur_speed = 3.14, ur_acceleration = 40, ur_blend = 2
-ur_speed = 0.1
-ur_acceleration = 10.0
-ur_blend = 0.0
+# ur_speed = 0.1
+# ur_acceleration = 10.0
+# ur_blend = 0.0
 
 
 # коррекция положения после attach объекта

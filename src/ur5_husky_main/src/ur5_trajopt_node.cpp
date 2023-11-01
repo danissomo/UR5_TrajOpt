@@ -150,6 +150,13 @@ URRTDEInterface* rtde;
 
 float gripperAngle = 0.85;
 
+std::string robot_ip = "127.0.0.1";
+
+double delay_loop_rate = 0.0;
+double ur_speed = 0.1;
+double ur_acceleration = 10.0;
+double ur_blend = 0.0;
+
 
 
 ColorInfo getDefaultColor(std::string colorName) {
@@ -469,9 +476,9 @@ void robotMove(std::vector<double> &path_pose, const ros::Publisher &messageRobo
   auto rtde_control = rtde->getRtdeControl();
   auto rtde_receive = rtde->getRtdeReceive();
 
-  path_pose.push_back(settingsConfig.ur_speed);
-  path_pose.push_back(settingsConfig.ur_acceleration);
-  path_pose.push_back(settingsConfig.ur_blend);
+  path_pose.push_back(ur_speed);
+  path_pose.push_back(ur_acceleration);
+  path_pose.push_back(ur_blend);
 
   std::vector<std::vector<double>> jointsPath;
   jointsPath.push_back(path_pose);
@@ -660,7 +667,7 @@ bool calculateRobotTrajectory(ur5_husky_main::CalculateTrajectory::Request &req,
   std::vector<Eigen::VectorXd> middlePos;
   middlePos.empty();
 
-  UR5Trajopt calculate(env, plotter, joint_names, startPose, finishPose, true, middlePos, settingsConfig);
+  UR5Trajopt calculate(env, plotter, joint_names, startPose, finishPose, true, middlePos);
   UR5TrajoptResponce responce = calculate.run();
 
   tesseract_common::JointTrajectory trajectoryTrajOpt = responce.getTrajectory();
@@ -852,7 +859,7 @@ bool getInfo(ur5_husky_main::GetInfo::Request &req,
                    const std::vector<std::string> &joint_names,
                    ros::Rate &loop_rate) {
 
-  TestIK test(settingsConfig.robot_ip, settingsConfig.ur_speed, settingsConfig.ur_acceleration, settingsConfig.ur_blend, req.debug);
+  TestIK test(robot_ip, ur_speed, ur_acceleration, ur_blend, req.debug);
   if (rtde->robotConnect()) {
     auto dash_board = rtde->getDashboard();
     dash_board->connect();
@@ -1007,15 +1014,12 @@ int main(int argc, char** argv) {
   ros::NodeHandle pnh("~");
   ros::NodeHandle nh;
 
-  ros::Rate loop_rate(settingsConfig.delay_loop_rate);
-
   bool plotting = true;
   bool rviz = true;
   bool debug = false;
   bool connect_robot = false;
   bool ui_control = false;
   std::string script = "";
-  std::string robot_ip = "";
 
   // конфиги для робота
   double velocity = 0.5;
@@ -1037,6 +1041,12 @@ int main(int argc, char** argv) {
   pnh.param("ui_control", ui_control, ui_control);
   pnh.param("script", script, script);
   pnh.param("robot_ip", robot_ip, robot_ip);
+  pnh.param("delay_loop_rate", delay_loop_rate, delay_loop_rate);
+  pnh.param("ur_speed", ur_speed, ur_speed);
+  pnh.param("ur_acceleration", ur_acceleration, ur_acceleration);
+  pnh.param("ur_blend", ur_blend, ur_blend);
+
+  ros::Rate loop_rate(delay_loop_rate);
 
   // Initial setup
   std::string urdf_xml_string, srdf_xml_string;
@@ -1048,7 +1058,7 @@ int main(int argc, char** argv) {
 
   settingsConfig.update();
 
-  rtde = URRTDEInterface::getInstance(settingsConfig.robot_ip);
+  rtde = URRTDEInterface::getInstance(robot_ip);
 
   auto env = std::make_shared<tesseract_environment::Environment>();
 
@@ -1095,7 +1105,7 @@ int main(int argc, char** argv) {
   ros::Subscriber sub_gripper = nh.subscribe<ur5_husky_main::Gripper>("gripper_state_robot", 10, boost::bind(gripperStateCallback, _1));
 
   if (connect_robot) { // Соединение с роботом (в симуляции или с реальным роботом)
-    ROS_INFO("Start connect with UR5 to %s ...", settingsConfig.robot_ip.c_str());
+    ROS_INFO("Start connect with UR5 to %s ...", robot_ip.c_str());
 
     if (rtde->robotConnect()) {
       auto rtde_receive = rtde->getRtdeReceive();
@@ -1356,7 +1366,7 @@ int main(int argc, char** argv) {
           changeGripperState = true;
           gripperStates.push_back(gripperPoseList[i]);
 
-          UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list_tmp, settingsConfig);
+          UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list_tmp);
           UR5TrajoptResponce responce = calculate.run();
           bool success = responce.isSuccessful();
 
@@ -1387,7 +1397,7 @@ int main(int argc, char** argv) {
 
     // Если в принципе не было смены состояния гриппера, то тоже считаем план
     if (!changeGripperState) {
-      UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list, settingsConfig);
+      UR5Trajopt calculate(env, plotter, joint_names, joint_start_pos, joint_end_pos, ui_control, joint_middle_pos_list);
       UR5TrajoptResponce responce = calculate.run();
       bool success = responce.isSuccessful();
 
@@ -1466,9 +1476,9 @@ int main(int argc, char** argv) {
             tesseract_common::JointState j_state = player.getByIndex(i);
             path_pose.resize(j_state.position.size());
             Eigen::VectorXd::Map(&path_pose[0], j_state.position.size()) = j_state.position;
-            path_pose.push_back(settingsConfig.ur_speed);
-            path_pose.push_back(settingsConfig.ur_acceleration);
-            path_pose.push_back(settingsConfig.ur_blend);
+            path_pose.push_back(ur_speed);
+            path_pose.push_back(ur_acceleration);
+            path_pose.push_back(ur_blend);
             jointsPath.push_back(path_pose);
 
             ROS_INFO("%d point of traectory: ", i+1);
@@ -1494,9 +1504,9 @@ int main(int argc, char** argv) {
 
           path_pose.resize(position_vector.size());
           Eigen::VectorXd::Map(&path_pose[0], joint_end_pos.size()) = joint_end_pos;
-          path_pose.push_back(settingsConfig.ur_speed);
-          path_pose.push_back(settingsConfig.ur_acceleration);
-          path_pose.push_back(settingsConfig.ur_blend);
+          path_pose.push_back(ur_speed);
+          path_pose.push_back(ur_acceleration);
+          path_pose.push_back(ur_blend);
           jointsPath.push_back(path_pose);
 
           // Отправить на робота

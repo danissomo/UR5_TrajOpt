@@ -42,8 +42,6 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 
 #include <tesseract_visualization/trajectory_player.h>
 
-#include <settings_custom_lib/settings_custom_lib.hpp>
-
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -68,8 +66,7 @@ UR5Trajopt::UR5Trajopt (tesseract_environment::Environment::Ptr env,
                         Eigen::VectorXd joint_start_pos,
                         Eigen::VectorXd joint_end_pos,
                         bool ui_control,
-                        std::vector<Eigen::VectorXd> joint_middle_pos_list,
-                        SettingsCustomLibClass settings_config) {
+                        std::vector<Eigen::VectorXd> joint_middle_pos_list) {
   env_ = env;
   plotter_ = plotter;
   joint_names_ = joint_names;
@@ -77,7 +74,6 @@ UR5Trajopt::UR5Trajopt (tesseract_environment::Environment::Ptr env,
   joint_end_pos_ = joint_end_pos;
   ui_control_ = ui_control;
   joint_middle_pos_list_ = joint_middle_pos_list;
-  settings_config_ = settings_config;
 }
 
 
@@ -127,18 +123,18 @@ UR5TrajoptResponce UR5Trajopt::run() {
   // Тип коллизии задается в настройках
   trajopt::CollisionEvaluatorType collisionCostConfigType;
   trajopt::CollisionEvaluatorType collisionConstraintConfigType;
-  if (settings_config_.collision_cost_config_type == "SINGLE_TIMESTEP") {
-      collisionCostConfigType = trajopt::CollisionEvaluatorType::SINGLE_TIMESTEP;
-  } else if (settings_config_.collision_cost_config_type == "CAST_CONTINUOUS") {
-      collisionCostConfigType = trajopt::CollisionEvaluatorType::CAST_CONTINUOUS;
-  } else if (settings_config_.collision_constraint_config_type == "SINGLE_TIMESTEP") {
-      collisionConstraintConfigType = trajopt::CollisionEvaluatorType::SINGLE_TIMESTEP;
-  } else if (settings_config_.collision_constraint_config_type == "CAST_CONTINUOUS") {
-      collisionConstraintConfigType = trajopt::CollisionEvaluatorType::CAST_CONTINUOUS;
-  } else { // DISCRETE_CONTINUOUS - вариант по умолчанию
+  // if (settings_config_.collision_cost_config_type == "SINGLE_TIMESTEP") {
+  //     collisionCostConfigType = trajopt::CollisionEvaluatorType::SINGLE_TIMESTEP;
+  // } else if (settings_config_.collision_cost_config_type == "CAST_CONTINUOUS") {
+  //     collisionCostConfigType = trajopt::CollisionEvaluatorType::CAST_CONTINUOUS;
+  // } else if (settings_config_.collision_constraint_config_type == "SINGLE_TIMESTEP") {
+  //     collisionConstraintConfigType = trajopt::CollisionEvaluatorType::SINGLE_TIMESTEP;
+  // } else if (settings_config_.collision_constraint_config_type == "CAST_CONTINUOUS") {
+  //     collisionConstraintConfigType = trajopt::CollisionEvaluatorType::CAST_CONTINUOUS;
+  // } else { // DISCRETE_CONTINUOUS - вариант по умолчанию
       collisionCostConfigType = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
       collisionConstraintConfigType = trajopt::CollisionEvaluatorType::DISCRETE_CONTINUOUS;
-  }
+  // }
 
   auto composite_profile = std::make_shared<TrajOptDefaultCompositeProfile>();
   // composite_profile->longest_valid_segment_length = 0.05;

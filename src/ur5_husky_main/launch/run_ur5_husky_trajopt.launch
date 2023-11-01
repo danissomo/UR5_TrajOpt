@@ -17,6 +17,10 @@
   <arg name="script" default=""/> <!-- Название сценария -->
   <arg name="use_robot" default="false"/> <!-- Использовать URSim или UR5 -->
   <arg name="rosbag" default="false" /> <!-- True, если планируется проигрывание сенсорной информации из росбэга -->
+  <arg name="delay_loop_rate" default="1.0" /> <!-- Любое положительное число. Не может быть 0! -->
+  <arg name="ur_speed" default="0.1" />
+  <arg name="ur_acceleration" default="10.0" />
+  <arg name="ur_blend" default="0.0" />
   
   <!-- Варианты сценариев: open_lock (открыть ящик тумбы) -->
 
@@ -39,6 +43,10 @@
     <param name="connect_robot" type="bool" value="$(arg connect_robot)"/>
     <param name="ui_control" type="bool" value="$(arg ui_control)"/>
     <param name="script" type="string" value="$(arg script)"/>
+    <param name="delay_loop_rate" type="double" value="$(arg delay_loop_rate)"/>
+    <param name="ur_speed" type="double" value="$(arg ur_speed)"/>
+    <param name="ur_acceleration" type="double" value="$(arg ur_acceleration)"/>
+    <param name="ur_blend" type="double" value="$(arg ur_blend)"/>
   </node>
 
   <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" ns="vx300s" />
