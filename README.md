@@ -166,7 +166,7 @@ sudo make install
 - Ввести команду из списка ниже.
 
 
-## ======================================  КОМАНДЫ ДЛЯ УПРАВЛЕНИЯ  ======================================
+## ======  КОМАНДЫ ДЛЯ УПРАВЛЕНИЯ  ======
 
 **Схема управления роботом:**
 
@@ -560,7 +560,7 @@ resuest:
 
 
 
-## ======================================  ОДНА КОМАНДА ДЛЯ ПЛАНИРОВАНИЯ TRAJOPT  ======================================
+## ======  ОДНА КОМАНДА ДЛЯ ПЛАНИРОВАНИЯ TRAJOPT  ======
 
 Получение траектории робота-манипулятора после применения TrajOpt в одном завпросе.
 
@@ -722,7 +722,7 @@ catkin build robotiq_ft_sensor
 
 - Библиотека UR RTDE для управления роботом-манипулятором UR5: https://sdurobotics.gitlab.io/ur_rtde/api/api.html 
 - Документация на библиотеки Tesseract (используется для алгоритма TrajOpt): https://tesseract-docs.readthedocs.io/en/latest/_source/intro/getting_started_doc.html
-- Расчет кинематики и динамифи робота: https://www.universal-robots.com/articles/ur/application-installation/dh-parameters-for-calculations-of-kinematics-and-dynamics 
+- Расчет кинематики и динамики робота: https://www.universal-robots.com/articles/ur/application-installation/dh-parameters-for-calculations-of-kinematics-and-dynamics 
 
 
 
