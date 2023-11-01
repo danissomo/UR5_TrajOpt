@@ -19,7 +19,7 @@
 #include <moveit/kinematic_constraints/utils.h>
 #include <boost/scoped_ptr.hpp>
 
-#include <settings_custom_lib/SettingsCustomLib.hpp>
+#include <settings_custom_lib/settings_custom_lib.hpp>
 
 #include <tf2/LinearMath/Quaternion.h>
 
@@ -34,6 +34,13 @@
 #include "MoveOperationClass.hpp"
 
 SettingsCustomLibClass settingsConfig;
+
+// При работе с этим пакетом записать актуальные значения для переменныъ ниже
+std::string PLANNING_GROUP = "arm";
+std::string GRIPPER_GROUP = "gripper";
+std::string robotDefaultPose = "start";
+std::string robotDefaultJoint = "ee_joint";
+std::string pose,robotDefaultLink = "";
 
 
 bool setGripperAngular(MoveOperationClass *move_group_gripper,
@@ -163,8 +170,8 @@ bool openDoor(ur5_single_arm_manipulation::OpenDoor::Request &req,
              moveit::core::RobotStatePtr kinematic_state) {
 
 
-    robotMove(handlePosition_x, handlePosition_y, handlePosition_z, move_group);
-    setGripperAngular(move_group_gripper, gripper_joint_group, kinematic_state, gripperPickHandle);
+    robotMove(settingsConfig.handlePosition_x, settingsConfig.handlePosition_y, settingsConfig.handlePosition_z, move_group);
+    setGripperAngular(move_group_gripper, gripper_joint_group, kinematic_state, settingsConfig.gripperPickHandle);
 
     // Информация о joint`ах
     ROS_INFO("Current joints");

@@ -40,6 +40,3 @@
 [submodule "src/libs_other/rviz_camera_stream"]
 	path = src/libs_other/rviz_camera_stream
 	url = ../../lucasw/rviz_camera_stream
-[submodule "src/utils/collada_urdf"]
-	path = src/utils/collada_urdf
-	url = ../../ros/collada_urdf
