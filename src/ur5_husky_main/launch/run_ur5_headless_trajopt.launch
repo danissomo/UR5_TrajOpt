@@ -1,0 +1,115 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="robot_ip" default="127.0.0.1"/>
+  <arg name="plotting" default="true"/>
+  <arg name="rviz" default="true"/>
+  <arg name="paused" default="true" />
+  <arg name="use_sim_time" default="true"/>
+  <arg name="debug" default="true"/> <!-- Включить для вывода результатов расчетов -->
+  <arg name="connect_robot" default="true"/> <!-- Подключение к роботу (в симуляции или к реальному роботу) -->
+  <arg name="delay" default="0.5" />  <!-- Задержка для запуска ноды -->
+  <arg name="prefix" default="ur5_"/>
+  <arg name="rvizconfig" default="$(find ur5_husky_main)/config/rviz/trajopt.rviz" />
+  <arg name="vx300s" default="true"/>
+  <arg name="gazebo" default="false"/>
+  <arg name="script" default=""/> <!-- Название сценария -->
+  <arg name="use_robot" default="false"/> <!-- Использовать URSim или UR5 -->
+  <arg name="rosbag" default="false" /> <!-- True, если планируется проигрывание сенсорной информации из росбэга -->
+  <arg name="delay_loop_rate" default="1.0" /> <!-- Любое положительное число. Не может быть 0! -->
+  <arg name="ur_speed" default="0.1" />
+  <arg name="ur_acceleration" default="10.0" />
+  <arg name="ur_blend" default="0.0" />
+  
+  <!-- Варианты сценариев: open_lock (открыть ящик тумбы) -->
+
+  <!-- Load controller configuration -->
+  <rosparam command="load" file="$(find husky_control)/config/control.yaml" />
+  <rosparam command="load" file="$(find ur5_husky_main)/config/arm_controller_ur5.yaml" />
+  <rosparam command="load" file="$(find ur5_husky_main)/config/vx300s_trajectory_controllers.yaml"/>
+
+  <!-- Load robot description -->
+  <include file="$(find ur5_husky_main)/launch/robot_load_ur5.launch" >
+    <arg name="prefix" value="$(arg prefix)" />
+  </include>
+
+  <node pkg="ur5_husky_main" type="ur5_trajopt_node"
+    name="ur5_trajopt_node" output="screen" launch-prefix="bash -c 'sleep $(arg delay); $0 $@' ">
+    <param name="plotting" type="bool" value="$(arg plotting)"/>
+    <param name="robot_ip" type="string" value="$(arg robot_ip)"/>
+    <param name="rviz" type="bool" value="$(arg rviz)"/>
+    <param name="debug" type="bool" value="$(arg debug)"/>
+    <param name="connect_robot" type="bool" value="$(arg connect_robot)"/>
+    <param name="script" type="string" value="$(arg script)"/>
+    <param name="delay_loop_rate" type="double" value="$(arg delay_loop_rate)"/>
+    <param name="ur_speed" type="double" value="$(arg ur_speed)"/>
+    <param name="ur_acceleration" type="double" value="$(arg ur_acceleration)"/>
+    <param name="ur_blend" type="double" value="$(arg ur_blend)"/>
+  </node>
+
+  <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" ns="vx300s" />
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+  <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" output="screen">
+    <rosparam param="source_list">[/joint_states]</rosparam>
+  </node>
+
+  <!-- Подключение Webserver rosbridge -->
+  <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+
+  <!-- Проба для Gazebo -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch" if="$(arg gazebo)">
+    <arg name="world_name" value="$(find ur5_husky_main)/worlds/scene.world"/>
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot -z 0.2" respawn="false" output="screen" if="$(arg gazebo)"/>
+
+  <!-- Start joint state controller -->
+  <node name="controller_spawner" pkg="controller_manager" type="controller_manager" respawn="false" output="screen" args="spawn ur5_controller" if="$(arg gazebo)" />
+  <!-- GAZEBO finish -->
+
+  <!-- Получение изображений с камеры робота -->
+  <!-- <node name="camera_node" pkg="ur5_husky_camera" type="camera.py" output="screen">
+    <param name="rosbag" type="bool" value="$(arg rosbag)"/>
+  </node> -->
+
+  <!-- Получение информации с робота -->
+  <!-- Подключать только при запущенном роботе или ursim -->
+  <node pkg="ur5_husky_main" type="ur5_state" name="manipulator_state_info" output="screen" if="$(arg use_robot)">
+    <param name="robot_ip" type="string" value="$(arg robot_ip)"/>
+  </node>
+
+  <!-- Камера для передачи изображения за пределы rViz -->
+  <group ns="camera1">
+  <node pkg="tf" type="static_transform_publisher" name="camera_broadcaster"
+      args="1.3 1 0.5 -0.9 -2.8 2.7 1 world camera1 10" />
+  <node name="camera_info" pkg="rostopic" type="rostopic"
+      args="pub camera_info sensor_msgs/CameraInfo
+     '{header: {seq: 0, stamp: {secs: 0, nsecs: 0}, frame_id: 'camera1'},
+      height: 480, width: 640, distortion_model: 'plumb_bob',
+      D: [0],
+      K: [500.0, 0.0, 320, 0.0, 500.0, 240.0, 0.0, 0.0, 1.0],
+      R: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+      P: [500.0, 0.0, 320, 0.0, 0.0, 500, 240, 0.0, 0.0, 0.0, 1.0, 0.0],
+      binning_x: 0, binning_y: 0,
+      roi: {x_offset: 0, y_offset: 0, height: 480, width: 640, do_rectify: false}}' -r 2"
+      output="screen"/>
+  </group>
+
+  <group ns="rviz1/camera1/image">
+  <rosparam param="disable_pub_plugins">
+    - 'image_transport/compressed'
+    - 'image_transport/compressedDepth'
+    - 'image_transport/theora'
+  </rosparam>
+  </group>
+
+  <!-- <node pkg="joint_state_publisher_gui" type="joint_state_publisher_gui" name="joint_state_publisher_gui" output="screen" /> -->
+
+</launch>

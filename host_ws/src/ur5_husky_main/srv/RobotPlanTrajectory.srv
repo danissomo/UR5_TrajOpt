@@ -1,0 +1,4 @@
+bool trajopt
+---
+string result
+bool success
